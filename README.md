@@ -67,6 +67,24 @@ make
 
 Again, fix up the makefile, and make a PR.
 
+
+To setup writing_observer on top of the learning observer platform you must go into modules/writing_observer and run:
+
+   sudo python setup.py develop
+
+
+Additional System-Specific Notes
+-----------------------------------
+
+RHEL systems require the addition of the rh-python38 packages.
+You also must also install the separate devel packages.  
+
+The virtualenv once created on RHEL will be stored in your home directory under .virtualenvs.
+
+
+
 Contact/maintainer: Piotr Mitros (pmitros@ets.org)
 
 Licensing: Open source / free software. License TBD. 
+
+

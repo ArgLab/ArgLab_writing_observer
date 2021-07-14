@@ -1,0 +1,94 @@
+Rough Installation Notes
+=======================================================
+Working ROugh notes in installation from Dr. Lynch.
+
+
+
+
+
+1) Installation on RH requires rh-python38 or later.
+   Load with scl enable rh-python38 bash
+
+3) Running make install generates the following:
+
+#    mkvirtualenv learning_observer
+#    pip install -r requirements.txt
+#    cd learning_observer
+#    python setup.py develop (does not require sudo)
+#    python learning_observer
+
+Following the requirements for the tool we will need to load all elements in the requirements.txt list.
+
+
+
+
+Step by step notes:
+=========================================
+1)#    mkvirtualenv learning_observer
+
+Makes the actual working virtualenv for LO.  This must be done after rh is enabled.  This will allow us to do the actual execution of the tasks.    This will be done each time we reenter.
+
+
+2) #    pip install -r requirements.txt
+
+This will install each of the items and libraries necessary for execution.
+
+
+3) #    cd learning_observer
+
+This will enter it for evaluation but is mostly meaningful within the LO package.
+
+
+4) #    python setup.py develop (requires sudo)
+
+This performs either a local install or, if you are doi8ng so outside the virtualenv it will try to install it in the prefix specified by the make.
+
+
+5) #    python learning_observer
+
+This starts the basic process within the virtualenv which will let us run the code.  Outside of the virtualenv it will try to manage with the opt install.
+
+NOTE: BEFORE DOING THIS Install Writing Observer.
+
+
+
+
+
+Setup and Credential Files
+=================================================
+Running this requires some basic setup including the credentials.  The basic creds.yaml file is stored in the writing-observer folder.  That will need to be set to handle the credential information.
+
+The password file is also necessary, a basic dummy file can be made easily.
+
+The current dummy file is testuser testpass
+
+NOTE: In order to connect to Google classroom it is necessary to set up the connections with token and secret in the creds.yaml file.  This necessitates obtaining the requisite google information and in updating the stored values.  It also means switching authentication from "all" to "google".
+  Developing this extension will require google authorization.
+
+Updates will be required in creds.yaml for all cases where there is a curly brace to change the requisite values.
+
+   TODO: Fill that in as you go.
+
+
+
+Additionally the system has a number of hardcoded URLS in the source that specifies where it should be linked.  All of these are linked to 'hopto.org' in the files.  To find them use:
+
+  find . -exec grep "hopto" {} \+
+
+In the writing_observer root directory.
+
+These will all need to be changed to update both the extension and the operation of the server to direct listening and should be consistent with the local server setup.
+
+
+
+
+
+Writing Observer
+==================================================
+Building and running the Writing Observer tasks requires building out the WO module which is done with a simple install under the modules.
+
+
+
+
+
+
