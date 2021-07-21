@@ -94,9 +94,6 @@ Client info:
 ---------------------------------------------
 Using Google webapp permissions
 
-Project-ID:    writingobserver-320514
-Client-ID:     217106683904-m870hfj7mivnoromrdolqlvop77cmgp1.apps.googleusercontent.com
-Client-Secret: aE-QkFPdICWbTrMuV32Jg4ZI
 
 
 
