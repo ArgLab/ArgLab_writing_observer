@@ -28,10 +28,24 @@ Step by step notes:
 
 Makes the actual working virtualenv for LO.  This must be done after rh is enabled.  This will allow us to do the actual execution of the tasks.    This will be done each time we reenter.
 
+      On an RHELl system python-virtualenvwrapper must itself be installed.
+      And you will need to do a  source /usr/bin/virtualenvwrapper.sh to ensure that it is usable.
+
+# will need to ensure we embed python38 in the virtualenv with this.
+
+      mkvirtualenv -p python3.8 learning_observer
+
+
 
 2) #    pip install -r requirements.txt
 
 This will install each of the items and libraries necessary for execution.
+
+NOTE: This must use pip3 and be done inside the 
+
+  must do a pip install --upgrade pip first.
+  And must install the rh-python38-python-devel files. 
+
 
 
 3) #    cd learning_observer
@@ -39,9 +53,14 @@ This will install each of the items and libraries necessary for execution.
 This will enter it for evaluation but is mostly meaningful within the LO package.
 
 
-4) #    python setup.py develop (requires sudo)
+4) #    python setup.py develop
 
 This performs either a local install or, if you are doi8ng so outside the virtualenv it will try to install it in the prefix specified by the make.
+
+
+Now before actually running learning_observer we also need to go to the modules folder and install writing_observer via:
+
+   python setup.py develop
 
 
 5) #    python learning_observer
@@ -62,12 +81,24 @@ The password file is also necessary, a basic dummy file can be made easily.
 
 The current dummy file is testuser testpass
 
+
 NOTE: In order to connect to Google classroom it is necessary to set up the connections with token and secret in the creds.yaml file.  This necessitates obtaining the requisite google information and in updating the stored values.  It also means switching authentication from "all" to "google".
   Developing this extension will require google authorization.
 
 Updates will be required in creds.yaml for all cases where there is a curly brace to change the requisite values.
 
    TODO: Fill that in as you go.
+
+
+Client info:
+---------------------------------------------
+Using Google webapp permissions
+
+Project-ID:    writingobserver-320514
+Client-ID:     217106683904-m870hfj7mivnoromrdolqlvop77cmgp1.apps.googleusercontent.com
+Client-Secret: aE-QkFPdICWbTrMuV32Jg4ZI
+
+
 
 
 
