@@ -74,7 +74,7 @@ async def _google(request):
         'client_id': settings.settings['auth']['google-oauth']['web']['client_id'],
         # Default URI Here.  Resetting to local.
         #'redirect_uri': "https://writing.hopto.org/auth/login/google",
-        'redirect_uri': "https://writing.csc.ncsu.edu/auth/login/google",
+         'redirect_uri': "https://writing.csc.ncsu.edu/auth/login/google",
     }
 
     # Step 1: redirect to get code
