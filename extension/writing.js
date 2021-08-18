@@ -3,7 +3,9 @@
 */ 
 
 /* For debugging purposes: we know the extension is active */
-document.body.style.border = "5px solid blue";
+
+// Commented below 8/17
+// document.body.style.border = "5px solid blue";
 
 function log_error(error_string) {
     /* 
@@ -233,8 +235,21 @@ function google_docs_version_history() {
 
       It also lets us debug the system.
      */
-    var token = executeOnPageSpace("_docs_flag_initialData.info_params.token");
 
+    /* (CL)  The block below depends upon the specified variable being defined
+     * and may trigger an error if run.  To address that it is wrapped up in 
+     * a try block that will simply jump out of the method with a return.
+     * 
+     * In future this may be changed to an if defined or provide some more 
+     * complex analysis if that is possible.
+    */
+    try {
+	var token = executeOnPageSpace("_docs_flag_initialData.info_params.token");
+    } catch (error) {
+    	log_event("Error on Page History.", {"ERROR" : error})
+	return -1;
+    }
+    
     metainfo_url = "https://docs.google.com/document/d/"+doc_id()+"/revisions/tiles?id="+doc_id()+"&start=1&showDetailedRevisions=false&filterNamed=false&token="+token+"&includes_info_params=true"
 
     fetch(metainfo_url).then(function(response) {
@@ -242,6 +257,12 @@ function google_docs_version_history() {
 	    tiles = JSON.parse(text.substring(5)); // Google adds a header to prevent JavaScript injection. This removes it.
 	    var first_revision = tiles.firstRev;
 	    var last_revision = tiles.tileInfo[tiles.tileInfo.length - 1].end;
+
+	    /* Note1: This load may trigger a great deal of work.  Consider adding the 
+	       caveat commented out below to cut down revision amount.  Test empirically.
+	    */
+	    // if (last_revision > 10000) { return...};
+
 	    version_history_url = "https://docs.google.com/document/d/"+doc_id()+"/revisions/load?id="+doc_id()+"&start="+first_revision+"&end="+last_revision;
 	    fetch(version_history_url).then(function(history_response) {
 		history_response.text().then(function(history_text) {
@@ -253,6 +274,9 @@ function google_docs_version_history() {
 	    });
 	});
     });
+
+    // Done to mirror return -1;
+    return 1;
 }
 
 function writing_onload() {
