@@ -82,6 +82,9 @@ You also must also install the separate devel packages.
 The virtualenv once created on RHEL will be stored in your home directory under .virtualenvs.
 
 
+In order to use the client you will need to be logged into both the user account *and* Chrome.
+
+
 
 Contact/maintainer: Piotr Mitros (pmitros@ets.org)
 
