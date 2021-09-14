@@ -1,4 +1,4 @@
-#!/usr/bin/env/bash
+#!/usr/bin/env bash
 # ===============================
 # RunLearningObserver.sh
 # Collin F. Lynch
@@ -19,12 +19,14 @@ LOGFILE_DEST="/usr/local/share/Projects/WritingObserver/Repo-Fork/writing_observ
 # Make the logfile name
 # ---------------------------------------
 LOG_DATE=$(date "+%m-%d-%Y--%H-%M-%S")
-LOG_NAME="$LOGFILE_DEST/learning_observer_service_$LOG_DATE.log"
+LOGFILE_NAME="$LOGFILE_DEST/learning_observer_service_$LOG_DATE.log"
 echo $LOG_NAME;
 
  
-
-
-
-
-# learning_observer
+# Now run the thing.
+# --------------------------------------
+echo "Running Learning Observer Service..."
+cd $LEARNING_OBSERVER_LOC
+#$($VIRTUALENV_PYTHON $LEARNING_OBSERVER_LOC > $LOG_NAME 2>&1)
+nohup $VIRTUALENV_PYTHON learning_observer > $LOGFILE_NAME 2>&1 &
+echo $! > $LOGFILE_DEST/run.pid
