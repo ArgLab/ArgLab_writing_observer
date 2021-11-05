@@ -58,8 +58,9 @@ import learning_observer.filesystem_state
 import learning_observer.paths as paths
 import learning_observer.settings as settings
 
+def mainlog_path():
+    return paths.logs("main_log.json"), "ab", 0
 
-mainlog = open(paths.logs("main_log.json"), "ab", 0)
 files = {}
 
 # Do we make files for exceptions? Do we print extra stuff on the console?
@@ -144,21 +145,22 @@ def log_event(event, filename=None, preencoded=False, timestamp=False):
     This isn't done, but it's how we log events for now.
     '''
     if filename is None:
-        log_file_fp = mainlog
+        filepath = mainlog_path()
     elif filename in files:
-        log_file_fp = files[filename]
+        filepath = files[filename].name
     else:
-        log_file_fp = open(paths.logs("" + filename + ".log"), "ab", 0)
-        files[filename] = log_file_fp
+        filepath = paths.logs("" + filename + ".log")
+        files[filename] = open(filepath)
 
-    if not preencoded:
-        event = encode_json_line(event)
-    log_file_fp.write(event.encode('utf-8'))
-    if timestamp:
-        log_file_fp.write("\t".encode('utf-8'))
-        log_file_fp.write(datetime.datetime.utcnow().isoformat().encode('utf-8'))
-    log_file_fp.write("\n".encode('utf-8'))
-    log_file_fp.flush()
+    with open(filename, "ab", 0) as log_file_fp:
+        if not preencoded:
+            event = encode_json_line(event)
+        log_file_fp.write(event.encode('utf-8'))
+        if timestamp:
+            log_file_fp.write("\t".encode('utf-8'))
+            log_file_fp.write(datetime.datetime.utcnow().isoformat().encode('utf-8'))
+        log_file_fp.write("\n".encode('utf-8'))
+        log_file_fp.flush()
 
 
 def debug_log(text):
