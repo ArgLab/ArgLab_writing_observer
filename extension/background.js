@@ -204,7 +204,7 @@ loggers_enabled = [
        tailored to our current working context.
     */
     //websocket_logger("wss://writing.hopto.org/wsapi/in/")
-    websocket_logger("wss://writing.csc.ncsu.edu/wsapi/in/")
+    websocket_logger("ws://lin-res90.csc.ncsu.edu/wsapi/in/")
 ];
 
 function log_event(event_type, event) {
