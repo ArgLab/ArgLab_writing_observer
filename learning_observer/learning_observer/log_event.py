@@ -129,7 +129,7 @@ def log_event(event, filename=None, preencoded=False, timestamp=False):
     This isn't done, but it's how we log events for now.
     '''
     
-    # This flag ensures that all rapid log files are closed after writing
+    #This is a minimal fix/measure to ensure log files are closed atfer io
     close_flag = False
     
     if filename is None:
