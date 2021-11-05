@@ -150,7 +150,9 @@ def log_event(event, filename=None, preencoded=False, timestamp=False):
         filepath = files[filename].name
     else:
         filepath = paths.logs("" + filename + ".log")
-        files[filename] = open(filepath)
+
+        with open(filepath, "ab", 0) as log_file_fp:
+            files[filename] = open(filepath, "ab", 0)
 
     with open(filename, "ab", 0) as log_file_fp:
         if not preencoded:
