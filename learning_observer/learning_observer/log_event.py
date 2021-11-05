@@ -1,15 +1,11 @@
 '''
 For now, we dump logs into files, crudely.
-
 We're not there yet, but we would like to create a 哈希树, or
 Merkle-tree-style structure for our log files.
-
 Or to be specific, a Merkle DAG, like git.
-
 Each item is stored under its SHA hash. Note that items are not
 guaranteed to exist. We can prune them, and leave a dangling pointer
 with just the SHA.
-
 Each event log will be structured as
    +-----------------+     +-----------------+
 <--- Last item (SHA) |  <--- Last item (SHA) | ...
@@ -21,27 +17,21 @@ Each event log will be structured as
        +-------+                +-------+
        | Event |                | Event |
        +-------+                +-------+
-
 Where the top objects form a linked list (each containing a pair of
 SHA hashes, one of the previous item, and one of the associated
 event).
-
 We will then have a hierarchy, where we have lists per-document,
 documents per-student. When we run analyses, those will store the
 hashes of where in each event log we are. Likewise, with each layer
 of analysis, we'll store pointers to git hashes of code, as well as
 of intermediate files (and how those were generated).
-
 Where data is available, we can confirm we're correctly replicating
 prior tesults.
-
 The planned data structure is very similar to git, but with the
 potential for missing data without an implosion.
-
 Where data might not be available is after a FERPA, CCPA, or GDPR
 requests to change data. In those cases, we'll have dangling nodes,
 where we'll know that data used to exist, but not what it was.
-
 We might also have missing intermediate files. For example, if we do
 a dozen analyses, we'll want to know those happened and what those
 were, but we might not keep terabytes of data around (just enough to
@@ -58,9 +48,8 @@ import learning_observer.filesystem_state
 import learning_observer.paths as paths
 import learning_observer.settings as settings
 
-def mainlog_path():
-    return paths.logs("main_log.json"), "ab", 0
 
+mainlog = open(paths.logs("main_log.json"), "ab", 0)
 files = {}
 
 # Do we make files for exceptions? Do we print extra stuff on the console?
@@ -72,7 +61,6 @@ DEBUG = settings.RUN_MODE == settings.RUN_MODES.DEV or 'logging' in settings.set
 def encode_json_line(line):
     '''
     For encoding short data, such as an event.
-
     We use a helper function so we have the same encoding
     everywhere. Our primary goal is replicability -- if
     we encode the same dictionary twice, we'd like to get
@@ -84,7 +72,6 @@ def encode_json_line(line):
 def encode_json_block(block):
     '''
     For encoding large data, such as the startup log.
-
     We use a helper function so we have the same encoding
     everywhere. Our primary goal is replicability -- if
     we encode the same dictionary twice, we'd like to get
@@ -96,18 +83,15 @@ def encode_json_block(block):
 def secure_hash(text):
     '''
     Our standard hash functions. We can either use either
-
     * A full hash (e.g. SHA3 512) which should be secure against
     intentional attacks (e.g. a well-resourced entity wants to temper
     with our data, or if Moore's Law starts up again, a well-resourced
     teenager).
-
     * A short hash (e.g. MD5), which is no longer considered
     cryptographically-secure, but is good enough to deter casual
     tempering. Most "tempering" comes from bugs, rather than attackers,
     so this is very helpful still. MD5 hashes are a bit more manageable
     in size.
-
     For now, we're using full hashes everywhere, but it would probably
     make sense to alternate as makes sense. MD5 is 32 characters, while
     SHA3_512 is 128 characters (104 if we B32 encode).
@@ -144,34 +128,37 @@ def log_event(event, filename=None, preencoded=False, timestamp=False):
     '''
     This isn't done, but it's how we log events for now.
     '''
+    
+    #This is a minimal fix/measure to ensure log files are closed atfer io
+    close_flag = False
+    
     if filename is None:
-        filepath = mainlog_path()
+        log_file_fp = mainlog
     elif filename in files:
-        filepath = files[filename].name
+        log_file_fp = files[filename]
     else:
-        filepath = paths.logs("" + filename + ".log")
+        close_flag = True
+        log_file_fp = open(paths.logs("" + filename + ".log"), "ab", 0)
+        files[filename] = log_file_fp
 
-        with open(filepath, "ab", 0) as log_file_fp:
-            files[filename] = open(filepath, "ab", 0)
-
-    with open(filename, "ab", 0) as log_file_fp:
-        if not preencoded:
-            event = encode_json_line(event)
-        log_file_fp.write(event.encode('utf-8'))
-        if timestamp:
-            log_file_fp.write("\t".encode('utf-8'))
-            log_file_fp.write(datetime.datetime.utcnow().isoformat().encode('utf-8'))
-        log_file_fp.write("\n".encode('utf-8'))
-        log_file_fp.flush()
+    if not preencoded:
+        event = encode_json_line(event)
+    log_file_fp.write(event.encode('utf-8'))
+    if timestamp:
+        log_file_fp.write("\t".encode('utf-8'))
+        log_file_fp.write(datetime.datetime.utcnow().isoformat().encode('utf-8'))
+    log_file_fp.write("\n".encode('utf-8'))
+    log_file_fp.flush()
+    
+    if close_flag:
+        log_file_fp.close()
 
 
 def debug_log(text):
     '''
     Helper function to help us trace our code.
-
     We print a time stamp, a stack trace, and a /short/ summary of
     what's going on.
-
     This is not intended for programmatic debugging. We do change
     format regularly (and you should feel free to do so too -- for
     example, on narrower terminals, a `\n\t` can help)
