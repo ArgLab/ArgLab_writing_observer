@@ -50,7 +50,6 @@ import learning_observer.settings as settings
 
 import lo_logging.tree_manager as tree_manager
 
-
 mainlog = open(paths.logs("main_log.json"), "ab", 0)
 files = {}
 
