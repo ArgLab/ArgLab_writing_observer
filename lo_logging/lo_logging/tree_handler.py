@@ -1,7 +1,9 @@
 import hashlib
 
-def compute_hash_str(input: str) -> str:
-    return hashlib.sha256(input.encode('utf-8')).hexdigest() 
+def compute_hash_str(input) -> str:
+    value = str(input)    
+    
+    return hashlib.sha256(value.encode('utf-8')).hexdigest() 
 
 #This is highly inefficient, but it works for now.
 def compute_root(nodes):
