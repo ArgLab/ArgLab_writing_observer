@@ -133,6 +133,8 @@ def log_event(event, filename=None, preencoded=False, timestamp=False):
     #This is a minimal fix/measure to ensure log files are closed atfer io
     close_flag = False
     
+    tree_manager.log()
+    
     if filename is None:
         log_file_fp = mainlog
     elif filename in files:
