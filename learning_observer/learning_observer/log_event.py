@@ -131,7 +131,7 @@ def log_event(event, filename=None, preencoded=False, timestamp=False):
     '''
     
     #This is a minimal fix/measure to ensure log files are closed atfer io
-    close_flag = False
+    #close_flag = False
     
     tree_manager.log()
     
@@ -153,8 +153,10 @@ def log_event(event, filename=None, preencoded=False, timestamp=False):
     log_file_fp.write("\n".encode('utf-8'))
     log_file_fp.flush()
     
-    if close_flag:
+    '''
+        if close_flag:
         log_file_fp.close()
+    '''
 
 
 def debug_log(text):
