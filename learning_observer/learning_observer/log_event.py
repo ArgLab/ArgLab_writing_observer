@@ -140,7 +140,7 @@ def log_event(event, filename=None, preencoded=False, timestamp=False):
     elif filename in files:
         log_file_fp = files[filename]
     else:
-        close_flag = True
+        #close_flag = True
         log_file_fp = open(paths.logs("" + filename + ".log"), "ab", 0)
         files[filename] = log_file_fp
 
