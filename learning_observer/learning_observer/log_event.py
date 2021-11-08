@@ -137,7 +137,8 @@ def log_event(event, filename=None, preencoded=False, timestamp=False):
     log_session.get_current_tree().append(event)
     log_session.get_current_tree().generate()
     
-    print(log_session.get_current_tree().get_root())
+    print(str(len(log_session.get_current_tree().get_nodes())))
+    print(log_session.get_current_tree().get_root().get_hash())
     
     if filename is None:
         log_file_fp = mainlog
