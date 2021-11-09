@@ -1,10 +1,21 @@
 import hashlib
 
+'''
+This approach is merely a demonstration of the Merkle Tree concept
+that ought to eventually be implemented. This code is still inefficient
+since it serves its role as a pathfinder.
+'''
+
 def compute_hash_str(input) -> str:
     value = str(input)    
     
     return hashlib.sha256(value.encode('utf-8')).hexdigest() 
 
+'''
+Pair off nodes with a double string array and recursively repeat
+algorithm until only two single hashes are left, in which case
+they are combined, hashed, and returned as the output (tree root)
+'''
 #This is highly inefficient, but it works for now.
 def compute_root(nodes):
     paired_nodes = []
@@ -17,6 +28,7 @@ def compute_root(nodes):
         paired_nodes.append([nodes[i], nodes[i+1]])
         
     if len(paired_nodes) == 1:
+        # TODO: Clean up
         return Node(paired_nodes[0][0].get_hash() + paired_nodes[0][1].get_hash())
     
     for x in range(0, len(paired_nodes)):
@@ -31,9 +43,12 @@ def compute_root(nodes):
     if len(resultant) != 2:
         return compute_root(resultant)
     
+    # TODO: Clean up
     return Node(resultant[0].get_hash() + resultant[1].get_hash())
 
-
+'''
+Object Oriented Approach for future scaling during testing
+'''
 class Node:
     def __init__(self, value: str):
         self.value = value
@@ -45,8 +60,15 @@ class Node:
     @staticmethod
     def get_nodes(values: str):
         return list(map(lambda x: Node(x), values))
+    
+    @staticmethod
+    def get_str_nodes(nodes):
+        return list(map(lambda x: x.get_hash(), nodes))
 
-
+'''
+Tree class allows for easy adding and removing of nodes
+before inevitable generation and production of root hash
+'''
 class Tree:
     def __init__(self):
         self.root_hash = None
