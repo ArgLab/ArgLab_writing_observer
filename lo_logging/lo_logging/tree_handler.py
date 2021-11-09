@@ -9,7 +9,7 @@ since it serves its role as a pathfinder.
 def compute_hash_str(input) -> str:
     value = str(input)    
     
-    return hashlib.sha256(value.encode('utf-8')).hexdigest() 
+    return "SHA512_" + hashlib.sha3_512(value.encode('utf-8')).hexdigest()
 
 '''
 Pair off nodes with a double string array and recursively repeat
