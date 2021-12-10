@@ -48,9 +48,6 @@ import learning_observer.filesystem_state
 import learning_observer.paths as paths
 import learning_observer.settings as settings
 
-import lo_logging.tree_handler as tree_manager
-import lo_logging.session as log_session
-
 mainlog = open(paths.logs("main_log.json"), "ab", 0)
 files = {}
 
@@ -133,12 +130,6 @@ def log_event(event, filename=None, preencoded=False, timestamp=False):
     
     #This is a minimal fix/measure to ensure log files are closed atfer io
     #close_flag = False
-    
-    log_session.get_current_tree().append(event)
-    log_session.get_current_tree().generate()
-    
-    print(str(len(log_session.get_current_tree().get_nodes())))
-    print(log_session.get_current_tree().get_root().get_hash())
     
     if filename is None:
         log_file_fp = mainlog

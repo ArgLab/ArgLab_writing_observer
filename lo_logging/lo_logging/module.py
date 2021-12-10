@@ -1,1 +1,0 @@
-NAME = "Logging Structure Base"
