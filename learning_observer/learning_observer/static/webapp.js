@@ -89,6 +89,7 @@ requirejs(
 	// Add libraries
 	config.d3 = d3;
 	config.ajax = ajax(config);
+	
 
 	function password_authorize() {
 	    d3.json("/auth/login/password", {
@@ -138,6 +139,9 @@ requirejs(
 		if(data["error"]!=null) {
 		    if(data["error"]["status"]==="UNAUTHENTICATED") {
 			load_login_page();
+		    }
+		    else if (data["error"]["status"]==="PERMISSION_DENIED") {
+		        alert("Error: Can't access course list through google api!");
 		    }
 		    else {
 			error("Unknown error!");
