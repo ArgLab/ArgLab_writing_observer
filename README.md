@@ -76,7 +76,7 @@ To setup writing_observer on top of the learning observer platform you must go i
 Additional System-Specific Notes
 -----------------------------------
 
-RHEL systems require the addition of the rh-python38 packages.
+ RHEL systems require the addition of the rh-python38 packages.
 You also must also install the separate devel packages.  
 
 The virtualenv once created on RHEL will be stored in your home directory under .virtualenvs.
