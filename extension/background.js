@@ -214,8 +214,13 @@ loggers_enabled = [
 */
 loggers_enabled = [
     console_logger(),
-    //ajax_logger("https://writing.learning-observer.org/webapi/")//,
-    websocket_logger("wss://writing.learning-observer.org/wsapi/in/")
+    //ajax_logger("https://writing.hopto.org/webapi/")//,
+
+    /* Default in code is the hopto account.  This has been
+       tailored to our current working context.
+    */
+    //websocket_logger("wss://writing.hopto.org/wsapi/in/")
+    websocket_logger("wss://writing.csc.ncsu.edu/wsapi/in/")
 ];
 
 function log_event(event_type, event) {
