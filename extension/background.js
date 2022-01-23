@@ -24,6 +24,7 @@ var RAW_DEBUG = false; // Do not save debug requests. We flip this frequently. P
 
 Dequeue events
 */
+
 function profileInfoWrapper(callback) {
     /* Workaround for this bug:
        https://bugs.chromium.org/p/chromium/issues/detail?id=907425#c6
@@ -222,94 +223,6 @@ function log_event(event_type, event) {
     }
 }
 
-
-//all new code for oauth implementation
-
-//these constants are used to create the eauth endpoint
-const CLIENT_ID = encodeURIComponent('956402578974-o5ou9bnbp2mlmp1a21j4v4k3itsj71fr.apps.googleusercontent.com');
-const RESPONSE_TYPE = encodeURIComponent('id_token');
-const REDIRECT_URI = encodeURIComponent('https://cfbjcoibdloagfbnclfjekhmdneiegal.chromiumapp.org')
-const SCOPE = encodeURIComponent('openid');
-const STATE = encodeURIComponent('meet' + Math.random().toString(36).substring(2, 15));
-const PROMPT = encodeURIComponent('consent');
-//users signed in status is false
-let user_signed_in = false;
-
-function is_user_signed_in() {
-    return user_signed_in;
-}
-//function to construct the oauth2.0 endpoint, using constants from above
-function create_auth_endpoint() {
-    //random nonce value
-    let nonce = encodeURIComponent(Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15));
-
-    let openId_endpoint_url =
-        `https://accounts.google.com/o/oauth2/v2/auth
-?client_id=${CLIENT_ID}
-&response_type=${RESPONSE_TYPE}
-&redirect_uri=${REDIRECT_URI}
-&scope=${SCOPE}
-&state=${STATE}
-&nonce=${nonce}
-&prompt=${PROMPT}`;
-
-    return openId_endpoint_url;
-}
-
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.message === 'login') {
-        //if the user wants to sign in
-        if (user_signed_in) {
-            console.log("User is already signed in.");
-            //error is already signed in
-        } else {
-            //else sign in the user
-            //popup window to sign in
-            chrome.identity.launchWebAuthFlow({
-                'url': create_auth_endpoint(),
-                'interactive': true
-            }, function (redirect_url) {
-                if (chrome.runtime.lastError) {
-                } else {
-                    //parsing the id token
-                    //using this library to parse the jwt: https://github.com/kjur/jsrsasign/releases/
-                    let id_token = redirect_url.substring(redirect_url.indexOf('id_token=') + 9);
-                    id_token = id_token.substring(0, id_token.indexOf('&'));
-                    const user_info = KJUR.jws.JWS.readSafeJSONString(b64utoutf8(id_token.split(".")[1]));
-
-                    //authenitcating by making sure that the issuer is from google
-                    //authenticating by making sure that the aud value returned in the jwt is the same as the client id
-                    if ((user_info.iss === 'https://accounts.google.com' || user_info.iss === 'accounts.google.com')
-                        && user_info.aud === CLIENT_ID) {
-                        console.log("User successfully signed in.");
-                        user_signed_in = true;
-                        //once the user is signed in, changing to a different html file to display the log out button
-                        chrome.browserAction.setPopup({ popup: 'pages/popup-signed-in.html' }, () => {
-                            sendResponse('success');
-                        });
-                        //if the user cannot be authenticated, the user is not signed in
-                    } else {
-                        // invalid credentials
-                        console.log("Invalid credentials.");
-                    }
-                }
-            });
-
-            return true;
-        }
-    } else if (request.message === 'logout') {
-        //logging out
-        user_signed_in = false;
-        chrome.browserAction.setPopup({ popup: 'pages/popup.html' }, () => {
-            sendResponse('success');
-        });
-
-        return true;
-    } else if (request.message === 'isUserSignedIn') {
-        sendResponse(is_user_signed_in());
-    }
-});
-
 function send_chrome_identity() {
     /*
        We sometimes may want to log the user's identity, as stored in
@@ -457,4 +370,3 @@ profileInfoWrapper(function callback(userInfo) {
 
 // And let the console know we've loaded
 chrome.extension.getBackgroundPage().console.log("Loaded");
-
