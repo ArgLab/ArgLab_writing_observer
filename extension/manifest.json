@@ -1,7 +1,6 @@
 {
     "author": "Piotr Mitros",
     "manifest_version": 2,
-    "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqTIyuLjmuk7t0xR+Q+FTg6P7ecVyOvj7YKVU9EilT8iaY1pCYevnb4f1aPlHhUzUVozJ3pa2cQdd4cQYcXYQcleNeh0dhbPQLwKFmZo6W5gil/o3JD5MsPhra9uk07RojRoaazm9yGxNg40r7GvVOv0TR+SRHWUqopaKvzi5OkTS9EML4DyL+qUB0Xb5/lTlVPrRhoyGUcnuXJNmcWAIBkhYjMTzuY/DNPwVK90Em9e2BDfN/QmmrWBZLqhwmDDgWjouiVj13p2wIRE1xrbycqRv7uo/WKrX68svm01TQXLHsg5VHMlLe5uO6P5eaWOSDOaZ777SpV6ipCPuDPTsuwIDAQAB",
     "name": "Writing Process",
     "homepage_url": "http://mitros.org/",
     "incognito": "not_allowed",
@@ -22,7 +21,7 @@
 	"js": ["3rdparty/sha256.js", "writing_common.js", "writing.js"]
     }],
     "background": {
-	"scripts": ["writing_common.js", "background.js", "jsrsasign-all-min.js"]
+	"scripts": ["writing_common.js", "background.js"]
     },
     "permissions": [
 	"webRequest",
