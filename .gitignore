@@ -5,8 +5,11 @@
 webapp/logs
 webapp/static_data/teachers.yaml
 creds.yaml
+CREDS.YAML
 uncommitted
-extension.*
+extension.crx
+extension.pem
+extension.zip
 *egg-info*
 public_key
 */dist
@@ -19,3 +22,4 @@ learning_observer/learning_observer/static_data/repos/
 learning_observer/learning_observer/static_data/courses.json
 learning_observer/learning_observer/static_data/students.json
 learning_observer/passwd.lo
+--*

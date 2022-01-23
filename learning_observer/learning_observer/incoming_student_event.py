@@ -10,7 +10,9 @@ We:
 * Optionally, notify via a pubsub of new data
 '''
 
+import asyncio
 import datetime
+import inspect
 import json
 import os
 import time
@@ -28,6 +30,8 @@ import learning_observer.pubsub as pubsub                      # Pluggable pubsu
 import learning_observer.stream_analytics as stream_analytics  # Individual analytics modules
 
 import learning_observer.settings as settings
+
+import learning_observer.stream_analytics.helpers
 
 from learning_observer.log_event import debug_log
 
@@ -59,15 +63,33 @@ async def student_event_pipeline(metadata):
     '''
     client_source = metadata["source"]
     print("client_source")
-    print(stream_analytics.student_reducer_modules())
-    if client_source not in stream_analytics.student_reducer_modules():
-        debug_log("Unknown event source: " + str(client_source))
-        debug_log("Known sources: " + repr(stream_analytics.student_reducer_modules().keys()))
-        raise learning_observer.exceptions.SuspiciousOperation("Unknown event source")
-    analytics_modules = stream_analytics.student_reducer_modules()[client_source]
+    print(stream_analytics.reducer_modules(client_source))
+    analytics_modules = stream_analytics.reducer_modules(client_source)
+
     # Create an event processor for this user
-    # TODO: This should happen in parallel: https://stackoverflow.com/questions/57263090/async-list-comprehensions-in-python
-    event_processors = [await am['student_event_reducer'](metadata) for am in analytics_modules]
+    # TODO:
+    # * Thing like this (esp. below) should happen in parallel:
+    #   https://stackoverflow.com/questions/57263090/async-list-comprehensions-in-python
+    # * We should create cached modules for each key, rather than this partial evaluation
+    #   kludge
+    async def prepare_reducer(analytics_module):
+        '''
+        Prepare a reducer for the analytics module. Note that this is in-place (the
+        field is mutated).
+        '''
+        f = analytics_module['reducer']
+        # We're moving to this always being a co-routine. This is
+        # backwards-compatibility code which should be remove,
+        # eventually. We started with a function, and had an interrim
+        # period where both functions and co-routines worked.
+        if not inspect.iscoroutinefunction(f):
+            print(analytics_module)
+            raise AttributeError("The above reducer should be a co-routine")
+
+        analytics_module['reducer_partial'] = await analytics_module['reducer'](metadata)
+        return analytics_module
+
+    analytics_modules = await asyncio.gather(*[prepare_reducer(am) for am in analytics_modules])
 
     async def pipeline(parsed_message):
         '''
@@ -83,8 +105,23 @@ async def student_event_pipeline(metadata):
         # To do: Finer-grained exception handling. Right now, if we break, we don't run
         # through remaining processors.
         try:
-            print(event_processors)
-            processed_analytics = [await ep(parsed_message) for ep in event_processors]
+            processed_analytics = []
+            for am in analytics_modules:
+                print(am['scope'])
+                args = {}
+                skip = False
+                for field in am['scope']:
+                    if isinstance(field, learning_observer.stream_analytics.helpers.EventField):
+                        print("event", parsed_message)
+                        print("field", field)
+                        client_event = parsed_message.get('client', {})
+                        if field.event not in client_event:
+                            print(field.event, "not found")
+                            skip = True
+                        args[field.event] = client_event.get(field.event)
+                if not skip:
+                    print("args", args)
+                    processed_analytics.append(await am['reducer_partial'](parsed_message, **args))
         except Exception as e:
             traceback.print_exc()
             filename = paths.logs("critical-error-{ts}-{rnd}.tb".format(
@@ -243,7 +280,25 @@ async def incoming_websocket_handler(request):
 
     print("Init pipeline")
     header_events = []
-    INIT_PIPELINE = True
+
+    # This will take a little bit of explaining....
+    #
+    # We originally did not have a way to do auth/auth. Now, we do
+    # auth with a header. However, we have old log files without that
+    # header. Setting INIT_PIPELINE to False allows us to use those
+    # files in the current system.
+    #
+    # At some point, we should either:
+    #
+    # 1) Change restream.py to inject a false header, or archive the
+    # source files and migrate the files, so that we can eliminate
+    # this setting; or
+    # 2) Dispatch on type of event
+    #
+    # This should not be a config setting.
+
+    INIT_PIPELINE = settings.settings.get("init_pipeline", True)
+    json_msg = None
     if INIT_PIPELINE:
         async for msg in ws:
             print("Auth", msg)
@@ -277,6 +332,9 @@ async def incoming_websocket_handler(request):
 
         # We set up metadata based on the first event, plus any headers
         if not AUTHENTICATED:
+            # If INIT_PIPELINE == False
+            if json_msg is None:
+                json_msg = client_event
             # E.g. is this from Writing Observer? Some math assessment? Etc. We dispatch on this
             if 'source' in json_msg:
                 event_metadata['source'] = json_msg['source']
@@ -288,7 +346,8 @@ async def incoming_websocket_handler(request):
             )
             AUTHENTICATED = True
 
-        event_handler = await handle_incoming_client_event(metadata=event_metadata)
+        if not event_handler:
+            event_handler = await handle_incoming_client_event(metadata=event_metadata)
 
         debug_log(
             "Dispatch incoming ws event: " + client_event['event']

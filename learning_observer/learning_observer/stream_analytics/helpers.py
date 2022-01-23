@@ -26,18 +26,18 @@ system. For now, our overall system diagram is:
                   |            |
                   +------------+
 
-We create reducers with the `kvs_pipeline` decorator. In the longer
-term, we'll want to be able to plug together different aggregators,
-state types, etc. We'll also want different keys for reducers
-(per-student, per-resource, etc.). For now, though, this works.
+We create reducers with the `student_event_reducer` decorator. In the
+longer term, we'll want to be able to plug together different
+aggregators, state types, etc. We'll also want different keys for
+reducers (per-student, per-resource, etc.). For now, though, this
+works.
 '''
-import enum
+
+import copy
 import functools
 
 import learning_observer.kvs
-
-
-KeyStateType = enum.Enum("KeyStateType", "INTERNAL EXTERNAL")
+from learning_observer.stream_analytics.fields import KeyStateType, KeyField, EventField, Scope
 
 
 def fully_qualified_function_name(func):
@@ -58,13 +58,25 @@ def fully_qualified_function_name(func):
     )
 
 
-def make_key(func, safe_user_id, state_type):
+def make_key(func, key_dict, state_type):
     '''
-    Create a KVS key
+    Create a KVS key.
 
-    This joins a stream module ID, a sanitized user ID, and
-    whether this is the internal state of the module or the
-    external state.
+    It combines:
+
+    * A fully-qualified name for the reducer function
+    * A dictionary of fields
+    * Whether the key is internal or external
+
+    Into a unique string
+
+    For example:
+    >>> make_key(
+          some_module.reducer,
+          {h.KeyField.STUDENT: 123}, 
+          h.KeyStateType.INTERNAL
+    )
+    'Internal,some_module.reducer,STUDENT:123'
     '''
     # pylint: disable=isinstance-second-argument-not-valid-type
     assert isinstance(state_type, KeyStateType)
@@ -72,15 +84,34 @@ def make_key(func, safe_user_id, state_type):
 
     streammodule = fully_qualified_function_name(func)
 
-    return "{state_type}:{streammodule}:{user}".format(
-        state_type=state_type.name.capitalize(),
-        streammodule=streammodule,
-        user=safe_user_id
-    )
+    safe_user_id = key_dict[KeyField.STUDENT]
+
+    # Key starts with whether it is internal versus external state, and what module it comes from
+    key_list = [
+        state_type.name.capitalize(),
+        streammodule
+    ]
+
+    # It continues with the fields. These are organized as key-value
+    # pairs. These need a well-defined order. I'm sure there's a
+    # logical order here, but for now, we do alphabetical.
+    #
+    # We will want to be able to do reduce operations across multiple
+    # axes. This is where an RDS with multiple indexes might be nice,
+    # if we can figure out the sharding, etc. Another alternative
+    # might be to use postgres to organize things (which changes
+    # rarely), but to keep actual key/value pairs in redis (which
+    # changes a lot).
+    for key in sorted(key_dict.keys(), key = lambda x: x.name):
+        key_list.append("{key}:{value}".format(key=key.name, value=key_dict[key]))
+
+    # And we return this as comma-seperated values
+    return ",".join(key_list)
 
 
 def kvs_pipeline(
-        null_state=None
+        null_state=None,
+        scope=None
 ):
     '''
     Closures, anyone?
@@ -94,12 +125,17 @@ def kvs_pipeline(
       happened. This can be important for the aggregator. We're documenting the
       code before we've written it, so please make sure this works before using.
     '''
+    if scope==None:
+        print("TODO: explicitly specify a scope")
+        print("Defaulting to student scope")
+        scope = Scope([KeyField.STUDENT])
+
     def decorator(func):
         '''
         The decorator itself
         '''
         @functools.wraps(func)
-        def wrapper_closure(metadata):
+        async def wrapper_closure(metadata):
             '''
             The decorator itself. We create a function that, when called,
             creates an event processing pipeline. It keeps a pointer
@@ -108,19 +144,17 @@ def kvs_pipeline(
             want to allow sharding, etc. If two users are connected, each
             will have their own data store connection.
             '''
-            print("Metadata: ")
-            print(metadata)
-            if metadata is not None and 'auth' in metadata:
-                safe_user_id = metadata['auth']['safe_user_id']
-            else:
-                safe_user_id = '[guest]'
-                # TODO: raise an exception.
-
-            internal_key = make_key(func, safe_user_id, KeyStateType.INTERNAL)
-            external_key = make_key(func, safe_user_id, KeyStateType.EXTERNAL)
             taskkvs = learning_observer.kvs.KVS()
+            keydict = {}
 
-            async def process_event(events):
+            if KeyField.STUDENT in scope:
+                if metadata is not None and 'auth' in metadata:
+                    safe_user_id = metadata['auth']['safe_user_id']
+                else:
+                    safe_user_id = '[guest]'
+                keydict[KeyField.STUDENT] = safe_user_id
+
+            async def process_event(event, **additional_metadata):
                 '''
                 This is the function which processes events. It calls the event
                 processor, passes in the event(s) and state. It takes
@@ -167,14 +201,51 @@ def kvs_pipeline(
                 #   enough and probably the right long-term solution
                 # * We could have modules explicitly indicate where they need
                 #   thread safety and transactions. That'd be easy enough.
-                #
-                internal_state = await taskkvs[internal_key]
-                internal_state, external_state = await func(
-                    events, internal_state
+                for field in scope:
+                    # Skip out-of-scope events. E.g. if we have an event stream
+                    # where we're scoped to a document ID, we want to skip global events,
+                    # which don't have that document ID
+                    if field not in keydict and isinstance(field, EventField):
+                        AMG = additional_metadata.get(field.event, None)
+                        if AMG is None:
+                            return None
+                        keydict[field] = AMG
+
+                internal_key = make_key(
+                    func,
+                    keydict,
+                    KeyStateType.INTERNAL
                 )
-                await taskkvs.set(internal_key, internal_state)
-                await taskkvs.set(external_key, external_state)
+                external_key = make_key(
+                    func,
+                    keydict,
+                    KeyStateType.EXTERNAL
+                )
+
+                internal_state = await taskkvs[internal_key]
+                if internal_state is None:
+                    internal_state = copy.deepcopy(null_state)
+                    await taskkvs.set(internal_key, internal_state)
+
+                internal_state, external_state = await func(
+                    event, internal_state
+                )
+
+                # We would like to give reducers the option to /not/ write
+                # on all events
+                if internal_state is not False:
+                    await taskkvs.set(internal_key, internal_state)
+                if external_state is not False:
+                    await taskkvs.set(external_key, external_state)
                 return external_state
             return process_event
         return wrapper_closure
     return decorator
+
+# `kvs_pipeline`, in it's current incarnation, is obsolete.
+#
+# We will now have reducers of multiple types.
+#
+# We will probably keep `kvs_pipeline` as a generic, and this is part of that
+# transition.
+student_event_reducer = functools.partial(kvs_pipeline, scope=Scope([KeyField.STUDENT]))

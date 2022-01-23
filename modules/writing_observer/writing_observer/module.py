@@ -11,6 +11,8 @@ NAME = "The Writing Observer"
 # HTML. These used to be called 'dashboards,' but we're now hosting those as static
 # files.
 
+import learning_observer.stream_analytics.helpers as helpers
+
 import writing_observer.aggregator
 import writing_observer.writing_analysis
 
@@ -47,10 +49,28 @@ STUDENT_AGGREGATORS = {
 }
 
 # Incoming event APIs
-REDUCERS = [{
-    'context': "org.mitros.writing-analytics",
-    'function': writing_observer.writing_analysis.pipeline
-}]
+REDUCERS = [
+    {
+        'context': "org.mitros.writing-analytics",
+        'scope': helpers.Scope([helpers.KeyField.STUDENT]),
+        'function': writing_observer.writing_analysis.time_on_task
+    },
+    {
+        'context': "org.mitros.writing-analytics",
+        'scope': helpers.Scope([helpers.KeyField.STUDENT, helpers.EventField('doc_id')]),
+        'function': writing_observer.writing_analysis.reconstruct
+    },
+    {
+        'context': "org.mitros.writing-analytics",
+        'scope': helpers.Scope([helpers.KeyField.STUDENT, helpers.EventField('doc_id')]),
+        'function': writing_observer.writing_analysis.event_count
+    },
+    {
+        'context': "org.mitros.writing-analytics",
+        'scope': helpers.Scope([helpers.KeyField.STUDENT, helpers.EventField('doc_id')]),
+        'function': writing_observer.writing_analysis.document_list
+    }
+]
 
 
 # Required client-side JavaScript downloads
@@ -142,6 +162,3 @@ COURSE_DASHBOARDS = [{
         "icon": "fa-pen-nib"
     }
 }]
-
-STUDENT_DASHBOARDS = {
-}

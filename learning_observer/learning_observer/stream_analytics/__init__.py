@@ -12,20 +12,28 @@ This should move into a config file.
 '''
 
 import collections
+import copy
 import functools
+import learning_observer.exceptions
 import learning_observer.module_loader
 
-STUDENT_REDUCER_MODULES = None
+REDUCER_MODULES = None
 
 
-def student_reducer_modules():
+def reducer_modules(source):
     '''
     Helper.
 
     TODO: Somewhat obsolete, since a lot of this code will migrate into module_loader.
     '''
-    global STUDENT_REDUCER_MODULES
-    return STUDENT_REDUCER_MODULES
+    global REDUCER_MODULES
+    modules = copy.deepcopy(REDUCER_MODULES.get(source, None))
+    if modules is None:
+        debug_log("Unknown event source: " + str(client_source))
+        debug_log("Known sources: " + repr(stream_analytics.reducer_modules().keys()))
+        raise learning_observer.exceptions.SuspiciousOperation("Unknown event source")
+
+    return modules
 
 
 def async_lambda(function):
@@ -45,27 +53,21 @@ def async_lambda(function):
 def init():
     import learning_observer.module_loader
     srm = collections.defaultdict(lambda: list())
-    srm['org.mitros.mirror'].append({'student_event_reducer': async_lambda(
+
+    # For debugging; this can go away at some point
+    srm['org.mitros.mirror'].append({'reducer': async_lambda(
         lambda metadata: async_lambda(lambda event: event)
     )})
-    # try:
-    #     import learning_observer.stream_analytics.dynamic_assessment
-    #     srm["org.mitros.dynamic-assessment"].append({
-    #         'student_event_reducer': async_lambda(
-    #             lambda metadata: learning_observer.stream_analytics.dynamic_assessment.process_event
-    #         )
-    #     })
-    # except ModuleNotFoundError:
-    #     print("Module dynamic_assessment not found. "
-    #           "Starting without dynamic assessment")
 
     reducers = learning_observer.module_loader.reducers()
     for reducer in reducers:
         context = reducer['context']
         function = reducer['function']
+        scope = reducer.get('scope', helpers.Scope([helpers.KeyField.STUDENT]))
         srm[context].append({
-            'student_event_reducer': function
+            'reducer': function,
+            'scope': scope
         })
 
-    global STUDENT_REDUCER_MODULES
-    STUDENT_REDUCER_MODULES = dict(srm)
+    global REDUCER_MODULES
+    REDUCER_MODULES = dict(srm)
