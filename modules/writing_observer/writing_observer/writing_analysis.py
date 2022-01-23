@@ -7,7 +7,7 @@ It just routes to smaller pipelines. Currently that's:
 '''
 import writing_observer.reconstruct_doc
 
-from learning_observer.stream_analytics.helpers import kvs_pipeline
+from learning_observer.stream_analytics.helpers import student_event_reducer, kvs_pipeline, KeyField, EventField, Scope
 
 # How do we count the last action in a document? If a student steps away
 # for hours, we don't want to count all those hours.
@@ -28,7 +28,11 @@ from learning_observer.stream_analytics.helpers import kvs_pipeline
 TIME_ON_TASK_THRESHOLD = 5
 
 
-@kvs_pipeline()
+gdoc_scope = Scope([KeyField.STUDENT, EventField('doc_id')])
+student_scope = Scope([KeyField.STUDENT])
+
+
+@kvs_pipeline(scope=student_scope)
 async def time_on_task(event, internal_state):
     '''
     This adds up time intervals between successive timestamps. If the interval
@@ -56,14 +60,17 @@ async def time_on_task(event, internal_state):
     return internal_state, internal_state
 
 
-@kvs_pipeline()
+@kvs_pipeline(scope=gdoc_scope)
 async def reconstruct(event, internal_state):
     '''
     This is a thin layer to route events to `reconstruct_doc` which compiles
     Google's deltas into a document. It also adds a bit of metadata e.g. for
     Deane plots.
     '''
-    print(internal_state)
+    # If it's not a relevant event, ignore it
+    if event['client']['event'] not in ["google_docs_save", "document_history"]:
+        return False, False
+
     internal_state = writing_observer.reconstruct_doc.google_text.from_json(
         json_rep=internal_state)
     if event['client']['event'] == "google_docs_save":
@@ -80,20 +87,36 @@ async def reconstruct(event, internal_state):
             writing_observer.reconstruct_doc.google_text(), change_list
         )
     state = internal_state.json
+    print(state)
     return state, state
 
 
-async def pipeline(metadata):
+@kvs_pipeline(scope=gdoc_scope)
+async def event_count(event, internal_state):
     '''
-    We pass the event through all of our analytic pipelines, and
-    combine the results into a common state-of-the-universe to return
-    for display in the dashboard.
+    An example of a per-document pipeline
     '''
-    processors = [time_on_task(metadata), reconstruct(metadata)]
+    print("I'm getting called!")
+    print(event)
 
-    async def process(event):
-        external_state = {}
-        for processor in processors:
-            external_state.update(await processor(event))
-        return external_state
-    return process
+    state = {"status": "called"}
+
+    return state, state
+
+
+@kvs_pipeline(scope=student_scope, null_state={})
+async def document_list(event, internal_state):
+    '''
+    We would like to gather a list of all Google Docs a student
+    has visited / edited. This can then be used to decide which
+    ones to show.
+    '''
+    document_id = event.get('client', {}).get('doc_id', None)
+
+    if document_id is not None:
+        if document_id not in internal_state:
+            # In the future, we might include things like e.g. document title.
+            internal_state[document_id] = {}
+            return internal_state, internal_state
+
+    return False, False

@@ -9,7 +9,7 @@ processes.
 
 ## Learning Observer
 
-Learning Observer is designed as an open source, open science learning
+_Learning Observer_ is designed as an open source, open science learning
 process data dashboarding framework. You write reducers to handle
 per-student writing data, and aggegators to make dashboards. We've
 tested this in math and writing, but our focus is on writing process
@@ -19,7 +19,7 @@ It's not finished, but it's moving along quickly.
 
 ## Writing Observer
 
-Writing Observer is a plug-in for Google Docs which visualizes writing
+_Writing Observer_ is a plug-in for Google Docs which visualizes writing
 data to teachers. Our immediate goal was to provide a dashboard which
 gives rapid, actionable insights to educators supporting remote
 learning during this pandemic. We're working to expand this to support
@@ -44,9 +44,11 @@ for developers to be able to navigate this repo (in particular,
 explaining *why* this approach works).
 
 This system is designed to be *massively* scalable, but it is not
-currently implemented to be so. It would take work to flush out all of
-the performance issues. We'd like to do that work once we better
-understand what we're doing.
+currently implemented to be so (mostly for trivial reasons;
+e.g. scaffolding code which uses static files as a storage model). It
+will take work to flush out all of these performance issues, but we'd
+like to do that work once we better understand what we're doing and
+that the core approach and APIs are correct.
 
 Getting Started
 ===============
@@ -57,7 +59,7 @@ As an early prototype, getting started isn't seamless. Run:
 make install
 ~~~~~
 
-And follow the instructions. Then fix up the makefile and make a PR :)
+And follow the instructions. You'll probably run into bugs. Work around the bugs. Then fix up the makefile and make a PR to address those bugs :)
 
 Once that's done, run:
 
@@ -68,15 +70,56 @@ make
 Again, fix up the makefile, and make a PR.
 
 
+~~~~
+Writing Observer
+~~~~
+
+
 To setup writing_observer on top of the learning observer platform you must go into modules/writing_observer and run:
 
    sudo python setup.py develop
 
 
-Additional System-Specific Notes
------------------------------------
 
- RHEL systems require the addition of the rh-python38 packages.
+
+
+
+=======
+You can also go into the devops directory, which has scripts in
+progress for spinning up a cloud instance and managing flocks of
+_Learning Observer_ instances.
+
+
+
+System requirements
+===================
+
+It depends on what you're planning to use the system for.
+
+The core _Learning Observer_ system works fine on an AWS nano
+instance, and that's how we do most of our testing and small-scale
+pilots. These instances have 512MB of RAM, and minimal CPU. It's
+important that this configuration remains usable.
+
+For deployment and more sophisticated uses (e.g. NLP) in larger
+numbers of classrooms, we expect to need **heavy** metal. As we're
+playing with algorithms, deep learning is turning out to work
+surprisingly well, and at the same time, requires surprisingly large
+amounts of computing power. A GPGPU with plenty of RAM is helpful if
+you want to work with more sophisticated algorithms, and is likely to
+be a requirement for many types of uses.
+
+All _Learning Observer_ development has been on Linux-based platforms
+(including Ubuntu and RHEL). There are folks outside of the core team
+who have tried to run it on Mac or on WSL, with mixed success.
+
+
+
+~~~~
+Additional System-Specific Notes
+~~~~
+
+RHEL systems require the addition of the rh-python38 packages.
 You also must also install the separate devel packages.  
 
 The virtualenv once created on RHEL will be stored in your home directory under .virtualenvs.
@@ -86,8 +129,15 @@ In order to use the client you will need to be logged into both the user account
 
 
 
-Contact/maintainer: Piotr Mitros (pmitros@ets.org)
 
-Licensing: Open source / free software. License TBD. 
+Contributing or learning more
+=============================
 
+We're still a small team, and the easiest way is to shoot us a quick
+email. We'll gladly walk you through anything you're interested in.
+
+Contact/core maintainer: Piotr Mitros
+NCSU Contact: Collin Lynch
+
+Licensing: Open source / free software. License: AGPL.
 

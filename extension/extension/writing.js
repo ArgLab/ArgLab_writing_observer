@@ -24,8 +24,22 @@ function log_event(event_type, event) {
       We pass an event, annotated with the page document ID and title,
       to the background script
     */
-    event["title"] = google_docs_title();
-    event["doc_id"] = doc_id();
+    // This is a compromise. We'd like to be similar to xAPI / Caliper, both
+    // of which use the 'object' field with a bunch of verbose stuff.
+    //
+    // Verbosity is bad for analytics, but compatibility is good.
+    //
+    // This is how Caliper thinks of this: https://www.imsglobal.org/spec/caliper/v1p2#entity
+    // This is how Tincan/xAPI thinks of this: https://xapi.com/statements-101/
+    //
+    // "Object" is a really bad name. Come on. Seriously?
+    event["object"] = {
+	"type": "http://schema.learning-observer.org/writing-observer/",
+	"title": google_docs_title(),
+	"id": doc_id(),
+	"url": window.location.href,
+    }
+
     event['event'] = event_type;
     // We want to track the page status during events. For example,
     // Google Docs inserts comments during the document load.
@@ -85,7 +99,7 @@ function google_docs_partial_text() {
     try {
         return document.getElementsByClassName("kix-page")[0].innerText;
     } catch(error) {
-        log_error("Could get document text");
+        log_error("Could not get document text");
         return null;
     }
 }
@@ -711,5 +725,24 @@ function writing_onload() {
         google_docs_version_history();
     }
 }
+
+/*
+This is code which, if executed on the page space, will capture HTTP
+AJAX responses.
+
+This is impossible to do directly from within an extension.
+
+This is currently unused.
+*/
+const LOG_AJAX = "\n\
+const WO_XHR = XMLHttpRequest.prototype;\n\
+const wo_send = WO_XHR.send;\n\
+\n\
+\n\
+WO_XHR.send = function () {\n\
+    this.addEventListener('load', function () {\n\
+        console.log(this); console.log(this.getAllResponseHeaders());\n\
+    }); return wo_send.apply(this, arguments); }\n\
+"
 
 window.addEventListener("load", writing_onload);

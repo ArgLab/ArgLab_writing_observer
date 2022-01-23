@@ -144,8 +144,8 @@ def add_routes():
     # This serves up data (currently usually dummy data) for the dashboard
     app.add_routes([
         aiohttp.web.get(
-            '/wsapi/dashboard/{module_id}/{course_id}/',
-            learning_observer.dashboard.ws_course_aggregate_view),
+            '/wsapi/dashboard',
+            learning_observer.dashboard.websocket_dashboard_view),
         aiohttp.web.get(
             '/webapi/course_dashboards',
             ajax_handler_wrapper(learning_observer.module_loader.course_dashboards)),
@@ -153,6 +153,13 @@ def add_routes():
             '/webapi/student_dashboards',
             ajax_handler_wrapper(learning_observer.module_loader.student_dashboards))
     ])
+
+    if 'DEBUG_VIEW' in settings.settings['feature_flags']:
+        app.add_routes([
+            aiohttp.web.get(
+                '/wsapi/generic_dashboard',
+                learning_observer.dashboard.generic_dashboard)
+        ])
 
     # Serve static files
     app.add_routes([
@@ -309,17 +316,31 @@ def add_routes():
     ])
 
     # New-style modular views
-    extra_views = learning_observer.module_loader.extra_views()
-    for view in extra_views:
-        print(extra_views[view])
-        app.add_routes([
-            # TODO: Change URL
-            # TODO: Add classroom ID within URL
-            # TODO: Add student API
-            aiohttp.web.get(
-                "/views/" + extra_views[view]['url'],
-                handler=extra_views[view]['function'])
-        ])
+    # extra_views = learning_observer.module_loader.extra_views()
+    # for view in extra_views:
+    #     print(extra_views[view])
+    #     app.add_routes([
+    #         # TODO: Change URL
+    #         # TODO: Add classroom ID within URL
+    #         # TODO: Add student API
+    #         aiohttp.web.get(
+    #             "/views/" + extra_views[view]['url'],
+    #             handler=extra_views[view]['function'])
+    #     ])
+
+    # Allow AJAX calls.  Right now, the function receives a `request`
+    # object. This should be cleaned in some way.
+    ajax = learning_observer.module_loader.ajax();
+    for module in ajax:
+        for call in ajax[module]:
+            path = "/ajax/{module}/{call}".format(module=module, call=call)
+            print(path)
+            app.add_routes([
+                aiohttp.web.get(
+                    path,
+                    lambda x: aiohttp.web.json_response(ajax[module][call](x))
+                )
+            ])
 
     # Repos
     repos = learning_observer.module_loader.static_repos()
@@ -406,4 +427,4 @@ async def add_nocache(request, response):
 app.on_response_prepare.append(add_nocache)
 
 print("Running!")
-aiohttp.web.run_app(app, port=8888)
+aiohttp.web.run_app(app, port=int(settings.settings.get("server", {}).get("port", 8888)))
