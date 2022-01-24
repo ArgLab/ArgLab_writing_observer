@@ -129,15 +129,11 @@ def log_event(event, filename=None, preencoded=False, timestamp=False):
     This isn't done, but it's how we log events for now.
     '''
     
-    #This is a minimal fix/measure to ensure log files are closed atfer io
-    close_flag = False
-    
     if filename is None:
         log_file_fp = mainlog
     elif filename in files:
         log_file_fp = files[filename]
     else:
-        close_flag = True
         log_file_fp = open(paths.logs("" + filename + ".log"), "ab", 0)
         files[filename] = log_file_fp
 
@@ -149,9 +145,6 @@ def log_event(event, filename=None, preencoded=False, timestamp=False):
         log_file_fp.write(datetime.datetime.utcnow().isoformat().encode('utf-8'))
     log_file_fp.write("\n".encode('utf-8'))
     log_file_fp.flush()
-    
-    if close_flag:
-        log_file_fp.close()
 
 
 def debug_log(text):
