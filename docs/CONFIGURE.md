@@ -43,3 +43,51 @@
 24. Click on "Load Unpacked". Select `~/writing_observer/extensions` and ensure that it is enabled
 25. Select `background page` on the extension section and ensure no errors are present
 26. Open a Google Docs document while signed into Chrome and ensure websocket communication between client and server is active
+
+
+=====================================================================
+The following is a work in progerss. These are the steps I used to set up the project on an RHEL 7 system
+
+# Setting up Learning Observer for NCSU systems
+
+## Python
+Learning Observer requires at least Python 3.8. RHEL-7 systems do not have the most intuitive way to install and activate Python 3.8.
+
+```bash
+sudo yum -y install rh-python38
+```
+Notes: 
+1. rh-python38 dev tools are also required. This might require an extra install step.
+1. You may have to update the subscription manager first
+
+## Virtual Environment / Package setup
+There is a shell script located at `servermanagement/RunLearningObserver.sh` that will automatically go and fetch Python from our virtual environment, start Learning Observer, and pipe output into log files.
+
+We want to setup the VirtualEnvironment to do just this:
+1. Locate where Python3.8 is installed.
+1. Use that Python create a virtual environment named `learning_observer` inside the directory specified in the shell script mentioned above.
+1. Using the Pip command from within the newly created virtual environment, install all the required packages. You'll want to use the following commands:
+```bash
+cd writing_observer
+pip install -r requirements.txt
+cd learning_observer
+pip install -e .
+cd ..
+cd modules/writing_observer
+pip install -e .
+```
+Note: you might need Sudo access to run.
+
+You should now be able to run Learning Observer without errors.
+
+## Running
+You can run either of the following commands to start Learning Observer
+```bash
+# Log to standard out
+cd learning_observer
+python learning_observer
+
+# Log to log file
+./servermanagement/RunLearningObserver.sh
+```
+Note: the first commands are better for testing and making sure you are connected. The latter command should be used when setting up production. 
