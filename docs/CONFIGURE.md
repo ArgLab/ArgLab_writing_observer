@@ -69,6 +69,8 @@ We want to setup the VirtualEnvironment to do just this:
 1. Using the Pip command from within the newly created virtual environment, install all the required packages. You'll want to use the following commands:
 ```bash
 cd writing_observer
+pip install --upgrade pip
+pip install wheel
 pip install -r requirements.txt
 cd learning_observer
 pip install -e .
