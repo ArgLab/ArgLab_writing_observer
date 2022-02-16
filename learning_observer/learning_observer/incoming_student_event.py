@@ -327,6 +327,9 @@ async def incoming_websocket_handler(request):
                 print("!!!!!! Unknown event type !!!!!!!")
                 print(msg.type)
                 debug_log("Unknown event type: " + msg.type)
+            else:
+                if msg.data == 'close':
+                    await ws.close()
 
             debug_log("Web socket message received")
             client_event = decoder_and_logger(msg)
@@ -357,5 +360,4 @@ async def incoming_websocket_handler(request):
 
     finally:
         debug_log('Websocket connection closed')
-        ws.close()
         return ws
