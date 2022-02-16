@@ -311,48 +311,51 @@ async def incoming_websocket_handler(request):
     event_handler = None
     AUTHENTICATED = False
 
-    async for msg in ws:
-        # If web socket closed, we're done.
-        if msg.type == aiohttp.WSMsgType.ERROR:
-            print('ws connection closed with exception %s' %
-                  ws.exception())
-            return
+    try:
+        async for msg in ws:
+            # If web socket closed, we're done.
+            if msg.type == aiohttp.WSMsgType.ERROR:
+                print('ws connection closed with exception %s' %
+                    ws.exception())
+                return
 
-        # If we receive an unknown event type, we keep going, but we
-        # print an error to the console. If we got some kind of e.g.
-        # wonky ping or keep-alive or something we're unaware of, we'd
-        # like to handle that gracefully.
-        if msg.type != aiohttp.WSMsgType.TEXT:
-            print("!!!!!! Unknown event type !!!!!!!")
-            print(msg.type)
-            debug_log("Unknown event type: " + msg.type)
+            # If we receive an unknown event type, we keep going, but we
+            # print an error to the console. If we got some kind of e.g.
+            # wonky ping or keep-alive or something we're unaware of, we'd
+            # like to handle that gracefully.
+            if msg.type != aiohttp.WSMsgType.TEXT:
+                print("!!!!!! Unknown event type !!!!!!!")
+                print(msg.type)
+                debug_log("Unknown event type: " + msg.type)
 
-        debug_log("Web socket message received")
-        client_event = decoder_and_logger(msg)
+            debug_log("Web socket message received")
+            client_event = decoder_and_logger(msg)
 
-        # We set up metadata based on the first event, plus any headers
-        if not AUTHENTICATED:
-            # If INIT_PIPELINE == False
-            if json_msg is None:
-                json_msg = client_event
-            # E.g. is this from Writing Observer? Some math assessment? Etc. We dispatch on this
-            if 'source' in json_msg:
-                event_metadata['source'] = json_msg['source']
-            event_metadata['auth'] = await learning_observer.auth.events.authenticate(
-                request=request,
-                headers=header_events,
-                first_event=client_event,
-                source=json_msg['source']
+            # We set up metadata based on the first event, plus any headers
+            if not AUTHENTICATED:
+                # If INIT_PIPELINE == False
+                if json_msg is None:
+                    json_msg = client_event
+                # E.g. is this from Writing Observer? Some math assessment? Etc. We dispatch on this
+                if 'source' in json_msg:
+                    event_metadata['source'] = json_msg['source']
+                event_metadata['auth'] = await learning_observer.auth.events.authenticate(
+                    request=request,
+                    headers=header_events,
+                    first_event=client_event,
+                    source=json_msg['source']
+                )
+                AUTHENTICATED = True
+
+            if not event_handler:
+                event_handler = await handle_incoming_client_event(metadata=event_metadata)
+
+            debug_log(
+                "Dispatch incoming ws event: " + client_event['event']
             )
-            AUTHENTICATED = True
+            await event_handler(request, client_event)
 
-        if not event_handler:
-            event_handler = await handle_incoming_client_event(metadata=event_metadata)
-
-        debug_log(
-            "Dispatch incoming ws event: " + client_event['event']
-        )
-        await event_handler(request, client_event)
-
-    debug_log('Websocket connection closed')
-    return ws
+    finally:
+        debug_log('Websocket connection closed')
+        ws.close()
+        return ws
