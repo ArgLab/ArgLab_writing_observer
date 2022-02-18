@@ -251,13 +251,13 @@ def event_decoder_and_logger(request):
     )
     COUNT += 1
 
-    def decode_and_log_event(msg):
+    def decode_and_log_event(msg, close=False):
         '''
         Take an aiohttp web sockets message, log it, and return
         a clean event.
         '''
         json_event = json.loads(msg.data)
-        log_event.log_event(json_event, filename=filename)
+        log_event.log_event(json_event, filename=filename, close=close)
         return json_event
     return decode_and_log_event
 
@@ -327,10 +327,6 @@ async def incoming_websocket_handler(request):
                 print("!!!!!! Unknown event type !!!!!!!")
                 print(msg.type)
                 debug_log("Unknown event type: " + msg.type)
-            else:
-                if msg.data == 'close':
-                    debug_log('Closing the ws conneciton')
-                    await ws.close()
 
             debug_log("Web socket message received")
             client_event = decoder_and_logger(msg)
@@ -361,4 +357,5 @@ async def incoming_websocket_handler(request):
 
     finally:
         debug_log('Websocket connection closed')
+        decoder_and_logger('Websocket closing', close=True)
         return ws
