@@ -357,6 +357,6 @@ async def incoming_websocket_handler(request):
 
     finally:
         debug_log('Websocket connection closed')
-        setattr(msg, 'data', 'Websocket closing')
-        close_event = decoder_and_logger(msg, close=True)
+        close = type('close', (), {'data': 'Websocket closing'})
+        close_event = decoder_and_logger(close, close=True)
         return ws
