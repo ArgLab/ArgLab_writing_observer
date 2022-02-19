@@ -357,6 +357,7 @@ async def incoming_websocket_handler(request):
 
     finally:
         debug_log('Websocket connection closed')
+        # create a fake object so the logger is happy
         close = type('close', (), {'data': '{"info": "Websocket closing"}'})
         close_event = decoder_and_logger(close, close=True)
         return ws
