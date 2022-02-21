@@ -12,6 +12,6 @@ echo $BACKUP_NAME;
 # Create the backup
 # ---------------------------------------
 echo "Backing up web socket logs"
-find LOGFILE_SRC -name "????-??-??T*.log" -mmin +60 -print | zip -Z bzip2 LOGFILE_DEST -@
+find $LOGFILE_SRC -name "????-??-??T*.log" -mmin +60 -print | zip -Z bzip2 $LOGFILE_DEST -@
 echo "Removing backed up web sockets logs"
 # find LOGFILE_SRC -name "????-??-??T*.log" -mmin +60 -delete
