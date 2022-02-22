@@ -14,4 +14,4 @@ echo $BACKUP_NAME;
 echo "Backing up web socket logs"
 find $LOGFILE_SRC -name "????-??-??T*.log" -mmin +60 -print | zip -Z bzip2 $BACKUP_NAME -@
 echo "Removing backed up web sockets logs"
-find $LOGFILE_SRC -name "????-??-??T*.log" -mmin +60 -delete
+find $LOGFILE_SRC -name "????-??-??T*.log" -mmin +120 -delete
