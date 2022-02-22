@@ -269,8 +269,7 @@ async def incoming_websocket_handler(request):
     aggregated. It also logs them.
     '''
     debug_log("Incoming web socket connected")
-    # ws = aiohttp.web.WebSocketResponse(receive_timeout=30)
-    ws = aiohttp.web.WebSocketResponse(autoping=True, heartbeat=30)
+    ws = aiohttp.web.WebSocketResponse(receive_timeout=30)
     await ws.prepare(request)
     decoder_and_logger = event_decoder_and_logger(request)
 
