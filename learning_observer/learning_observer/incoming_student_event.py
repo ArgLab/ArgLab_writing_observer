@@ -270,7 +270,7 @@ async def incoming_websocket_handler(request):
     '''
     debug_log("Incoming web socket connected")
     # ws = aiohttp.web.WebSocketResponse(receive_timeout=30)
-    ws = aiohttp.web.WebSocketResponse(autoping=True, heartbeat=60)
+    ws = aiohttp.web.WebSocketResponse(autoping=True, heartbeat=30)
     await ws.prepare(request)
     decoder_and_logger = event_decoder_and_logger(request)
 
@@ -328,6 +328,10 @@ async def incoming_websocket_handler(request):
                 print("!!!!!! Unknown event type !!!!!!!")
                 print(msg.type)
                 debug_log("Unknown event type: " + msg.type)
+
+            if msg.data == 'close':
+                debug_log('closing time')
+                await ws.close()
 
             debug_log("Web socket message received")
             client_event = decoder_and_logger(msg)
