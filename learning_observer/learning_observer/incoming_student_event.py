@@ -269,7 +269,9 @@ async def incoming_websocket_handler(request):
     aggregated. It also logs them.
     '''
     debug_log("Incoming web socket connected")
-    ws = aiohttp.web.WebSocketResponse(receive_timeout=30)
+    # Set the websocket timeout value to be 55 minutes
+    websocket_timeout = 55*60
+    ws = aiohttp.web.WebSocketResponse(receive_timeout=websocket_timeout)
     await ws.prepare(request)
     decoder_and_logger = event_decoder_and_logger(request)
 
