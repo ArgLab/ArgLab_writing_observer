@@ -34,7 +34,19 @@ Again, keep note of where the virtual environment is located for future steps.
 
 ### Config files
 
-TODO
+For each system, you'll need to create a new `creds.yaml` file within the `/path/to/repo/learning_observer` directory.
+This file defines what type of connections are allowed to be made to the system.
+Luckily, there is an example file you can copy located in the `/path/to/repo/learning_observer/learning_observer` directory.
+When attempting to run the system later on in this setup guide, if you have any misconfigured here, then the system will tell you what's wrong.
+
+Some of the main changes that need to be made are:
+
+1. types of `auth` allowed
+1. `aio` session secret and max age
+1. `event_auth` to allow access from various locations (like Chromebooks)
+1. `server` for reconfiguring the port information
+
+More configurables are expected to be included in this config file in the future.
 
 ### Package installation
 
@@ -107,8 +119,8 @@ If a proxy server is not setup yet, make sure to include the port number (defaul
 An example of each instance is shown below:
 
 ```js
-websocket_logger("wss://writing.csc.ncsu.edu/wsapi/in/") // SSL enabled, nginx set
-websocket_logger("ws://writing.csc.ncsu.edu:8888/wsapi/in/") // SSL not enabled, nginx not setup 
+websocket_logger("wss://writing.csc.ncsu.edu/wsapi/in/")        // SSL enabled, nginx set
+websocket_logger("ws://writing.csc.ncsu.edu:8888/wsapi/in/")    // SSL not enabled, nginx not setup 
 ```
 
 ## Running the server
@@ -132,7 +144,7 @@ You should see any errors printed directly to the console.
 ### As a server
 
 To run the system as a server, we will run the `RunLearningObserver.sh` script.
-This pipes files into the proper log location we setup during the **Pointers** section.
+This fetches the virtual environment, runs the server, and pipes files into the proper log location we setup during the **System specific changes** section.
 Run the following commands:
 
 ```bash
