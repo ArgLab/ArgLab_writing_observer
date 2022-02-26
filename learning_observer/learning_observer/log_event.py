@@ -124,7 +124,7 @@ with open(STARTUP_FILENAME, "w") as sfp:
     sfp.write(startup_state)
 
 
-def log_event(event, filename=None, preencoded=False, timestamp=False):
+def log_event(event, filename=None, preencoded=False, timestamp=False, close=False):
     '''
     This isn't done, but it's how we log events for now.
     '''
@@ -145,6 +145,10 @@ def log_event(event, filename=None, preencoded=False, timestamp=False):
         log_file_fp.write(datetime.datetime.utcnow().isoformat().encode('utf-8'))
     log_file_fp.write("\n".encode('utf-8'))
     log_file_fp.flush()
+
+    if close:
+        log_file_fp.close()
+        files.pop(filename, None)
 
 
 def debug_log(text):
