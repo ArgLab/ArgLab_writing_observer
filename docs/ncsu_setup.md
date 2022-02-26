@@ -69,6 +69,16 @@ cd writing_observer                                         # cd into the top le
 By default, LO runs on port 8888.
 Configure nginx, or another proxy server, for LO's port.
 
+### Executable files
+
+If this is the first time you are running the server on your system, you might need to make the shell scripts in the `servermanagement` directory executable.
+To do this, use the following commands
+
+```bash
+chmod +x /path/to/repo/servermanagement/RunLearningObserver.sh
+chmod +x /path/to/repo/servermanagement/BackupWebSocketLogs.sh
+```
+
 ## System specific changes
 
 There are various lines of code that point to specific servers.
@@ -203,6 +213,6 @@ To set up the cron job, we first enter the crontab utility then add a line for t
 ```bash
 crontab -e  # open the cron job menu
 
-0 * * * * ./full/path/to/repo/servermanagement/BackupWebsocketLogs.sh # line to add to the cronjob
+0 * * * * /usr/bin/sh /full/path/to/repo/servermanagement/BackupWebsocketLogs.sh # line to add to the cronjob
 # Run it at the 0th minute every hour, every day, every month, and so on
 ```
