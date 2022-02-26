@@ -356,9 +356,14 @@ async def incoming_websocket_handler(request):
             if not event_handler:
                 event_handler = await handle_incoming_client_event(metadata=event_metadata)
 
-            debug_log(
-                "Dispatch incoming ws event: " + client_event['event']
-            )
+            if ("event" in client_event):
+                debug_log(
+                    "Dispatch incoming ws event: " + client_event['event']
+                )
+            else:
+                debug_log(
+                    "Dispatch incoming ws event: {}".format(client_event)
+                )
             await event_handler(request, client_event)
 
     finally:
