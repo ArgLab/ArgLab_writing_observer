@@ -54,7 +54,7 @@ import learning_observer.settings as settings
 # mainlog = open(paths.logs("main_log.json"), "ab", 0)
 logger = logging.getLogger('main_logger')
 logger.setLevel(logging.INFO)
-handler = RotatingFileHandler(paths.logs('main_log.json'), maxBytes=2000, backupCount=20)
+handler = RotatingFileHandler(paths.logs('logger.json'), maxBytes=2000, backupCount=20)
 logger.addHandler(handler)
 files = {}
 
