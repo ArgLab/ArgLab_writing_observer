@@ -62,8 +62,8 @@ async def student_event_pipeline(metadata):
     Create an event pipeline, based on header metadata
     '''
     client_source = metadata["source"]
-    print("client_source")
-    print(stream_analytics.reducer_modules(client_source))
+    # print("client_source")
+    # print(stream_analytics.reducer_modules(client_source))
     analytics_modules = stream_analytics.reducer_modules(client_source)
 
     # Create an event processor for this user
@@ -107,20 +107,20 @@ async def student_event_pipeline(metadata):
         try:
             processed_analytics = []
             for am in analytics_modules:
-                print(am['scope'])
+                # print(am['scope'])
                 args = {}
                 skip = False
                 for field in am['scope']:
                     if isinstance(field, learning_observer.stream_analytics.helpers.EventField):
-                        print("event", parsed_message)
-                        print("field", field)
+                        # print("event", parsed_message)
+                        # print("field", field)
                         client_event = parsed_message.get('client', {})
                         if field.event not in client_event:
-                            print(field.event, "not found")
+                            # print(field.event, "not found")
                             skip = True
                         args[field.event] = client_event.get(field.event)
                 if not skip:
-                    print("args", args)
+                    # print("args", args)
                     processed_analytics.append(await am['reducer_partial'](parsed_message, **args))
         except Exception as e:
             traceback.print_exc()
@@ -257,7 +257,8 @@ def event_decoder_and_logger(request):
         a clean event.
         '''
         json_event = json.loads(msg.data)
-        log_event.log_event(json_event, filename=filename, close=close)
+        # ignoring the individual websocket logs for now
+        # log_event.log_event(json_event, filename=filename, close=close)
         return json_event
     return decode_and_log_event
 
