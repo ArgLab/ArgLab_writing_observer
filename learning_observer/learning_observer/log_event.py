@@ -42,6 +42,8 @@ import datetime
 import inspect
 import json
 import hashlib
+import logging
+from logging.handlers import RotatingFileHandler
 
 import learning_observer.filesystem_state
 
@@ -49,7 +51,11 @@ import learning_observer.paths as paths
 import learning_observer.settings as settings
 
 
-mainlog = open(paths.logs("main_log.json"), "ab", 0)
+# mainlog = open(paths.logs("main_log.json"), "ab", 0)
+logger = logging.getLogger('main_logger')
+logger.setLevel(logging.INFO)
+handler = RotatingFileHandler(paths.logs('main_log.json'), maxBytes=2000, backupCount=20)
+logger.addHandler(handler)
 files = {}
 
 # Do we make files for exceptions? Do we print extra stuff on the console?
@@ -129,16 +135,20 @@ def log_event(event, filename=None, preencoded=False, timestamp=False, close=Fal
     This isn't done, but it's how we log events for now.
     '''
     
+    # pre-encode the data first
+    if not preencoded:
+        event = encode_json_line(event)
+
+    # determine which logger to use, if no name is provided, use main
     if filename is None:
-        log_file_fp = mainlog
+        logger.info(event.encode('utf-8'))
+        return
     elif filename in files:
         log_file_fp = files[filename]
     else:
         log_file_fp = open(paths.logs("" + filename + ".log"), "ab", 0)
         files[filename] = log_file_fp
 
-    if not preencoded:
-        event = encode_json_line(event)
     log_file_fp.write(event.encode('utf-8'))
     if timestamp:
         log_file_fp.write("\t".encode('utf-8'))
@@ -174,8 +184,9 @@ def debug_log(text):
     )
 
     # Flip here to print / not print debug messages
-    if DEBUG:
-        print(message)
+    # Need to comment/uncomment this out to flip this since this and the following use the same DEBUG var
+    # if DEBUG:
+    #     print(message)
 
     # Flip here to save / not save debug messages
     # Ideally, we'd like to log these somewhere which won't cause cascading failures.
