@@ -58,12 +58,9 @@ def namer(name):
     return name + ".gz"
 
 def rotator(source, dest):
-    print('brotating')
     with open(source, "rb") as sf:
         data = sf.read()
-        print(data)
         compressed = zlib.compress(data, 9)
-        print(compressed)
         with open(dest, "wb") as df:
             df.write(compressed)
     os.remove(source)
