@@ -43,7 +43,7 @@ import inspect
 import json
 import hashlib
 import os
-import gzip
+import zlib
 import logging
 from logging.handlers import RotatingFileHandler
 
@@ -54,21 +54,19 @@ import learning_observer.settings as settings
 
 
 # mainlog = open(paths.logs("main_log.json"), "ab", 0)
-class GZipRotator:
-    def __call__(self, source, dest):
-        os.rename(source, dest)
-        f_in = open(dest, 'rb')
-        f_out = gzip.open("%s.gz" % dest, 'wb')
-        f_out.writelines(f_in)
-        f_out.close()
-        f_in.close()
-        os.remove(dest)
+def rotator(source, dest):
+    with open(source, "rb") as sf:
+        data = sf.read()
+        compressed = zlib.compress(data, 9)
+        with open(dest, "wb") as df:
+            df.write(compressed)
+    os.remove(source)
 
 logger = logging.getLogger('main_logger')
 logger.setLevel(logging.INFO)
 handler = RotatingFileHandler(paths.logs('logger.json'), maxBytes=2000, backupCount=20)
 logger.addHandler(handler)
-logger.rotator = GZipRotator()
+logger.rotator = rotator
 files = {}
 
 # Do we make files for exceptions? Do we print extra stuff on the console?
