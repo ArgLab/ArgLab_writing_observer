@@ -54,6 +54,9 @@ import learning_observer.settings as settings
 
 
 # mainlog = open(paths.logs("main_log.json"), "ab", 0)
+def namer(name):
+    return name + ".gz"
+
 def rotator(source, dest):
     print('brotating')
     with open(source, "rb") as sf:
@@ -68,8 +71,9 @@ def rotator(source, dest):
 logger = logging.getLogger('main_logger')
 logger.setLevel(logging.INFO)
 handler = RotatingFileHandler(paths.logs('logger.json'), maxBytes=2000, backupCount=20)
+handler.namer = namer
+handler.rotator = rotator
 logger.addHandler(handler)
-logger.rotator = rotator
 files = {}
 
 # Do we make files for exceptions? Do we print extra stuff on the console?
