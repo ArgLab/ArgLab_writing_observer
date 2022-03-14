@@ -55,9 +55,12 @@ import learning_observer.settings as settings
 
 # mainlog = open(paths.logs("main_log.json"), "ab", 0)
 def rotator(source, dest):
+    print('brotating')
     with open(source, "rb") as sf:
         data = sf.read()
+        print(data)
         compressed = zlib.compress(data, 9)
+        print(compressed)
         with open(dest, "wb") as df:
             df.write(compressed)
     os.remove(source)
