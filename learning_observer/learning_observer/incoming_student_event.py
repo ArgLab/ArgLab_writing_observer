@@ -62,8 +62,8 @@ async def student_event_pipeline(metadata):
     Create an event pipeline, based on header metadata
     '''
     client_source = metadata["source"]
-    log_event.log_event("client_source", 'console')
-    log_event.log_event(stream_analytics.reducer_modules(client_source), 'console')
+    # print("client_source")
+    # print(stream_analytics.reducer_modules(client_source))
     analytics_modules = stream_analytics.reducer_modules(client_source)
 
     # Create an event processor for this user
@@ -83,7 +83,7 @@ async def student_event_pipeline(metadata):
         # eventually. We started with a function, and had an interrim
         # period where both functions and co-routines worked.
         if not inspect.iscoroutinefunction(f):
-            log_event.log_event(analytics_module, 'console')
+            print(analytics_module)
             raise AttributeError("The above reducer should be a co-routine")
 
         analytics_module['reducer_partial'] = await analytics_module['reducer'](metadata)
@@ -107,20 +107,20 @@ async def student_event_pipeline(metadata):
         try:
             processed_analytics = []
             for am in analytics_modules:
-                log_event.log_event(am['scope'], 'console')
+                # print(am['scope'])
                 args = {}
                 skip = False
                 for field in am['scope']:
                     if isinstance(field, learning_observer.stream_analytics.helpers.EventField):
-                        log_event.log_event(f'event {parsed_message}', 'console')
-                        log_event.log_event(f'field {field}', 'console')
+                        # print("event", parsed_message)
+                        # print("field", field)
                         client_event = parsed_message.get('client', {})
                         if field.event not in client_event:
-                            log_event(f'{field.event} not found', 'console')
+                            # print(field.event, "not found")
                             skip = True
                         args[field.event] = client_event.get(field.event)
                 if not skip:
-                    log_event.log_event(f'args {args}', 'console')
+                    # print("args", args)
                     processed_analytics.append(await am['reducer_partial'](parsed_message, **args))
         except Exception as e:
             traceback.print_exc()
@@ -209,7 +209,7 @@ async def handle_incoming_client_event(metadata):
             json.dumps(event, sort_keys=True),
             "incoming_websocket", preencoded=True, timestamp=True)
         if PUBSUB:
-            log_event.log_event(pubsub_client, 'console')
+            print(pubsub_client)
         outgoing = await pipeline(event)
 
         # We're currently polling on the other side.
@@ -281,7 +281,7 @@ async def incoming_websocket_handler(request):
     # * browser.storage identity information
     event_metadata = {'headers': {}}
 
-    log_event.log_event("Init pipeline", 'console')
+    print("Init pipeline")
     header_events = []
 
     # This will take a little bit of explaining....
@@ -304,12 +304,12 @@ async def incoming_websocket_handler(request):
     json_msg = None
     if INIT_PIPELINE:
         async for msg in ws:
-            log_event.log_event(f'Auth {msg}', 'console')
+            print("Auth", msg)
             json_msg = decoder_and_logger(msg)
             header_events.append(json_msg)
             if json_msg["event"] == "metadata_finished":
                 break
-        log_event.log_event(event_metadata, 'console')
+        # print(event_metadata)
 
     event_handler = None
     AUTHENTICATED = False
@@ -318,7 +318,7 @@ async def incoming_websocket_handler(request):
         async for msg in ws:
             # If web socket closed, we're done.
             if msg.type == aiohttp.WSMsgType.ERROR:
-                debug_log('ws connection closed with exception %s' %
+                print('ws connection closed with exception %s' %
                     ws.exception())
                 return
 
@@ -327,6 +327,8 @@ async def incoming_websocket_handler(request):
             # wonky ping or keep-alive or something we're unaware of, we'd
             # like to handle that gracefully.
             if msg.type != aiohttp.WSMsgType.TEXT:
+                print("!!!!!! Unknown event type !!!!!!!")
+                print(msg.type)
                 debug_log("Unknown event type: " + msg.type)
 
             if msg.data == 'close':
