@@ -54,6 +54,11 @@ import learning_observer.settings as settings
 
 
 # mainlog = open(paths.logs("main_log.json"), "ab", 0)
+
+# the following methods override are used to override the RotatingFileHandler
+# they will auto compress the old log files
+# more information can be found:
+# https://docs.python.org/3/howto/logging-cookbook.html#cookbook-rotator-namer
 def namer(name):
     return name + ".gz"
 
@@ -65,12 +70,16 @@ def rotator(source, dest):
             df.write(compressed)
     os.remove(source)
 
-logger = logging.getLogger('main_logger')
-logger.setLevel(logging.INFO)
-handler = RotatingFileHandler(paths.logs('logger.json'), maxBytes=2000, backupCount=20)
-handler.namer = namer
-handler.rotator = rotator
-logger.addHandler(handler)
+event_logger = logging.getLogger('main_logger')
+event_logger.setLevel(logging.INFO)
+event_handler = RotatingFileHandler(
+    paths.logs('event_logger.json'),
+    maxBytes=settings.settings['config']['logging']['max-size'],
+    backupCount=settings.settings['config']['logging']['backups']
+)
+event_handler.namer = namer
+event_handler.rotator = rotator
+event_logger.addHandler(event_handler)
 files = {}
 
 # Do we make files for exceptions? Do we print extra stuff on the console?
@@ -154,26 +163,29 @@ def log_event(event, filename=None, preencoded=False, timestamp=False, close=Fal
     if not preencoded:
         event = encode_json_line(event)
 
-    # determine which logger to use, if no name is provided, use main
+    # determine which logger to use, if no name is provided, use the main event logger
     if filename is None:
-        logger.info(event.encode('utf-8'))
+        logger = event_logger
         return
     elif filename in files:
-        log_file_fp = files[filename]
+        logger = files[filename]
     else:
-        log_file_fp = open(paths.logs("" + filename + ".log"), "ab", 0)
-        files[filename] = log_file_fp
+        logger = logging.getLogger(filename)
+        logger.setLevel(logging.INFO)
+        handler = RotatingFileHandler(
+            paths.logs(f'{filename}.log'),
+            maxBytes=settings.settings['config']['logging']['max-size'],
+            backupCount=settings.settings['config']['logging']['backups']
+        )
+        if timestamp:
+            formatter = logging.Formatter(fmt='[%(asctime)s] %(message)s')
+            handler.setFormatter(formatter)
+        handler.namer = namer
+        handler.rotator = rotator
+        logger.addHandler(handler)
+        files[filename] = logger
 
-    log_file_fp.write(event.encode('utf-8'))
-    if timestamp:
-        log_file_fp.write("\t".encode('utf-8'))
-        log_file_fp.write(datetime.datetime.utcnow().isoformat().encode('utf-8'))
-    log_file_fp.write("\n".encode('utf-8'))
-    log_file_fp.flush()
-
-    if close:
-        log_file_fp.close()
-        files.pop(filename, None)
+    logger.info(event.encode('utf-8'))
 
 
 def debug_log(text):

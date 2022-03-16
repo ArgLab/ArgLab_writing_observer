@@ -56,6 +56,9 @@ config:
     run_mode: dev   # "dev" versus "deploy". E.g. Do we crash on errors? Or log them and keep going?
     debug: []  # add "tracemalloc" to the list to enable memory leak debugging
                # add "logging" to have extra stuff on the console AND log exceptions
+    logging:
+        max-size: 536870912     # max size of logs (in bytes) before rotating: 1_000_000_000 = 1 GB
+        backups: 50             # number of backups to keep on hand before rotating
 theme:
     server-name: Learning Observer
     front-page-pitch: Learning Observer is an experimental dashboard. If you'd like to be part of the experiment, please contact us. If you're already part of the experiment, log in!
