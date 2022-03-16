@@ -74,7 +74,7 @@ event_logger = logging.getLogger('main_logger')
 event_logger.setLevel(logging.INFO)
 event_handler = RotatingFileHandler(
     paths.logs('event_logger.json'),
-    maxBytes=settings.settings['config']['logging']['max-size'],
+    maxBytes=settings.settings['config']['logging']['max_size'],
     backupCount=settings.settings['config']['logging']['backups']
 )
 event_handler.namer = namer
@@ -165,27 +165,24 @@ def log_event(event, filename=None, preencoded=False, timestamp=False, close=Fal
 
     # determine which logger to use, if no name is provided, use the main event logger
     if filename is None:
-        logger = event_logger
+        event_logger.info(event.encode('utf-8'))
         return
     elif filename in files:
-        logger = files[filename]
+        log_file_fp = files[filename]
     else:
-        logger = logging.getLogger(filename)
-        logger.setLevel(logging.INFO)
-        handler = RotatingFileHandler(
-            paths.logs(f'{filename}.log'),
-            maxBytes=settings.settings['config']['logging']['max-size'],
-            backupCount=settings.settings['config']['logging']['backups']
-        )
-        if timestamp:
-            formatter = logging.Formatter(fmt='[%(asctime)s] %(message)s')
-            handler.setFormatter(formatter)
-        handler.namer = namer
-        handler.rotator = rotator
-        logger.addHandler(handler)
-        files[filename] = logger
+        log_file_fp = open(paths.logs("" + filename + ".log"), "ab", 0)
+        files[filename] = log_file_fp
 
-    logger.info(event.encode('utf-8'))
+    log_file_fp.write(event.encode('utf-8'))
+    if timestamp:
+        log_file_fp.write("\t".encode('utf-8'))
+        log_file_fp.write(datetime.datetime.utcnow().isoformat().encode('utf-8'))
+    log_file_fp.write("\n".encode('utf-8'))
+    log_file_fp.flush()
+
+    if close:
+        log_file_fp.close()
+        files.pop(filename, None)
 
 
 def debug_log(text):
