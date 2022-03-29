@@ -42,6 +42,10 @@ import datetime
 import inspect
 import json
 import hashlib
+import os
+import zlib
+import logging
+from logging.handlers import RotatingFileHandler
 
 import learning_observer.filesystem_state
 
@@ -49,7 +53,33 @@ import learning_observer.paths as paths
 import learning_observer.settings as settings
 
 
-mainlog = open(paths.logs("main_log.json"), "ab", 0)
+# mainlog = open(paths.logs("main_log.json"), "ab", 0)
+
+# the following methods override are used to override the RotatingFileHandler
+# they will auto compress the old log files
+# more information can be found:
+# https://docs.python.org/3/howto/logging-cookbook.html#cookbook-rotator-namer
+def namer(name):
+    return name + ".gz"
+
+def rotator(source, dest):
+    with open(source, "rb") as sf:
+        data = sf.read()
+        compressed = zlib.compress(data, 9)
+        with open(dest, "wb") as df:
+            df.write(compressed)
+    os.remove(source)
+
+event_logger = logging.getLogger('main_logger')
+event_logger.setLevel(logging.INFO)
+event_handler = RotatingFileHandler(
+    paths.logs('event_logger.json'),
+    maxBytes=settings.settings['config']['logging']['max_size'],
+    backupCount=settings.settings['config']['logging']['backups']
+)
+event_handler.namer = namer
+event_handler.rotator = rotator
+event_logger.addHandler(event_handler)
 files = {}
 
 # Do we make files for exceptions? Do we print extra stuff on the console?
@@ -129,16 +159,20 @@ def log_event(event, filename=None, preencoded=False, timestamp=False, close=Fal
     This isn't done, but it's how we log events for now.
     '''
     
+    # pre-encode the data first
+    if not preencoded:
+        event = encode_json_line(event)
+
+    # determine which logger to use, if no name is provided, use the main event logger
     if filename is None:
-        log_file_fp = mainlog
+        event_logger.info(event.encode('utf-8'))
+        return
     elif filename in files:
         log_file_fp = files[filename]
     else:
         log_file_fp = open(paths.logs("" + filename + ".log"), "ab", 0)
         files[filename] = log_file_fp
 
-    if not preencoded:
-        event = encode_json_line(event)
     log_file_fp.write(event.encode('utf-8'))
     if timestamp:
         log_file_fp.write("\t".encode('utf-8'))
@@ -174,8 +208,9 @@ def debug_log(text):
     )
 
     # Flip here to print / not print debug messages
-    if DEBUG:
-        print(message)
+    # Need to comment/uncomment this out to flip this since this and the following use the same DEBUG var
+    # if DEBUG:
+    #     print(message)
 
     # Flip here to save / not save debug messages
     # Ideally, we'd like to log these somewhere which won't cause cascading failures.
