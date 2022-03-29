@@ -257,8 +257,7 @@ def event_decoder_and_logger(request):
         a clean event.
         '''
         json_event = json.loads(msg.data)
-        # ignoring the individual websocket logs for now
-        # log_event.log_event(json_event, filename=filename, close=close)
+        log_event.log_event(json_event, filename=filename, close=close)
         return json_event
     return decode_and_log_event
 
