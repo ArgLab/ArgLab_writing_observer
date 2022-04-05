@@ -45,6 +45,7 @@ Some of the main changes that need to be made are:
 1. `aio` session secret and max age
 1. `event_auth` to allow access from various locations (like Chromebooks)
 1. `server` for reconfiguring the port information
+1. `config:logging` for determining the `max_size` (in bytes) of each log file and total `backups` to keep around before rotating.
 
 More configurables are expected to be included in this config file in the future.
 
@@ -111,13 +112,6 @@ In the `BackupWebsocketLogs.sh` file, you'll want to set log directory to the sa
 ```bash
 LOGFILE_SRC="/path/to/log/storage"
 LOGFILE_DEST="/path/to/log/backups"
-```
-
-Lastly, we need to update the `learning_observer_logrotate` file.
-Set the backup location for the generic logs.
-
-```bash
-    olddir /path/to/log/backups
 ```
 
 ### Client
@@ -188,31 +182,23 @@ We need to backup both the generic log files as well as all the websocket specif
 
 ### General logs
 
-The generic logs include the `*.pid`, `*.json`, `debug.log`, `incoming_websocket.log` and `learning_observer_service*.log` files located in the log directory.
-
-To backup the generic logs, we use the `logrotate` unix tool.
-You'll need to copy the modified configuration file from the repository into the lograte directory.
-Use this command:
-
-```bash
-cp /path/to/repo/servermanagement/learning_observer_logrotate /etc/lograte.d
-```
-
-As long as logrotate is installed, the generic logs will be backed up once a day.
+The main logger for events is located in `event_logger.json`.
+This is automatically backed up via the built-in Python logging module.
+The settings for this file are handling via the `creds.yaml` file that you previously setup.
+Simply changing the values and restarting the server will update the logging procress.
 
 ### Websocket logs
 
 The websocket logs take a little more setting up.
-We will set up an hourly `cron` job to run a backup script, `/path/to/repo/servermanagement/BackupWebsocketLogs.sh`.
+We will set up a daily `cron` job to run a backup script, `/path/to/repo/servermanagement/BackupWebsocketLogs.sh`.
 The backup script will search the log directory for any logs that match the websocket pattern and were last modified in the last **60 minutes**.
 Next, the backup script will remove any files that match the pattern and were modifed in the last **120 minutes**.
-This provides us redundancy in our backups.
 
 To set up the cron job, we first enter the crontab utility then add a line for the backup script.
 
 ```bash
 crontab -e  # open the cron job menu
 
-0 * * * * /usr/bin/sh /full/path/to/repo/servermanagement/BackupWebsocketLogs.sh # line to add to the cronjob
+0 1 * * * /usr/bin/sh /full/path/to/repo/servermanagement/BackupWebsocketLogs.sh # line to add to the cronjob
 # Run it at the 0th minute every hour, every day, every month, and so on
 ```
