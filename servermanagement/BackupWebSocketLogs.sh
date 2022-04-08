@@ -6,7 +6,7 @@ LOGFILE_DEST="/usr/local/share/Projects/WritingObserver/Repo-Fork/writing_observ
 # Make the backup name
 # ---------------------------------------
 LOG_DATE=$(date "+%m-%d-%Y--%H-%M-%S")
-BACKUP_NAME="$LOGFILE_DEST/learning_observer_backup_$LOG_DATE.bzip2"
+BACKUP_NAME="$LOGFILE_DEST/learning_observer_backup_$LOG_DATE.tar.gz"
 echo $BACKUP_NAME;
 
 # Create the backup
