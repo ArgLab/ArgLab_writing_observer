@@ -29,4 +29,9 @@ echo "Running Learning Observer Service..."
 cd $LEARNING_OBSERVER_LOC
 #$($VIRTUALENV_PYTHON $LEARNING_OBSERVER_LOC > $LOG_NAME 2>&1)
 nohup $VIRTUALENV_PYTHON learning_observer > $LOGFILE_NAME 2>&1 &
-echo $! > $LOGFILE_DEST/run.pid
+PROCESS_ID=$!
+echo $PROCESS_ID > $LOGFILE_DEST/run.pid
+
+
+# Set the number of allowed open files to something large 8192
+prlimit --pid $PROCESS_ID --nofile=8192
