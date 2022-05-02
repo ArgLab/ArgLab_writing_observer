@@ -22,31 +22,34 @@ import learning_observer.paths as paths
 import learning_observer.auth
 import learning_observer.rosters as rosters
 
+from learning_observer.log_event import debug_log
 
-def timelist_to_seconds(l):
+
+def timelist_to_seconds(timelist):
     '''
     [5, "seconds"] ==> 5
     [5, "minutes"] ==> 300
     etc.
     '''
-    if l is None:
+    if timelist is None:
         return None
-    if len(l) != 2:
+    if len(timelist) != 2:
         raise Exception("Time lists should have number and units")
-    if not isinstance(l[0], numbers.Number):
+    if not isinstance(timelist[0], numbers.Number):
         raise Exception("First element should be a number")
-    if not isinstance(l[1], str):
+    if not isinstance(timelist[1], str):
         raise Exception("Second element should be a string")
     units = {
         "seconds": 1,
         "minutes": 60,
         "hours": 3600
     }
-    if l[1] not in units:
+    if timelist[1] not in units:
         raise Exception("Second element should be a time unit")
-    return l[0] * units[l[1]]
+    return timelist[0] * units[timelist[1]]
 
 
+@learning_observer.auth.teacher
 async def generic_dashboard(request):
     '''
     We would like to be able to support pretty arbitrary dashboards,
@@ -73,7 +76,7 @@ async def generic_dashboard(request):
     # We never send data more than twice per second, because performance.
     MIN_REFRESH = 0.5
 
-    teacherkvs = kvs.KVS();
+    teacherkvs = kvs.KVS()
     ws = aiohttp.web.WebSocketResponse()
     await ws.prepare(request)
     subscriptions = queue.PriorityQueue()
@@ -89,12 +92,13 @@ async def generic_dashboard(request):
             return Δt
 
     count = [0]
+
     def counter():
         count[0] += 1
         return count[0]
 
-    running = False          # Are we streaming data?
-    next_subscription = None # What is the next item to send?
+    running = False           # Are we streaming data?
+    next_subscription = None  # What is the next item to send?
 
     while True:
         # Wait for the next message, with an upper bound of when we
@@ -103,16 +107,16 @@ async def generic_dashboard(request):
             if subscriptions.empty() or not running:
                 msg = await ws.receive()
             else:
-                msg = await ws.receive(timeout = timeout())
-            print("msg", msg)
+                msg = await ws.receive(timeout=timeout())
+            debug_log("msg", msg)
             if msg.type == aiohttp.WSMsgType.CLOSE:
-                print("Socket closed!")
+                debug_log("Socket closed!")
                 # By this point, the client is long gone, but we want to
                 # return something to avoid confusing middlewares.
                 return aiohttp.web.Response(text="This never makes it back....")
             elif msg.type == aiohttp.WSMsgType.TEXT:
                 message = json.loads(msg.data)
-                print(message)
+                debug_log(message)
                 if message['action'] == 'subscribe':
                     subscriptions.put([
                         time.time(),
@@ -135,7 +139,7 @@ async def generic_dashboard(request):
         except asyncio.exceptions.TimeoutError:
             pass
         if ws.closed:
-            print("Socket closed")
+            debug_log("Socket closed")
             return aiohttp.web.Response(text="This never makes it back to the client....")
         # Now, we send any messages we need to
         while timeout() is not None and timeout() < 0:
@@ -215,9 +219,9 @@ def fetch_student_state(
                     sa_module,
                     {sa_helpers.KeyField.STUDENT: student_id},
                     sa_helpers.KeyStateType.EXTERNAL)
-                print(key)
+                debug_log(key)
                 data = await teacherkvs[key]
-                print(data)
+                debug_log(data)
                 if data is not None:
                     student_state[sa_helpers.fully_qualified_function_name(sa_module)] = data
             cleaner = agg_module.get("cleaner", lambda x: x)
@@ -273,9 +277,9 @@ async def websocket_dashboard_view(request):
     course_aggregator_module, default_data = find_course_aggregator(module_id)
 
     if course_aggregator_module is None:
-        print("Bad module: ", module_id)
-        print("Available modules: ", learning_observer.module_loader.course_aggregators())
-        raise aiohttp.web.HTTPBadRequest(text="Invalid module: " + str(module_id))
+        debug_log("Bad module: ", module_id)
+        debug_log("Available modules: ", learning_observer.module_loader.course_aggregators())
+        raise aiohttp.web.HTTPBadRequest(text="Invalid module: {}".format(module_id))
 
     # We need to receive to detect web socket closures.
     ws = aiohttp.web.WebSocketResponse(receive_timeout=0.1)
@@ -314,7 +318,7 @@ async def websocket_dashboard_view(request):
         # and wait for an exception or a CLOSE message.
         try:
             if (await ws.receive()).type == aiohttp.WSMsgType.CLOSE:
-                print("Socket closed!")
+                debug_log("Socket closed!")
                 # By this point, the client is long gone, but we want to
                 # return something to avoid confusing middlewares.
                 return aiohttp.web.Response(text="This never makes it back....")
@@ -324,7 +328,7 @@ async def websocket_dashboard_view(request):
         await asyncio.sleep(0.5)
         # This never gets called, since we return above
         if ws.closed:
-            print("Socket closed")
+            debug_log("Socket closed. This should never appear, however.")
             return aiohttp.web.Response(text="This never makes it back....")
 
 

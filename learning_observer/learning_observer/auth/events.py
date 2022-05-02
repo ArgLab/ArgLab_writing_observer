@@ -29,13 +29,10 @@ import aiohttp_session
 import aiohttp.web
 
 import learning_observer.paths
+import learning_observer.prestartup
 import learning_observer.settings
 
-
-if 'event_auth' not in learning_observer.settings.settings:
-    print("Please configure event authentication")
-    sys.exit(-1)
-
+from learning_observer.log_event import debug_log
 
 AUTH_METHODS = {}
 
@@ -199,7 +196,7 @@ async def chromebook_auth(request, headers, first_event, source):
         auth = 'unauthenticated'
 
     untrusted_google_id = authdata.get('chrome_identity', {}).get('id', None)
-    print(untrusted_google_id)
+    debug_log("untrusted_google_id", untrusted_google_id)
 
     if untrusted_google_id is None:
         return False
@@ -232,7 +229,7 @@ async def hash_identify(request, headers, first_event, source):
     list. Then, it'd be okay for the math team example
     '''
     authdata = find_event('hash_auth', headers + [first_event])
-    print(authdata)
+    debug_log("authdata", authdata)
 
     if authdata is None or 'hash' not in authdata:
         return False
@@ -302,17 +299,25 @@ async def authenticate(request, headers, first_event, source):
                 )
             return auth_metadata
 
-    print("Unauthorized")
-    raise aiohttp.web.HTTPUnauthorized
+    raise aiohttp.web.HTTPUnauthorized("All authentication methods failed. Unauthorized.")
 
 
-for auth_method in learning_observer.settings.settings['event_auth']:
-    if auth_method not in AUTH_METHODS:
-        print("Unrecognized event authentication method in settings file:")
-        print(auth_method)
-        print("Valid methods:")
-        print(AUTH_METHODS.keys())
-        sys.exit(-1)
+@learning_observer.prestartup.register_startup_check
+def check_event_auth_config():
+    '''
+    Check that all event auth methods are correctly configured,
+    before events come in.
+    '''
+    if 'event_auth' not in learning_observer.settings.settings:
+        raise learning_observer.prestartup.StartupCheck("Please configure event authentication")
+    for auth_method in learning_observer.settings.settings['event_auth']:
+        if auth_method not in AUTH_METHODS:
+            raise learning_observer.prestartup.StartupCheck(
+                "Please configure event authentication for {}\n(Methods: {})".format(
+                    auth_method,
+                    list(AUTH_METHODS.keys())
+                ))
+
 
 if __name__ == "__main__":
     import doctest

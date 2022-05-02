@@ -1,5 +1,4 @@
-'''Key-
-value store
+'''Key-value store
 
 Manages JSON objects
 
@@ -19,6 +18,7 @@ import sys
 
 import asyncio_redis
 
+import learning_observer.prestartup
 import learning_observer.settings
 import learning_observer.redis
 
@@ -75,8 +75,7 @@ class _RedisKVS():
         asyncio_redis auto-reconnects. We can't do async in __init__. So
         we connect on the first get / set.
         '''
-        if learning_observer.redis.redis_connection is None:
-            await learning_observer.redis.connect()
+        await learning_observer.redis.connect()
 
     async def __getitem__(self, key):
         '''
@@ -85,7 +84,8 @@ class _RedisKVS():
         >> await kvs['item']
         '''
         await self.connect()
-        item = await learning_observer.redis.redis_connection.get(key)
+        connection = await learning_observer.redis.connection()
+        item = await connection.get(key)
         if item is not None:
             return json.loads(item)
         return None
@@ -106,7 +106,8 @@ class _RedisKVS():
         await self.connect()
         json.dumps(value)  # Fail early if we're not JSON
         assert isinstance(key, str), "KVS keys must be strings"
-        await learning_observer.redis.redis_connection.set(key, json.dumps(value), expire=self.expire)
+        connection = await learning_observer.redis.connection()
+        await connection.set(key, json.dumps(value), expire=self.expire)
         return
 
     async def keys(self):
@@ -116,7 +117,8 @@ class _RedisKVS():
         This is obviously not very performant for large-scale dpeloys.
         '''
         await self.connect()
-        return [await k for k in await learning_observer.redis.redis_connection.keys("*")]
+        connection = await learning_observer.redis.connection()
+        return [await k for k in await connection.keys("*")]
 
 
 class EphemeralRedisKVS(_RedisKVS):
@@ -132,6 +134,7 @@ class EphemeralRedisKVS(_RedisKVS):
 
 class PersistentRedisKVS(_RedisKVS):
     '''
+
     For deployment: Data lives forever.
     '''
     def __init__(self):
@@ -141,29 +144,65 @@ class PersistentRedisKVS(_RedisKVS):
         super().__init__(expire=None)
 
 
-#  This design pattern allows us to fail on import, rather than later
-try:
-    KVS_MAP = {
-        'stub': InMemoryKVS,
-        'redis-ephemeral': EphemeralRedisKVS,
-        'redis': PersistentRedisKVS
-    }
-    KVS = KVS_MAP[learning_observer.settings.settings['kvs']['type']]
-except KeyError:
-    if 'kvs' not in learning_observer.settings.settings:
-        print("KVS not configured in settings file")
-        print("Look at example settings file to set up KVS config")
-    elif learning_observer.settings.settings['kvs']['type'] not in KVS_MAP:
-        print("Invalid setting kvs/type.")
-        print("KVS config is currently ", end='')
-        print(learning_observer.settings.settings["kvs"])
-        print("Should have a 'type' field set to one of: ", end='')
-        print(",".join(KVS_MAP.keys()))
-    else:
-        print("KVS incorrectly configured. Please fix the error, and")
-        print("then replace this with a more meaningful error message")
-    print()
-    sys.exit(-1)
+KVS = None
+
+
+@learning_observer.prestartup.register_startup_check
+def kvs_startup_check():
+    '''
+    This is a startup check. If confirms that the KVS is properly configured
+    in settings.py. It should happen after we've loaded settings.py, so we
+    register this to run in prestartup.
+
+    Checks like this one allow us to fail on startup, rather than later
+    '''
+    global KVS
+    try:
+        KVS_MAP = {
+            'stub': InMemoryKVS,
+            'redis-ephemeral': EphemeralRedisKVS,
+            'redis': PersistentRedisKVS
+        }
+        KVS = KVS_MAP[learning_observer.settings.settings['kvs']['type']]
+    except KeyError:
+        if 'kvs' not in learning_observer.settings.settings:
+            raise learning_observer.prestartup.StartupCheck(
+                "No KVS configured. Please set kvs.type in settings.py\n"
+                "Look at example settings file to see what's available."
+            )
+        elif learning_observer.settings.settings['kvs']['type'] not in KVS_MAP:
+            raise learning_observer.prestartup.StartupCheck(
+                "Unknown KVS type: {}\n"
+                "Look at example settings file to see what's available. \n"
+                "Suppported types: {}".format(
+                    learning_observer.settings.settings['kvs']['type'],
+                    list(KVS_MAP.keys())
+                )
+            )
+        else:
+            raise learning_observer.prestartup.StartupCheck(
+                "KVS incorrectly configured. Please fix the error, and\n"
+                "then replace this with a more meaningful error message"
+            )
+    return True
+
+
+async def dump_kvs():
+    '''
+    Dumps the entire contents of the KVS to a JSON object.
+
+    It is intended to be used in development and for debugging. It is not
+    intended to be used in production, as it is not very performant. It can
+    be helpful for offline analytics too, at least at a small scale.
+
+    Helpers like this would be helpful to refactor into the KVS itself,
+    perhaps through a superclass.
+    '''
+    data = {}
+    kvs = learning_observer.kvs.KVS()
+    for key in await kvs.keys():
+        data[key] = await kvs[key]
+    return data
 
 
 async def test():
