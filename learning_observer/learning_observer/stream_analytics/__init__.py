@@ -17,6 +17,8 @@ import functools
 import learning_observer.exceptions
 import learning_observer.module_loader
 
+from learning_observer.log_event import debug_log
+
 REDUCER_MODULES = None
 
 
@@ -29,8 +31,8 @@ def reducer_modules(source):
     global REDUCER_MODULES
     modules = copy.deepcopy(REDUCER_MODULES.get(source, None))
     if modules is None:
-        debug_log("Unknown event source: " + str(client_source))
-        debug_log("Known sources: " + repr(stream_analytics.reducer_modules().keys()))
+        debug_log("Unknown event source: " + str(source))
+        debug_log("Known sources: " + repr(REDUCER_MODULES.keys()))
         raise learning_observer.exceptions.SuspiciousOperation("Unknown event source")
 
     return modules
@@ -51,7 +53,17 @@ def async_lambda(function):
 
 
 def init():
-    import learning_observer.module_loader
+    '''
+    Initialize the stream analytics module. For now, this just populates
+    `REDUCER_MODULES`, transformed into an appopriate dictionary format
+    for retrieving what we need.
+
+    We also add a loop-back module for testing.
+
+    Probably, we'd rather remove this redundancy, and do this in the
+    module loader.
+    '''
+    import learning_observer.stream_analytics.helpers as helpers
     srm = collections.defaultdict(lambda: list())
 
     # For debugging; this can go away at some point

@@ -36,7 +36,6 @@ we may:
 * Have a less Googley format
 '''
 
-import asyncio
 import json
 import os.path
 import sys
@@ -51,6 +50,10 @@ import learning_observer.settings as settings
 import learning_observer.kvs
 import learning_observer.log_event as log_event
 import learning_observer.paths as paths
+
+from learning_observer.log_event import debug_log
+
+import learning_observer.prestartup
 
 COURSE_URL = 'https://classroom.googleapis.com/v1/courses'
 ROSTER_URL = 'https://classroom.googleapis.com/v1/courses/{courseid}/students'
@@ -115,6 +118,11 @@ async def all_students():
 async def all_ajax(
         request, url,
         parameters=None, key=None, sort_key=None, default=None):
+    '''
+    Stub in information normally requested through Google's API,
+    using a dummy course and all students in the system as the
+    roster for that course.
+    '''
     if url == COURSE_URL:
         return [{
             "id": "12345678901",
@@ -130,7 +138,7 @@ async def all_ajax(
             },
             "calendarId": "NA"
         }]
-    elif url == ROSTER_URL:
+    if url == ROSTER_URL:
         students = await all_students()
 
         def profile(student, index):
@@ -151,6 +159,8 @@ async def all_ajax(
             }
 
         return [profile(s, i) for (s, i) in zip(students, range(len(students)))]
+    # Otherwise, we need to code up the other URLs
+    raise AttributeError("Unknown Google URL: " + url)
 
 
 async def synthetic_ajax(
@@ -169,7 +179,7 @@ async def synthetic_ajax(
             ROSTER_URL: paths.data("students.json")
         }
     elif settings.settings['roster-data']['source'] == 'filesystem':
-        print(request['user'])
+        debug_log(request['user'])
         safe_userid = pathvalidate.sanitize_filename(request['user']['user_id'])
         courselist_file = "courselist-" + safe_userid
         if parameters is not None and 'courseid' in parameters:
@@ -184,13 +194,13 @@ async def synthetic_ajax(
                 courselist_file=courselist_file))
         }
     else:
-        print("PANIC!!! ROSTER!")
-        print(settings.settings['roster-data']['source'])
-        sys.exit(-1)
+        debug_log("Roster data source is not recognized:", settings.settings['roster-data']['source'])
+        raise ValueError("Roster data source is not recognized: {}".format(settings.settings['roster-data']['source'])
+                            + " (should be 'test' or 'filesystem')")
     try:
         data = json.load(open(synthetic_data[url]))
-    except FileNotFoundError as e:
-        print(e)
+    except FileNotFoundError as exc:
+        debug_log(exc)
         raise aiohttp.web.HTTPInternalServerError(
             text="Server configuration error. "
             "No course roster file for your account. "
@@ -228,53 +238,69 @@ async def google_ajax(
                 resp_json, key, sort_key, default=default
             )
 
-if 'roster-data' not in settings.settings or \
-   'source' not in settings.settings['roster-data']:
-    print("Settings file needs a `roster-data` element with a `source` element")
-    sys.exit(-1)
-elif settings.settings['roster-data']['source'] in ['test', 'filesystem']:
-    ajax = synthetic_ajax
-elif settings.settings['roster-data']['source'] in ["google-api"]:
-    ajax = google_ajax
-elif settings.settings['roster-data']['source'] in ["all"]:
-    ajax = all_ajax
-else:
-    print("Settings file `roster-data` element should have `source` field")
-    print("set to either:")
-    print("  test        (retrieve from files courses.json and students.json)")
-    print("  google-api  (retrieve roster data from Google)")
-    print("  filesystem  (retrieve roster data from file system hierarchy")
-    print("Coming soon: all")
-    sys.exit(-1)
+ajax = None
 
-REQUIRED_PATHS = {
-    'test': [
-        paths.data("students.json"),
-        paths.data("courses.json")
-    ],
-    'filesystem': [
-        paths.data("course_lists/"),
-        paths.data("course_rosters/")
-    ]
-}
 
-if settings.settings['roster-data']['source'] in REQUIRED_PATHS:
-    r_paths = REQUIRED_PATHS[settings.settings['roster-data']['source']]
-    for p in r_paths:
-        if not os.path.exists(p):
-            print("Missing course roster files!")
-            print("The following are required:")
-            print("\t", "\n\t".join(r_paths))
-            print()
-            print("Run :")
-            for p in r_paths:
-                print("mkdir {path}".format(path=p))
-            print()
-            print(
-                "(And ideally, they'll be populated with "
-                "a list of courses, and of students for "
-                "those courses)")
-            sys.exit(-1)
+@learning_observer.prestartup.register_startup_check
+def startup():
+    '''
+    * Set up the ajax function.
+    * Check that the settings are valid.
+    * Check that the roster data paths exist.
+
+    TODO: It should be broken out into a separate check function and init function,
+    or smaller functions otherwise.
+    '''
+    global ajax
+    if 'roster-data' not in settings.settings or \
+       'source' not in settings.settings['roster-data']:
+        raise learning_observer.prestartup.StartupCheck(
+            "Settings file needs a `roster-data` element with a `source` element"
+        )
+    elif settings.settings['roster-data']['source'] in ['test', 'filesystem']:
+        ajax = synthetic_ajax
+    elif settings.settings['roster-data']['source'] in ["google-api"]:
+        ajax = google_ajax
+    elif settings.settings['roster-data']['source'] in ["all"]:
+        ajax = all_ajax
+    else:
+        raise learning_observer.prestartup.StartupCheck(
+            "Settings file `roster-data` element should have `source` field\n"
+            "set to either:\n"
+            "  test        (retrieve from files courses.json and students.json)\n"
+            "  google-api  (retrieve roster data from Google)\n"
+            "  filesystem  (retrieve roster data from file system hierarchy\n"
+            "  all  (retrieve roster data as all students)"
+        )
+    REQUIRED_PATHS = {
+        'test': [
+            paths.data("students.json"),
+            paths.data("courses.json")
+        ],
+        'filesystem': [
+            paths.data("course_lists/"),
+            paths.data("course_rosters/")
+        ]
+    }
+
+    if settings.settings['roster-data']['source'] in REQUIRED_PATHS:
+        r_paths = REQUIRED_PATHS[settings.settings['roster-data']['source']]
+        for p in r_paths:
+            if not os.path.exists(p):
+                raise learning_observer.prestartup.StartupCheck(
+                    "Missing course roster files!\n"
+                    "The following are required:\t{paths}\n\n"
+                    "Please run:\n"
+                    "{commands}\n\n"
+                    "(And ideally, they'll be populated with\n"
+                    "a list of courses, and of students for\n"
+                    "those courses)".format(
+                        paths=", ".join(r_paths),
+                        commands="\n".join(["mkdir {path}".format(path=path) for path in r_paths])
+                    )
+                )
+
+    return ajax
 
 
 async def courselist(request):
@@ -319,3 +345,19 @@ async def courseroster_api(request):
     '''
     course_id = int(request.match_info['course_id'])
     return aiohttp.web.json_response(await courseroster(request, course_id))
+
+
+# We'd like to be able to fetch classwork from Google. We don't know how to do this yet.
+# the following is a placeholder for the future. The code is commented out and probably
+# completely incorrect. It's never been tried.
+#
+# CLASSWORK_URL = "https://www.googleapis.com/auth/classroom.coursework.students.readonly"
+# async def fetch_classwork(request, course_id):
+#    '''
+#    Fetch the classwork associated with a course
+#    '''
+#    async with aiohttp.ClientSession(loop=request.app.loop) as client:
+#        async with client.get(CLASSWORK_URL, headers=request["auth_headers"]) as resp:
+#            resp_json = await resp.json()
+#            log_event.log_ajax(CLASSWORK_URL, resp_json, request)
+#            return resp_json

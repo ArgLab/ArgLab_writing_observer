@@ -26,7 +26,7 @@ import learning_observer.log_event as log_event
 import learning_observer.paths as paths
 
 import learning_observer.auth.utils as authutils               # Encoded / decode user IDs
-import learning_observer.pubsub as pubsub                      # Pluggable pubsub subsystem
+# import learning_observer.pubsub as pubsub                    # Pluggable pubsub subsystem
 import learning_observer.stream_analytics as stream_analytics  # Individual analytics modules
 
 import learning_observer.settings as settings
@@ -38,8 +38,6 @@ from learning_observer.log_event import debug_log
 import learning_observer.exceptions
 
 import learning_observer.auth.events
-
-stream_analytics.init()
 
 
 def compile_server_data(request):
@@ -62,8 +60,8 @@ async def student_event_pipeline(metadata):
     Create an event pipeline, based on header metadata
     '''
     client_source = metadata["source"]
-    # print("client_source")
-    # print(stream_analytics.reducer_modules(client_source))
+    debug_log("client_source", client_source)
+    debug_log("Module", stream_analytics.reducer_modules(client_source))
     analytics_modules = stream_analytics.reducer_modules(client_source)
 
     # Create an event processor for this user
@@ -83,8 +81,8 @@ async def student_event_pipeline(metadata):
         # eventually. We started with a function, and had an interrim
         # period where both functions and co-routines worked.
         if not inspect.iscoroutinefunction(f):
-            print(analytics_module)
-            raise AttributeError("The above reducer should be a co-routine")
+            debug_log("Not a coroutine", analytics_module)
+            raise AttributeError("The reducer {} should be a co-routine".format(analytics_module))
 
         analytics_module['reducer_partial'] = await analytics_module['reducer'](metadata)
         return analytics_module
@@ -96,7 +94,7 @@ async def student_event_pipeline(metadata):
         And this is the pipeline itself. It takes messages, processes them,
         and informs consumers when there is new data.
         '''
-        debug_log("Processing PubSub message {event} from {source}".format(
+        debug_log("Processing message {event} from {source}".format(
             event=parsed_message["client"]["event"], source=client_source
         ))
 
@@ -107,20 +105,20 @@ async def student_event_pipeline(metadata):
         try:
             processed_analytics = []
             for am in analytics_modules:
-                # print(am['scope'])
+                debug_log("Scope", am['scope'])
                 args = {}
                 skip = False
                 for field in am['scope']:
                     if isinstance(field, learning_observer.stream_analytics.helpers.EventField):
-                        # print("event", parsed_message)
-                        # print("field", field)
+                        debug_log("event", parsed_message)
+                        debug_log("field", field)
                         client_event = parsed_message.get('client', {})
                         if field.event not in client_event:
-                            # print(field.event, "not found")
+                            debug_log(field.event, "not found")
                             skip = True
                         args[field.event] = client_event.get(field.event)
                 if not skip:
-                    # print("args", args)
+                    debug_log("args", args)
                     processed_analytics.append(await am['reducer_partial'](parsed_message, **args))
         except Exception as e:
             traceback.print_exc()
@@ -149,7 +147,7 @@ async def student_event_pipeline(metadata):
         # iterators of incoming events so we can handle microbatches,
         # and generate lists of outgoing events too.
         if not isinstance(processed_analytics, list):
-            print("FIXME: Should return list")
+            debug_log("FIXME: Should return list")
             processed_analytics = [processed_analytics]
         return processed_analytics
     return pipeline
@@ -209,7 +207,7 @@ async def handle_incoming_client_event(metadata):
             json.dumps(event, sort_keys=True),
             "incoming_websocket", preencoded=True, timestamp=True)
         if PUBSUB:
-            print(pubsub_client)
+            debug_log("Pubsub client", pubsub_client)
         outgoing = await pipeline(event)
 
         # We're currently polling on the other side.
@@ -265,8 +263,8 @@ def event_decoder_and_logger(request):
 async def incoming_websocket_handler(request):
     '''
     This handles incoming WebSockets requests. It does some minimal
-    processing on them, and then relays them on via PubSub to be
-    aggregated. It also logs them.
+    processing on them. It used to relays them on via PubSub to be
+    aggregated, but we've switched to polling. It also logs them.
     '''
     debug_log("Incoming web socket connected")
     # Set the websocket timeout value to be 55 minutes
@@ -280,7 +278,7 @@ async def incoming_websocket_handler(request):
     # * browser.storage identity information
     event_metadata = {'headers': {}}
 
-    print("Init pipeline")
+    debug_log("Init pipeline")
     header_events = []
 
     # This will take a little bit of explaining....
@@ -303,7 +301,7 @@ async def incoming_websocket_handler(request):
     json_msg = None
     if INIT_PIPELINE:
         async for msg in ws:
-            print("Auth", msg)
+            debug_log("Auth", msg)
             json_msg = decoder_and_logger(msg)
             header_events.append(json_msg)
             if json_msg["event"] == "metadata_finished":
@@ -326,8 +324,6 @@ async def incoming_websocket_handler(request):
             # wonky ping or keep-alive or something we're unaware of, we'd
             # like to handle that gracefully.
             if msg.type != aiohttp.WSMsgType.TEXT:
-                print("!!!!!! Unknown event type !!!!!!!")
-                print(msg.type)
                 debug_log("Unknown event type: " + msg.type)
 
             if msg.data == 'close':

@@ -59,6 +59,11 @@ config:
     logging:
         max_size: 536870912     # max size of logs (in bytes) before rotating: 1_000_000_000 = 1 GB
         backups: 50             # number of backups to keep on hand before rotating
+logging:
+    debug-log-level: EXTENDED   # NONE, SIMPLE, or EXTENDED
+    debug-log-destinations:     # List of where they go. CONSOLE or FILE
+        - CONSOLE
+        - FILE
 theme:
     server-name: Learning Observer
     front-page-pitch: Learning Observer is an experimental dashboard. If you'd like to be part of the experiment, please contact us. If you're already part of the experiment, log in!
