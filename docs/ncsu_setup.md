@@ -16,8 +16,28 @@ sudo yum install rh-python38    # base python
 sudo yum install python38-devel # developer tools for python 3.8
 ```
 
+On RHEL 7, the `python38-devel` is no longer recognized as a package.
+To properly fetch the developer tools, use the following:
+
+```bash
+sudo subscription-manager repos --enable rhel-7-server-optional-rpms --enable rhel-server-rhscl-7-rpms
+sudo yum install rh-python38-python-devel.x86_64
+```
+
 The Python installation should be located at `/opt/rh/rh-python38`.
 Note this location for future sections.
+
+There is a chance you'll encounter an issue when installing the requirements, specifically `py-bcrypt`.
+The developer tools do not show up in the exact proper place, so we need to create a soft symbolic link between the correct location and where they are located.
+To create this link, use the following:
+
+```bash
+cd /opt/rh/rh-python38/root
+sudo ln -s usr/include/ .  # check that Python.h exists in usr/include/python3.8/Python.h
+```
+
+Note, we are creating a link between the subdirectory `/opt/rh/rh-python38/root/usr/include` and `/opt/rh/rh-python38/root`.
+Using `/usr/include` will result in the incorrect link.
 
 ## Install
 
@@ -41,7 +61,7 @@ When attempting to run the system later on in this setup guide, if you have any 
 
 Some of the main changes that need to be made are:
 
-1. types of `auth` allowed
+1. types of `auth` allowed, for simple setup, just remove the `google` child and all its subchildren
 1. `aio` session secret and max age
 1. `event_auth` to allow access from various locations (like Chromebooks)
 1. `server` for reconfiguring the port information
@@ -63,6 +83,18 @@ cd writing_observer                                         # cd into the top le
 /path/to/venv/bin/pip install -r requirements.txt           # install package requirements
 /path/to/venv/bin/pip install -e learning_observer/         # install learning observer module
 /path/to/venv/bin/pip install -e modules/writing_observer/  # install writing observer module
+```
+
+### Needed directories
+
+When installing Learning Observer for the first time, we need to create a few directories.
+Use the following commands:
+
+```bash
+mkdir /path/to/repo/learning_observer/learning_observer/static_data/course_lists
+mkdir /path/to/repo/learning_observer/learning_observer/static_data/course_rosters
+mkdir /path/to/repo/learning_observer/learning_observer/logs
+mkdir /path/to/repo/learning_observer/learning_observer/logs/startup
 ```
 
 ### Proxy server
