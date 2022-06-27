@@ -76,8 +76,8 @@ event_logger = logging.getLogger('main_logger')
 event_logger.setLevel(logging.INFO)
 event_handler = RotatingFileHandler(
     paths.logs('event_logger.json'),
-    maxBytes=settings.settings['config']['logging']['max_size'],
-    backupCount=settings.settings['config']['logging']['backups']
+    maxBytes=536870912,
+    backupCount=50
 )
 event_handler.namer = namer
 event_handler.rotator = rotator
