@@ -61,8 +61,8 @@ cd writing_observer                                         # cd into the top le
 /path/to/venv/bin/pip install --upgrade pip                 # upgrade pip
 /path/to/venv/bin/pip install wheel                         # install wheel
 /path/to/venv/bin/pip install -r requirements.txt           # install package requirements
-/path/to/venv/bin/pip install -e /learning_observer         # install learning observer module
-/path/to/venv/bin/pip install -e /modules/writing_observer  # install writing observer module
+/path/to/venv/bin/pip install -e learning_observer/         # install learning observer module
+/path/to/venv/bin/pip install -e modules/writing_observer/  # install writing observer module
 ```
 
 ### Proxy server
