@@ -71,14 +71,10 @@ async def _google(request):
         return {}
 
     common_params = {
-        'client_id': settings.settings['auth']['google-oauth']['web']['client_id'],
-
-        # Default URI Here.  Resetting to local.
-        #'redirect_uri': "https://{hostname}/auth/login/google".format(
-        #    hostname = settings.settings['hostname']
-        #)
-        #'redirect_uri': "https://writing.hopto.org/auth/login/google",
-         'redirect_uri': "https://writing.csc.ncsu.edu/auth/login/google",
+        'client_id': settings.settings['auth']['google_oauth']['web']['client_id'],
+        'redirect_uri': "https://{hostname}/auth/login/google".format(
+            hostname=settings.settings['hostname']
+        )
     }
 
     # Step 1: redirect to get code
@@ -94,6 +90,15 @@ async def _google(request):
                 ' https://www.googleapis.com/auth/classroom.rosters.readonly'
                 ' https://www.googleapis.com/auth/classroom.profile.emails'
                 ' https://www.googleapis.com/auth/classroom.profile.photos'
+                ' https://www.googleapis.com/auth/classroom.coursework.students.readonly'
+                ' https://www.googleapis.com/auth/classroom.courseworkmaterials.readonly'
+                ' https://www.googleapis.com/auth/classroom.guardianlinks.students.readonly'
+                ' https://www.googleapis.com/auth/classroom.student-submissions.students.readonly'
+                ' https://www.googleapis.com/auth/classroom.topics.readonly'
+                ' https://www.googleapis.com/auth/drive.metadata.readonly'
+                ' https://www.googleapis.com/auth/drive.readonly'
+                ' https://www.googleapis.com/auth/documents.readonly'
+                ' https://www.googleapis.com/auth/classroom.announcements.readonly'
             ),
         })
         if 'back_to' in request.query:
@@ -105,7 +110,7 @@ async def _google(request):
     url = 'https://accounts.google.com/o/oauth2/token'
     params = common_params.copy()
     params.update({
-        'client_secret': settings.settings['auth']['google-oauth']['web']['client_secret'],
+        'client_secret': settings.settings['auth']['google_oauth']['web']['client_secret'],
         'code': request.query['code'],
         'grant_type': 'authorization_code',
     })
@@ -135,3 +140,57 @@ async def _google(request):
         # TODO: Should this be immediate?
         'authorized': await learning_observer.auth.utils.verify_teacher_account(profile['id'], profile['email'])
     }
+
+
+async def show_me_my_auth_headers(request):
+    """
+    Show the auth headers that are set in the session. For convenience, we also
+    show other headers that were sent to the server and might add other
+    information.
+
+    This is handy for debugging and development. I'd often like to use the
+    server registered with Google to log in, but then use this information
+    in a development environment or a script.
+
+    This is behind a feature flag. On a live server, it should be disabled
+    as set right now. In the future, we might want to make this a feature
+    that can be enabled for specific users. This is not a huge security
+    risk, as the user can only access the information they have access to,
+    but a user's patterns might look suspicious to Google's (often broken)
+    algorithms, and we don't want to get flagged.
+
+    There is a setting, `allow_override`, which allows setting auth headers
+    in a development environment.
+    """
+    flag = settings.feature_flag('auth_headers_page')
+
+    if not flag:
+        # The route should not have been added...
+        raise aiohttp.web.HTTPForbidden(
+            "This feature is disabled. We should never get here. Please debug this."
+        )
+
+    # This is so that we can use the headers from the Google-approved server in
+    # my local development environment. Google has all sorts of validation that
+    # make it hard to retrieve the headers from the server directly to protect
+    # users from phishing, so we can't just implement oauth locally.
+    if request.method == 'POST':
+        if not (isinstance(flag, dict) or isinstance(flag, list)) or 'allow_override' not in flag:
+            raise aiohttp.web.HTTPForbidden("Overriding headers is disabled")
+        if not request.can_read_form:
+            raise aiohttp.web.HTTPForbidden("Cannot read form")
+
+        auth_headers = request.form.get('auth_headers')
+        if not auth_headers:
+            raise aiohttp.web.HTTPBadRequest(
+                text="Missing auth_headers"
+            )
+        session = await aiohttp_session.get_session(request)
+        session["auth_headers"] = auth_headers
+        request["auth_headers"] = auth_headers
+        session.save()
+
+    return aiohttp.web.json_response({
+        "auth_headers": request.get("auth_headers", None),
+        "headers": dict(request.headers)
+    })
