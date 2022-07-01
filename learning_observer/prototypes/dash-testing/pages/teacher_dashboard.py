@@ -1,9 +1,9 @@
 # package imports
 import dash
-from dash import html, dcc, clientside_callback, ClientsideFunction, callback, Output, Input, State, ALL
+from dash import html, dcc, clientside_callback, ClientsideFunction, callback, Output, Input, State, ALL, MATCH
 from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
-import random
+from dash_extensions import WebSocket
 
 # local imports
 from data import students as s_data
@@ -15,14 +15,34 @@ dash.register_page(
 )
 
 def create_student_card(s):
-    card =dbc.Card(
+    id = s.get('id')
+    card = html.Div(
         [
-            html.H4(s.get('name')),
-            html.P(s.get('text'))
+            dbc.Card(
+                [
+                    html.H4(s.get('name')),
+                    html.P(
+                        id={
+                            'type': 'student-card-data',
+                            'index': id
+                        }
+                    )
+                ],
+                body=True,
+                id={
+                    'type': 'student-card',
+                    'index': id
+                }
+            ),
+            WebSocket(
+                id={
+                    'type': 'student-ws',
+                    'index': id
+                },
+                url=f'ws://127.0.0.1:5000/student/{id}'
+            )
         ],
-        outline=True,
-        body=True,
-        class_name='my-2 mx-1'
+        className='my-2 mx-1',
     )
     return card
 
@@ -166,4 +186,10 @@ clientside_callback(
     ClientsideFunction(namespace='clientside', function_name='make_draggable'),
     Output('group-row', 'data-drag'),
     Input({'type': 'group-card', 'index': ALL}, 'id')
+)
+clientside_callback(
+    ClientsideFunction(namespace='clientside', function_name='update_student_card'),
+    Output({'type': 'student-card-data', 'index': MATCH}, 'children'),
+    Output({'type': 'student-card', 'index': MATCH}, 'class_name'),
+    Input({'type': 'student-ws', 'index': MATCH}, 'message')
 )
