@@ -1,6 +1,6 @@
 # package imports
 import dash
-from dash import html, dcc, clientside_callback, ClientsideFunction, callback, Output, Input, State
+from dash import html, dcc, clientside_callback, ClientsideFunction, callback, Output, Input, State, ALL
 from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
 import random
@@ -36,8 +36,12 @@ def create_group_card(name, students):
                     className='text-center my-2'
                 ),
                 html.Div(
-                    [create_student_card(s) for s in random.sample(s_data, random.randint(1, int(len(s_data)/2)))] if s_data else [],
-                    id=name.lower().replace(' ', '-')
+                    [create_student_card(s) for s in students] if students else [],
+                    id={
+                        'index': name.lower().replace(' ', '-'),
+                        'type': 'group-card'
+                    },
+                    style={'minHeight': '200px'}
                 )
             ],
             color='light',
@@ -55,8 +59,7 @@ assignment_1 = dbc.Container(
     [
         dbc.Row(
             [
-                create_group_card('Group 1', []),
-                create_group_card('Group 2', []),
+                create_group_card('Ungrouped', s_data),
                 dbc.Col(
                     dbc.Card(
                         dbc.Button(
@@ -68,6 +71,7 @@ assignment_1 = dbc.Container(
                         color='light',
                         class_name='h-100'
                     ),
+                    class_name='h-100',
                     xxl=3,
                     lg=4,
                     md=6
@@ -75,7 +79,7 @@ assignment_1 = dbc.Container(
             ],
             id='group-row',
             class_name='g-3 mt-1',
-            style={'height': '80vh'}
+            style={'height': '65vh'}
         ),
         dbc.Modal(
             [
@@ -130,6 +134,7 @@ layout = dbc.Tabs(
     active_tab='assignment_1'
 )
 
+
 @callback(
     Output('add-group-modal', 'is_open'),
     Input('add-group-button', 'n_clicks'),
@@ -139,6 +144,7 @@ def toggle_modal(n1, is_open):
     if n1:
         return not is_open
     return is_open
+
 
 @callback(
     Output('group-row', 'children'),
@@ -155,9 +161,9 @@ def add_group(clicks, name, students, groups):
     groups.insert(len(groups)-1, new_group)
     return groups
 
+
 clientside_callback(
     ClientsideFunction(namespace='clientside', function_name='make_draggable'),
     Output('group-row', 'data-drag'),
-    Input('group-1', 'id'),
-    Input('group-2', 'id')
+    Input({'type': 'group-card', 'index': ALL}, 'id')
 )
