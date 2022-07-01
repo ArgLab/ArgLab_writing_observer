@@ -11,9 +11,14 @@ window.dash_clientside.clientside = {
             for (i = 0; i < args.length; i++){
                 els[i] = document.getElementById(JSON.stringify(args[i]));
             }
-            console.log(els);
             window.drake = dragula(els);
         }, 1)
         return window.dash_clientside.no_update
+    },
+
+    update_student_card: function(msg) {
+        if(!msg){return "No data";}
+        const data = JSON.parse(msg.data);
+        return [data.text, data.class_name];
     }
 }
