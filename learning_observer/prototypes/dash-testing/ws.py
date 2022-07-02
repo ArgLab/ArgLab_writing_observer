@@ -23,13 +23,27 @@ class_names = [
 async def student_data(id):
     data = {
         'id': id,
-        'text': fake.text()
+        'text': fake.text(),
+        'sentences': 9,
+        'paragraphs': 3
     }
     while True:
         data['class_name'] = random.choice(class_names)
         output = json.dumps(data)
         await websocket.send(output)
         await asyncio.sleep(random.randint(10, 100))
+
+
+@app.websocket('/analysis/<string:id>')
+async def analysis_data(id):
+    data = {
+        'id': id
+    }
+    while True:
+        data['data'] = [random.random() for _ in range(10)]
+        output = json.dumps(data)
+        await websocket.send(output)
+        await asyncio.sleep(random.randint(10, 60))
 
 if __name__ == '__main__':
     app.run(port=5000)
