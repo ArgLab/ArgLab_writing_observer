@@ -1,4 +1,5 @@
 # package imports
+from http import client
 import dash
 from dash import html, dcc, clientside_callback, ClientsideFunction, callback, Output, Input, State, ALL, MATCH
 from dash.exceptions import PreventUpdate
@@ -14,6 +15,36 @@ dash.register_page(
     title='Dashboard'
 )
 
+def create_analysis_card(analysis):
+    id = analysis.get('id')
+    card = dbc.Col(
+        dbc.Card(
+            [
+                dcc.Graph(
+                    id={
+                        'type': 'analysis-graph',
+                        'index': id
+                    },
+                    className='m-2'
+                ),
+                WebSocket(
+                    id={
+                        'type': 'analysis-ws',
+                        'index': id
+                    },
+                    url=f'ws://127.0.0.1:5000/analysis/{id}'
+                )
+            ],
+            color='light',
+            class_name='h-100'
+        ),
+        class_name='h-100',
+        xxl=4,
+        lg=6
+    )
+    return card
+
+
 def create_student_card(s):
     id = s.get('id')
     card = html.Div(
@@ -21,6 +52,25 @@ def create_student_card(s):
             dbc.Card(
                 [
                     html.H4(s.get('name')),
+                    html.Div(
+                        [
+                            dbc.Badge(
+                                id={
+                                    'type': 'student-card-sentence-badge',
+                                    'index': id
+                                },
+                                color='info',
+                                class_name='me-1 display-6'
+                            ),
+                            dbc.Badge(
+                                id={
+                                    'type': 'student-card-paragraph-badge',
+                                    'index': id
+                                },
+                                color='info'
+                            )
+                        ]
+                    ),
                     html.P(
                         id={
                             'type': 'student-card-data',
@@ -77,6 +127,46 @@ def create_group_card(name, students):
 
 assignment_1 = dbc.Container(
     [
+        html.H2(
+            [
+                html.P(
+                    'Analysis',
+                    className='d-inline'
+                ),
+                dbc.Button(
+                    html.I(className='far fa-plus fs-5'),
+                    class_name='ms-2',
+                    color='secondary',
+                    id='add-analysis-button'
+                )
+            ]
+        ),
+        dbc.Row(
+            [
+                create_analysis_card({'name': 'Sample', 'id': 'scatter'}),
+                # dbc.Col(
+                #     dbc.Card(
+                #         dbc.Button(
+                #             html.I(className='far fa-plus display-5 mx-1'),
+                #             class_name='m-auto',
+                #             color='secondary',
+                #             id='add-analysis-button'
+                #         ),
+                #         color='light',
+                #         class_name='h-100'
+                #     ),
+                #     class_name='h-100',
+                #     xxl=4,
+                #     lg=6
+                # )
+            ],
+            id='analysis-row',
+            class_name='g-3',
+        ),
+        html.H2(
+            'Groups',
+            className='mt-1'
+        ),
         dbc.Row(
             [
                 create_group_card('Ungrouped', s_data),
@@ -98,7 +188,7 @@ assignment_1 = dbc.Container(
                 )
             ],
             id='group-row',
-            class_name='g-3 mt-1',
+            class_name='g-3',
             style={'height': '65vh'}
         ),
         dbc.Modal(
@@ -134,8 +224,39 @@ assignment_1 = dbc.Container(
             ],
             id='add-group-modal',
             is_open=False
+        ),
+        dbc.Modal(
+            [
+                dbc.ModalHeader(dbc.ModalTitle('Add Analysis')),
+                dbc.ModalBody(
+                    [
+                        html.H6('Type'),
+                        dcc.Dropdown(
+                            id='add-analysis-modal-dropdown',
+                            placeholder='Select analysis type...',
+                            options=[
+                                {'label': 'Bar chart', 'value': 'bar'},
+                                {'label': 'Scatter plot', 'value': 'scatter'},
+                            ]
+                        )
+                    ]
+                ),
+                dbc.ModalFooter(
+                    dbc.Button(
+                        [
+                            html.I(className='far fa-plus me-2'),
+                            'Add'
+                        ],
+                        id='add-analysis-modal-create-button',
+                        color='secondary'
+                    )
+                )
+            ],
+            id='add-analysis-modal',
+            is_open=False
         )
-    ]
+    ],
+    class_name='mb-5'
 )
 
 layout = dbc.Tabs(
@@ -167,7 +288,20 @@ def toggle_modal(n1, is_open):
 
 
 @callback(
+    Output('add-analysis-modal', 'is_open'),
+    Input('add-analysis-button', 'n_clicks'),
+    State('add-analysis-modal', 'is_open'),
+)
+def toggle_modal(n1, is_open):
+    if n1:
+        return not is_open
+    return is_open
+
+
+@callback(
     Output('group-row', 'children'),
+    Output('add-group-modal-name', 'value'),
+    Output('add-group-modal-student-dropdown', 'value'),
     Input('add-group-modal-create-button', 'n_clicks'),
     State('add-group-modal-name', 'value'),
     State('add-group-modal-student-dropdown', 'value'),
@@ -179,7 +313,23 @@ def add_group(clicks, name, students, groups):
     
     new_group = create_group_card(name, students)
     groups.insert(len(groups)-1, new_group)
-    return groups
+    return groups, None, None
+
+
+@callback(
+    Output('analysis-row', 'children'),
+    Output('add-analysis-modal-dropdown', 'value'),
+    Input('add-analysis-modal-create-button', 'n_clicks'),
+    State('add-analysis-modal-dropdown', 'value'),
+    State('analysis-row', 'children')
+)
+def add_analysis(clicks, analysis, items):
+    if clicks is None or analysis is None:
+        raise PreventUpdate
+    
+    new_group = create_analysis_card({'name': 'Sample', 'id': analysis})
+    items.append(new_group)
+    return items, None
 
 
 clientside_callback(
@@ -191,5 +341,12 @@ clientside_callback(
     ClientsideFunction(namespace='clientside', function_name='update_student_card'),
     Output({'type': 'student-card-data', 'index': MATCH}, 'children'),
     Output({'type': 'student-card', 'index': MATCH}, 'class_name'),
+    Output({'type': 'student-card-sentence-badge', 'index': MATCH}, 'children'),
+    Output({'type': 'student-card-paragraph-badge', 'index': MATCH}, 'children'),
     Input({'type': 'student-ws', 'index': MATCH}, 'message')
+)
+clientside_callback(
+    ClientsideFunction(namespace='clientside', function_name='update_analysis_data'),
+    Output({'type': 'analysis-graph', 'index': MATCH}, 'figure'),
+    Input({'type': 'analysis-ws', 'index': MATCH}, 'message')
 )

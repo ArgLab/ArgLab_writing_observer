@@ -19,6 +19,23 @@ window.dash_clientside.clientside = {
     update_student_card: function(msg) {
         if(!msg){return "No data";}
         const data = JSON.parse(msg.data);
-        return [data.text, data.class_name];
+        const sentences = `${data.sentences} sentences`
+        const paragraphs = `${data.paragraphs} sentences`
+        return [data.text, data.class_name, sentences, paragraphs];
+    },
+
+    update_analysis_data: function(msg) {
+        if(!msg){
+            return {
+                data: [{y: [], type: "scatter"}]
+            };
+        }
+        const data = JSON.parse(msg.data);
+        return {
+            data: [{y: data.data, type: data.id}],
+            layout: {
+                title: data.id
+            }
+        };
     }
 }
