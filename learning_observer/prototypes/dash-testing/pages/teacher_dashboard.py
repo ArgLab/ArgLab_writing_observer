@@ -59,8 +59,7 @@ def create_student_card(s):
                                     'type': 'student-card-sentence-badge',
                                     'index': id
                                 },
-                                color='info',
-                                class_name='me-1 display-6'
+                                color='info'
                             ),
                             dbc.Badge(
                                 id={
@@ -69,7 +68,8 @@ def create_student_card(s):
                                 },
                                 color='info'
                             )
-                        ]
+                        ],
+                        className='d-flex justify-content-around'
                     ),
                     html.P(
                         id={
@@ -164,8 +164,21 @@ assignment_1 = dbc.Container(
             class_name='g-3',
         ),
         html.H2(
-            'Groups',
-            className='mt-1'
+            [
+                html.P(
+                    'Groups',
+                    className='mt-1 d-inline'
+                ),
+                dbc.Button(
+                    [
+                        html.I(className='fas fa-gear me-1'),
+                        'Options'
+                    ],
+                    class_name='ms-2',
+                    color='secondary',
+                    id='group-options-button'
+                )
+            ]
         ),
         dbc.Row(
             [
@@ -254,6 +267,14 @@ assignment_1 = dbc.Container(
             ],
             id='add-analysis-modal',
             is_open=False
+        ),
+        dbc.Offcanvas(
+            [
+                'Options'
+            ],
+            id='offcanvas',
+            title='Display options',
+            is_open=False
         )
     ],
     class_name='mb-5'
@@ -332,11 +353,13 @@ def add_analysis(clicks, analysis, items):
     return items, None
 
 
+# make groups draggable
 clientside_callback(
     ClientsideFunction(namespace='clientside', function_name='make_draggable'),
     Output('group-row', 'data-drag'),
     Input({'type': 'group-card', 'index': ALL}, 'id')
 )
+# populate student data
 clientside_callback(
     ClientsideFunction(namespace='clientside', function_name='update_student_card'),
     Output({'type': 'student-card-data', 'index': MATCH}, 'children'),
@@ -345,6 +368,7 @@ clientside_callback(
     Output({'type': 'student-card-paragraph-badge', 'index': MATCH}, 'children'),
     Input({'type': 'student-ws', 'index': MATCH}, 'message')
 )
+# populate graph data
 clientside_callback(
     ClientsideFunction(namespace='clientside', function_name='update_analysis_data'),
     Output({'type': 'analysis-graph', 'index': MATCH}, 'figure'),
