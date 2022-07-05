@@ -39,7 +39,7 @@ def create_analysis_card(analysis):
             class_name='h-100'
         ),
         class_name='h-100',
-        xxl=4,
+        xxl=6,
         lg=6
     )
     return card
@@ -118,7 +118,7 @@ def create_group_card(name, students):
             class_name='h-100 overflow-auto'
         ),
         class_name='h-100',
-        xxl=3,
+        xxl=4,
         lg=4,
         md=6
     )
@@ -182,7 +182,7 @@ assignment_1 = dbc.Container(
                         class_name='h-100'
                     ),
                     class_name='h-100',
-                    xxl=3,
+                    xxl=4,
                     lg=4,
                     md=6
                 )
