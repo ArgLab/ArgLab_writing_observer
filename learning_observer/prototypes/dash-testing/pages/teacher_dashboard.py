@@ -1,5 +1,4 @@
 # package imports
-from http import client
 import dash
 from dash import html, dcc, clientside_callback, ClientsideFunction, callback, Output, Input, State, ALL, MATCH
 from dash.exceptions import PreventUpdate
