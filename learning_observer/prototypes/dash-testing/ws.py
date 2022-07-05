@@ -24,14 +24,16 @@ async def student_data(id):
     data = {
         'id': id,
         'text': fake.text(),
-        'sentences': 9,
-        'paragraphs': 3
+        'sentences': random.randint(1, 4),
+        'paragraphs': 1
     }
     while True:
         data['class_name'] = random.choice(class_names)
+        data['sentences'] += random.randint(1, 10)
+        data['paragraphs'] = int(data['sentences'] / random.randint(4, 8))
         output = json.dumps(data)
         await websocket.send(output)
-        await asyncio.sleep(random.randint(10, 100))
+        await asyncio.sleep(random.randint(10, 60))
 
 
 @app.websocket('/analysis/<string:id>')
@@ -43,7 +45,7 @@ async def analysis_data(id):
         data['data'] = [random.random() for _ in range(10)]
         output = json.dumps(data)
         await websocket.send(output)
-        await asyncio.sleep(random.randint(10, 60))
+        await asyncio.sleep(random.randint(10, 30))
 
 if __name__ == '__main__':
     app.run(port=5000)

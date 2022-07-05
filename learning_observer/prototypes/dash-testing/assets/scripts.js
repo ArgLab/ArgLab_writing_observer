@@ -20,7 +20,7 @@ window.dash_clientside.clientside = {
         if(!msg){return "No data";}
         const data = JSON.parse(msg.data);
         const sentences = `${data.sentences} sentences`
-        const paragraphs = `${data.paragraphs} sentences`
+        const paragraphs = `${data.paragraphs} paragraphs`
         return [data.text, data.class_name, sentences, paragraphs];
     },
 
