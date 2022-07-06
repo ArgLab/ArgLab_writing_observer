@@ -25,12 +25,16 @@ async def student_data(id):
         'id': id,
         'text': fake.text(),
         'sentences': random.randint(1, 4),
-        'paragraphs': 1
+        'paragraphs': 1,
+        'unique_words': random.randint(5, 20),
+        'data': [0]
     }
     while True:
         data['class_name'] = random.choice(class_names)
         data['sentences'] += random.randint(1, 10)
         data['paragraphs'] = int(data['sentences'] / random.randint(4, 8))
+        data['unique_words'] += random.randint(5, 20)
+        data['data'] = [random.random() for _ in range(random.randint(3, 8))]
         output = json.dumps(data)
         await websocket.send(output)
         await asyncio.sleep(random.randint(10, 60))
