@@ -66,6 +66,13 @@ def create_student_card(s):
                                     'index': id
                                 },
                                 color='info'
+                            ),
+                            dbc.Badge(
+                                id={
+                                    'type': 'student-card-words-badge',
+                                    'index': id
+                                },
+                                color='info'
                             )
                         ],
                         className='d-flex justify-content-around'
@@ -75,6 +82,13 @@ def create_student_card(s):
                             'type': 'student-card-data',
                             'index': id
                         }
+                    ),
+                    dcc.Graph(
+                        id={
+                            'type': 'student-card-graph',
+                            'index': id
+                        },
+                        className='m-1'
                     )
                 ],
                 body=True,
@@ -269,7 +283,40 @@ assignment_1 = dbc.Container(
         ),
         dbc.Offcanvas(
             [
-                'Options'
+                html.H4('Student Card'),
+                dcc.Checklist(
+                    options=[
+                        {
+                            'label': html.Span('Summary text', className='fs-5 m-2'),
+                            'value': 'summary'
+                        },
+                        {
+                            'label': dbc.Badge('# sentences', color='info', class_name='fs-5 m-2'),
+                            'value': 'sentences'
+                        },
+                        {
+                            'label': dbc.Badge('# paragraphs', color='info', class_name='fs-5 m-2'),
+                            'value': 'paragraphs'
+                        },
+                        {
+                            'label': dbc.Badge('# unique words', color='info', class_name='fs-5 m-2'),
+                            'value': 'unique_words'
+                        },
+                        {
+                            'label': html.Span(
+                                [
+                                    html.I(className='fas fa-chart-pie me-1'),
+                                    'Pie chart'
+                                ],
+                                className='fs-5 m-2'
+                            ),
+                            'value': 'chart'
+                        }
+                    ],
+                    value=['sentences', 'paragraphs', 'summary', 'chart'],
+                    id='options-checklist',
+                    labelClassName='d-block'
+                )
             ],
             id='offcanvas',
             title='Display options',
@@ -279,20 +326,22 @@ assignment_1 = dbc.Container(
     class_name='mb-5'
 )
 
-layout = dbc.Tabs(
-    [
-        dbc.Tab(
-            assignment_1,
-            label='Assignment 1',
-            tab_id='assignment_1'
-        ),
-        dbc.Tab(
-            '',
-            label='Assignment 2',
-            disabled=True
-        )
-    ],
-    active_tab='assignment_1'
+layout = dcc.Loading(
+    dbc.Tabs(
+        [
+            dbc.Tab(
+                assignment_1,
+                label='Assignment 1',
+                tab_id='assignment_1'
+            ),
+            dbc.Tab(
+                '',
+                label='Assignment 2',
+                disabled=True
+            )
+        ],
+        active_tab='assignment_1'
+    )
 )
 
 
@@ -365,6 +414,8 @@ clientside_callback(
     Output({'type': 'student-card', 'index': MATCH}, 'class_name'),
     Output({'type': 'student-card-sentence-badge', 'index': MATCH}, 'children'),
     Output({'type': 'student-card-paragraph-badge', 'index': MATCH}, 'children'),
+    Output({'type': 'student-card-words-badge', 'index': MATCH}, 'children'),
+    Output({'type': 'student-card-graph', 'index': MATCH}, 'figure'),
     Input({'type': 'student-ws', 'index': MATCH}, 'message')
 )
 # populate graph data
@@ -372,4 +423,21 @@ clientside_callback(
     ClientsideFunction(namespace='clientside', function_name='update_analysis_data'),
     Output({'type': 'analysis-graph', 'index': MATCH}, 'figure'),
     Input({'type': 'analysis-ws', 'index': MATCH}, 'message')
+)
+# open off canvace
+clientside_callback(
+    ClientsideFunction(namespace='clientside', function_name='open_offcanvas'),
+    Output('offcanvas', 'is_open'),
+    Input('group-options-button', 'n_clicks'),
+    State('offcanvas', 'is_open')
+)
+# hide/show attributes
+clientside_callback(
+    ClientsideFunction(namespace='clientside', function_name='hide_show_attributes'),
+    Output({'type': 'student-card-data', 'index': ALL}, 'className'),
+    Output({'type': 'student-card-sentence-badge', 'index': ALL}, 'class_name'),
+    Output({'type': 'student-card-paragraph-badge', 'index': ALL}, 'class_name'),
+    Output({'type': 'student-card-words-badge', 'index': ALL}, 'class_name'),
+    Output({'type': 'student-card-graph', 'index': ALL}, 'className'),
+    Input('options-checklist', 'value')
 )

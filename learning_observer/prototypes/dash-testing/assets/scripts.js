@@ -17,11 +17,21 @@ window.dash_clientside.clientside = {
     },
 
     update_student_card: function(msg) {
-        if(!msg){return "No data";}
+        if(!msg) {
+            return ['', '', '', '', '', {}];
+        }
         const data = JSON.parse(msg.data);
         const sentences = `${data.sentences} sentences`
         const paragraphs = `${data.paragraphs} paragraphs`
-        return [data.text, data.class_name, sentences, paragraphs];
+        const words = `${data.unique_words} unique words`
+        const graph ={
+            data: [{values: data.data, type: 'pie'}],
+            layout: {
+                showlegend: false,
+                height: 300
+            }
+        }
+        return [data.text, data.class_name, sentences, paragraphs, words, graph];
     },
 
     update_analysis_data: function(msg) {
@@ -37,5 +47,44 @@ window.dash_clientside.clientside = {
                 title: data.id
             }
         };
+    },
+
+    open_offcanvas: function(clicks, is_open) {
+        if(clicks) {
+            return !is_open
+        }
+        return is_open
+    },
+
+    hide_show_attributes: function(values) {
+        const students = 10;
+        let summary_class = 'd-none';
+        let sentences_class = 'd-none';
+        let paragraph_class = 'd-none';
+        let unique_class = 'd-none';
+        let chart_class = 'd-none';
+        if (values.includes('summary')) {
+            summary_class = '';
+        }
+        if (values.includes('sentences')) {
+            sentences_class = '';
+        }
+        if (values.includes('paragraphs')) {
+            paragraph_class = '';
+        }
+        if (values.includes('unique_words')) {
+            unique_class = '';
+        }
+        if (values.includes('chart')) {
+            chart_class = '';
+        }
+        console.log(sentences_class)
+        return [
+            Array(students).fill(summary_class),
+            Array(students).fill(sentences_class),
+            Array(students).fill(paragraph_class),
+            Array(students).fill(unique_class),
+            Array(students).fill(chart_class)
+        ]
     }
 }
