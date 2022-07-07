@@ -7,7 +7,7 @@ import dash_bootstrap_components as dbc
 from components import navbar
 
 dbc_css = (
-    "https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates@V1.0.1/dbc.min.css"
+    "https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates@V1.0.2/dbc.min.css"
 )
 
 app = dash.Dash(

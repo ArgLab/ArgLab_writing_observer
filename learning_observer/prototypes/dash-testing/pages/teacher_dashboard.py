@@ -215,7 +215,7 @@ assignment_1 = dbc.Container(
             ],
             id='group-row',
             class_name='g-3',
-            style={'height': '65vh'}
+            style={'height': '85vh'}
         ),
         dbc.Modal(
             [
@@ -326,7 +326,7 @@ assignment_1 = dbc.Container(
     class_name='mb-5'
 )
 
-layout = dcc.Loading(
+layout = dbc.Spinner(
     dbc.Tabs(
         [
             dbc.Tab(
@@ -341,7 +341,8 @@ layout = dcc.Loading(
             )
         ],
         active_tab='assignment_1'
-    )
+    ),
+    color='primary'
 )
 
 
