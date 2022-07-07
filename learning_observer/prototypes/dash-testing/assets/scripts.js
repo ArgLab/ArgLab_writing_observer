@@ -1,6 +1,7 @@
 if (!window.dash_clientside) {
     window.dash_clientside = {};
 }
+window.minty_colors = ['#78c2ad', '#f3969a', '#6cc3d5', '#ffce67', '#ff7851']
 window.drake = dragula();
 window.dash_clientside.clientside = {
     make_draggable: function() {
@@ -25,10 +26,24 @@ window.dash_clientside.clientside = {
         const paragraphs = `${data.paragraphs} paragraphs`
         const words = `${data.unique_words} unique words`
         const graph ={
-            data: [{values: data.data, type: 'pie'}],
+            data: [{
+                values: data.data,
+                type: 'pie',
+                marker: {
+                    colors: window.minty_colors,
+                    line: {
+                        color: '#000000',
+                        width: 1
+                    }
+                }
+            }],
             layout: {
                 showlegend: false,
-                height: 300
+                height: 300,
+                margin: {
+                    t: 5,
+                    b: 5
+                }
             }
         }
         return [data.text, data.class_name, sentences, paragraphs, words, graph];
@@ -42,9 +57,15 @@ window.dash_clientside.clientside = {
         }
         const data = JSON.parse(msg.data);
         return {
-            data: [{y: data.data, type: data.id}],
+            data: [{
+                y: data.data,
+                type: data.id,
+                marker: {
+                    color: window.minty_colors[0]
+                }
+            }],
             layout: {
-                title: data.id
+                title: data.id,
             }
         };
     },
