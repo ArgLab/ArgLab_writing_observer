@@ -1,15 +1,12 @@
 # Prototypes
 
 Required packages
-```
-dash==2.5.1
-dash-bootstrap-components==1.1.0
-dash-extensions
-quart
-Faker
+```bash
+cd learning_observer/prototypes/dash-testing
+pip install requirements.txt
 ```
 
-Running
+Running. Since you'll need two servers running, you'll need two terminals.
 ```bash
 cd learning_observer/prototypes/dash-testing
 python ws.py    # simple websocket server to connect to
