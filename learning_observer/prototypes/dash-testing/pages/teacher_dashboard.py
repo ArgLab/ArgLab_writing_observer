@@ -94,6 +94,14 @@ def create_student_card(s):
                                 color='info'
                             ),
                             dbc.Badge(
+                                f'{s.get("time_on_task")} minutes on task',
+                                id={
+                                    'type': 'student-card-time-on-task-badge',
+                                    'index': id
+                                },
+                                color='info'
+                            ),
+                            dbc.Badge(
                                 f'{s.get("unique_words")} unique words',
                                 id={
                                     'type': 'student-card-words-badge',
@@ -334,6 +342,10 @@ assignment_1 = dbc.Container(
                             'value': 'paragraphs'
                         },
                         {
+                            'label': dbc.Badge('time on task', color='info', class_name='fs-5 m-2'),
+                            'value': 'time_on_task'
+                        },
+                        {
                             'label': dbc.Badge('# unique words', color='info', class_name='fs-5 m-2'),
                             'value': 'unique_words'
                         },
@@ -473,6 +485,7 @@ clientside_callback(
     Output({'type': 'student-card-data', 'index': ALL}, 'className'),
     Output({'type': 'student-card-sentence-badge', 'index': ALL}, 'class_name'),
     Output({'type': 'student-card-paragraph-badge', 'index': ALL}, 'class_name'),
+    Output({'type': 'student-card-time-on-task-badge', 'index': ALL}, 'class_name'),
     Output({'type': 'student-card-words-badge', 'index': ALL}, 'class_name'),
     Output({'type': 'student-card-graph', 'index': ALL}, 'className'),
     Input('options-checklist', 'value')

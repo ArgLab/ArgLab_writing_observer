@@ -83,6 +83,7 @@ window.dash_clientside.clientside = {
         let sentences_class = 'd-none';
         let paragraph_class = 'd-none';
         let unique_class = 'd-none';
+        let time_on_task = 'd-none';
         let chart_class = 'd-none';
         if (values.includes('summary')) {
             summary_class = '';
@@ -92,6 +93,9 @@ window.dash_clientside.clientside = {
         }
         if (values.includes('paragraphs')) {
             paragraph_class = '';
+        }
+        if (values.includes('time_on_task')) {
+            time_on_task = '';
         }
         if (values.includes('unique_words')) {
             unique_class = '';
@@ -104,6 +108,7 @@ window.dash_clientside.clientside = {
             Array(students).fill(summary_class),
             Array(students).fill(sentences_class),
             Array(students).fill(paragraph_class),
+            Array(students).fill(time_on_task),
             Array(students).fill(unique_class),
             Array(students).fill(chart_class)
         ]
