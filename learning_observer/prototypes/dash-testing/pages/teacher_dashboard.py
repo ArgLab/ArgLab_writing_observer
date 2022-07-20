@@ -44,6 +44,30 @@ def create_analysis_card(analysis):
     return card
 
 
+def create_progress_bar(label, level):
+    max = 75
+    if level == 'high':
+        color = 'primary'
+        value = 75
+    elif level == 'mid':
+        color = 'warning'
+        value = 50
+    elif level == 'low':
+        color = 'secondary'
+        value = 25
+    bar = html.Div(
+        [
+            label,
+            dbc.Progress(
+                value=value,
+                max=max,
+                color=color
+            )
+        ]
+    )
+    return bar
+
+
 def create_student_card(s):
     id = s.get('id')
     card = html.Div(
@@ -54,6 +78,7 @@ def create_student_card(s):
                     html.Div(
                         [
                             dbc.Badge(
+                                f'{s.get("sentences")} sentences',
                                 id={
                                     'type': 'student-card-sentence-badge',
                                     'index': id
@@ -61,6 +86,7 @@ def create_student_card(s):
                                 color='info'
                             ),
                             dbc.Badge(
+                                f'{s.get("paragraphs")} paragraphs',
                                 id={
                                     'type': 'student-card-paragraph-badge',
                                     'index': id
@@ -68,6 +94,15 @@ def create_student_card(s):
                                 color='info'
                             ),
                             dbc.Badge(
+                                f'{s.get("time_on_task")} minutes on task',
+                                id={
+                                    'type': 'student-card-time-on-task-badge',
+                                    'index': id
+                                },
+                                color='info'
+                            ),
+                            dbc.Badge(
+                                f'{s.get("unique_words")} unique words',
                                 id={
                                     'type': 'student-card-words-badge',
                                     'index': id
@@ -78,12 +113,17 @@ def create_student_card(s):
                         className='d-flex justify-content-around'
                     ),
                     html.P(
+                        s.get("text"),
                         id={
                             'type': 'student-card-data',
                             'index': id
                         }
                     ),
-                    dcc.Graph(
+                    html.Div(
+                        [
+                            create_progress_bar(label, level)
+                            for label, level in s.get('data').items()
+                        ],
                         id={
                             'type': 'student-card-graph',
                             'index': id
@@ -95,15 +135,16 @@ def create_student_card(s):
                 id={
                     'type': 'student-card',
                     'index': id
-                }
-            ),
-            WebSocket(
-                id={
-                    'type': 'student-ws',
-                    'index': id
                 },
-                url=f'ws://127.0.0.1:5000/student/{id}'
-            )
+                class_name=s.get('class_name')
+            ),
+            # WebSocket(
+            #     id={
+            #         'type': 'student-ws',
+            #         'index': id
+            #     },
+            #     url=f'ws://127.0.0.1:5000/student/{id}'
+            # )
         ],
         className='my-2 mx-1',
     )
@@ -131,7 +172,7 @@ def create_group_card(name, students):
             class_name='h-100 overflow-auto'
         ),
         class_name='h-100',
-        xxl=4,
+        xxl=3,
         lg=4,
         md=6
     )
@@ -140,42 +181,42 @@ def create_group_card(name, students):
 
 assignment_1 = dbc.Container(
     [
-        html.H2(
-            [
-                html.P(
-                    'Analysis',
-                    className='d-inline'
-                ),
-                dbc.Button(
-                    html.I(className='far fa-plus fs-5'),
-                    class_name='ms-2',
-                    color='secondary',
-                    id='add-analysis-button'
-                )
-            ]
-        ),
-        dbc.Row(
-            [
-                create_analysis_card({'name': 'Sample', 'id': 'scatter'}),
-                # dbc.Col(
-                #     dbc.Card(
-                #         dbc.Button(
-                #             html.I(className='far fa-plus display-5 mx-1'),
-                #             class_name='m-auto',
-                #             color='secondary',
-                #             id='add-analysis-button'
-                #         ),
-                #         color='light',
-                #         class_name='h-100'
-                #     ),
-                #     class_name='h-100',
-                #     xxl=4,
-                #     lg=6
-                # )
-            ],
-            id='analysis-row',
-            class_name='g-3',
-        ),
+        # html.H2(
+        #     [
+        #         html.P(
+        #             'Analysis',
+        #             className='d-inline'
+        #         ),
+        #         dbc.Button(
+        #             html.I(className='far fa-plus fs-5'),
+        #             class_name='ms-2',
+        #             color='secondary',
+        #             id='add-analysis-button'
+        #         )
+        #     ]
+        # ),
+        # dbc.Row(
+        #     [
+        #         create_analysis_card({'name': 'Sample', 'id': 'scatter'}),
+        #         # dbc.Col(
+        #         #     dbc.Card(
+        #         #         dbc.Button(
+        #         #             html.I(className='far fa-plus display-5 mx-1'),
+        #         #             class_name='m-auto',
+        #         #             color='secondary',
+        #         #             id='add-analysis-button'
+        #         #         ),
+        #         #         color='light',
+        #         #         class_name='h-100'
+        #         #     ),
+        #         #     class_name='h-100',
+        #         #     xxl=4,
+        #         #     lg=6
+        #         # )
+        #     ],
+        #     id='analysis-row',
+        #     class_name='g-3',
+        # ),
         html.H2(
             [
                 html.P(
@@ -195,7 +236,9 @@ assignment_1 = dbc.Container(
         ),
         dbc.Row(
             [
-                create_group_card('Ungrouped', s_data),
+                create_group_card('Group 1', s_data[:3]),
+                create_group_card('Group 2', s_data[3:6]),
+                create_group_card('Group 3', s_data[6:]),
                 dbc.Col(
                     dbc.Card(
                         dbc.Button(
@@ -208,7 +251,7 @@ assignment_1 = dbc.Container(
                         class_name='h-100'
                     ),
                     class_name='h-100',
-                    xxl=4,
+                    xxl=3,
                     lg=4,
                     md=6
                 )
@@ -299,14 +342,18 @@ assignment_1 = dbc.Container(
                             'value': 'paragraphs'
                         },
                         {
+                            'label': dbc.Badge('time on task', color='info', class_name='fs-5 m-2'),
+                            'value': 'time_on_task'
+                        },
+                        {
                             'label': dbc.Badge('# unique words', color='info', class_name='fs-5 m-2'),
                             'value': 'unique_words'
                         },
                         {
                             'label': html.Span(
                                 [
-                                    html.I(className='fas fa-chart-pie me-1'),
-                                    'Pie chart'
+                                    html.I(className='fas fa-chart-bar me-1'),
+                                    'Metric overview'
                                 ],
                                 className='fs-5 m-2'
                             ),
@@ -357,15 +404,15 @@ def toggle_modal(n1, is_open):
     return is_open
 
 
-@callback(
-    Output('add-analysis-modal', 'is_open'),
-    Input('add-analysis-button', 'n_clicks'),
-    State('add-analysis-modal', 'is_open'),
-)
-def toggle_modal(n1, is_open):
-    if n1:
-        return not is_open
-    return is_open
+# @callback(
+#     Output('add-analysis-modal', 'is_open'),
+#     Input('add-analysis-button', 'n_clicks'),
+#     State('add-analysis-modal', 'is_open'),
+# )
+# def toggle_modal(n1, is_open):
+#     if n1:
+#         return not is_open
+#     return is_open
 
 
 @callback(
@@ -386,20 +433,20 @@ def add_group(clicks, name, students, groups):
     return groups, None, None
 
 
-@callback(
-    Output('analysis-row', 'children'),
-    Output('add-analysis-modal-dropdown', 'value'),
-    Input('add-analysis-modal-create-button', 'n_clicks'),
-    State('add-analysis-modal-dropdown', 'value'),
-    State('analysis-row', 'children')
-)
-def add_analysis(clicks, analysis, items):
-    if clicks is None or analysis is None:
-        raise PreventUpdate
+# @callback(
+#     Output('analysis-row', 'children'),
+#     Output('add-analysis-modal-dropdown', 'value'),
+#     Input('add-analysis-modal-create-button', 'n_clicks'),
+#     State('add-analysis-modal-dropdown', 'value'),
+#     State('analysis-row', 'children')
+# )
+# def add_analysis(clicks, analysis, items):
+#     if clicks is None or analysis is None:
+#         raise PreventUpdate
     
-    new_group = create_analysis_card({'name': 'Sample', 'id': analysis})
-    items.append(new_group)
-    return items, None
+#     new_group = create_analysis_card({'name': 'Sample', 'id': analysis})
+#     items.append(new_group)
+#     return items, None
 
 
 # make groups draggable
@@ -408,23 +455,23 @@ clientside_callback(
     Output('group-row', 'data-drag'),
     Input({'type': 'group-card', 'index': ALL}, 'id')
 )
-# populate student data
-clientside_callback(
-    ClientsideFunction(namespace='clientside', function_name='update_student_card'),
-    Output({'type': 'student-card-data', 'index': MATCH}, 'children'),
-    Output({'type': 'student-card', 'index': MATCH}, 'class_name'),
-    Output({'type': 'student-card-sentence-badge', 'index': MATCH}, 'children'),
-    Output({'type': 'student-card-paragraph-badge', 'index': MATCH}, 'children'),
-    Output({'type': 'student-card-words-badge', 'index': MATCH}, 'children'),
-    Output({'type': 'student-card-graph', 'index': MATCH}, 'figure'),
-    Input({'type': 'student-ws', 'index': MATCH}, 'message')
-)
-# populate graph data
-clientside_callback(
-    ClientsideFunction(namespace='clientside', function_name='update_analysis_data'),
-    Output({'type': 'analysis-graph', 'index': MATCH}, 'figure'),
-    Input({'type': 'analysis-ws', 'index': MATCH}, 'message')
-)
+# # populate student data
+# clientside_callback(
+#     ClientsideFunction(namespace='clientside', function_name='update_student_card'),
+#     Output({'type': 'student-card-data', 'index': MATCH}, 'children'),
+#     Output({'type': 'student-card', 'index': MATCH}, 'class_name'),
+#     Output({'type': 'student-card-sentence-badge', 'index': MATCH}, 'children'),
+#     Output({'type': 'student-card-paragraph-badge', 'index': MATCH}, 'children'),
+#     Output({'type': 'student-card-words-badge', 'index': MATCH}, 'children'),
+#     Output({'type': 'student-card-graph', 'index': MATCH}, 'figure'),
+#     Input({'type': 'student-ws', 'index': MATCH}, 'message')
+# )
+# # populate graph data
+# clientside_callback(
+#     ClientsideFunction(namespace='clientside', function_name='update_analysis_data'),
+#     Output({'type': 'analysis-graph', 'index': MATCH}, 'figure'),
+#     Input({'type': 'analysis-ws', 'index': MATCH}, 'message')
+# )
 # open off canvace
 clientside_callback(
     ClientsideFunction(namespace='clientside', function_name='open_offcanvas'),
@@ -438,6 +485,7 @@ clientside_callback(
     Output({'type': 'student-card-data', 'index': ALL}, 'className'),
     Output({'type': 'student-card-sentence-badge', 'index': ALL}, 'class_name'),
     Output({'type': 'student-card-paragraph-badge', 'index': ALL}, 'class_name'),
+    Output({'type': 'student-card-time-on-task-badge', 'index': ALL}, 'class_name'),
     Output({'type': 'student-card-words-badge', 'index': ALL}, 'class_name'),
     Output({'type': 'student-card-graph', 'index': ALL}, 'className'),
     Input('options-checklist', 'value')
