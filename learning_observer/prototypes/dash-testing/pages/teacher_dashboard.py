@@ -10,7 +10,7 @@ from data import students as s_data
 
 dash.register_page(
     __name__,
-    path='/dashboard',
+    path='/teacher-dashboard',
     title='Dashboard'
 )
 
