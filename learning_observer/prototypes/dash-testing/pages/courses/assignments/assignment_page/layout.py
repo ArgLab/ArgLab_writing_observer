@@ -5,6 +5,7 @@ import dash_bootstrap_components as dbc
 
 # local imports
 from ..course import Course
+from .teacher_dashboard import create_teacher_dashboard
 
 dash.register_page(
     __name__,
@@ -15,8 +16,10 @@ dash.register_page(
 def layout(course_id=None, assignment_id=None):
     role = 'teacher'
     course = Course(course_id, role)
+    if not role or not course_id or not assignment_id:
+        return 'BRUH'
     if role == 'teacher':
-        dashboard = 'Teacher'
+        dashboard = create_teacher_dashboard(course, course.assignments[int(assignment_id)])
     elif role == 'student':
         dashboard = 'Student'
     else:
@@ -30,8 +33,7 @@ def layout(course_id=None, assignment_id=None):
                     {'label': f'Assignment {assignment_id}', 'href': f'/course/{course.id}/assignment/{assignment_id}', 'active': True}
                 ]
             ),
-            dashboard,
-            f'Course: {course_id}, Assignment: {assignment_id}'
+            dashboard
         ]
     )
     return layout
