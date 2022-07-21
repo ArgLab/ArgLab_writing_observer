@@ -32,7 +32,7 @@ def serve_layout():
             navbar,
             dbc.Container(
                 dash.page_container,
-                class_name='my-2 mx-2 mw-100'
+                class_name='my-2 w-100'
             )
         ],
         className='dbc'

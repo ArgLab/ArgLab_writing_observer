@@ -10,12 +10,7 @@ courses = [
 
 teacher_courses = html.Div(
     [
-        html.H1('Courses'),
-        html.Div(
-            [
-                html.A(course['name'], href=f'/course/{course["id"]}/dashboard', className='me-3')
-                for course in courses
-            ]
-        )
+        html.A(course['name'], href=f'/course/{course["id"]}', className='me-3')
+        for course in courses
     ]
 )

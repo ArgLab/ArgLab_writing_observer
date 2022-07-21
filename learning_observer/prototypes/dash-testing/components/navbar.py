@@ -10,8 +10,8 @@ navbar = dbc.Navbar(
             ),
             dbc.NavItem(
                 dbc.NavLink(
-                    'Dashboard',
-                    href='/dashboard',
+                    'Courses',
+                    href='/courses',
                     class_name='text-light'
                 )
             )
