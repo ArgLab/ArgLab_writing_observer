@@ -1,6 +1,7 @@
 # package imports
-from dash import html, Output, Input, State
+from dash import html, clientside_callback, ClientsideFunction, Output, Input, State, MATCH
 import dash_bootstrap_components as dbc
+from dash_extensions import WebSocket
 
 class StudentCardAIO(html.Div):
 
@@ -15,6 +16,56 @@ class StudentCardAIO(html.Div):
             'subcomponent': 'websocket',
             'aio_id': aio_id
         }
+        sentence_badge = lambda aio_id: {
+            'component': 'StudentCardAIO',
+            'subcomponent': 'sentence_badge',
+            'aio_id': aio_id
+        }
+        paragraph_badge = lambda aio_id: {
+            'component': 'StudentCardAIO',
+            'subcomponent': 'paragraph_badge',
+            'aio_id': aio_id
+        }
+        time_on_task_badge = lambda aio_id: {
+            'component': 'StudentCardAIO',
+            'subcomponent': 'time_on_task_badge',
+            'aio_id': aio_id
+        }
+        unique_words_badge = lambda aio_id: {
+            'component': 'StudentCardAIO',
+            'subcomponent': 'unique_words_badge',
+            'aio_id': aio_id
+        }
+        text_area = lambda aio_id: {
+            'component': 'StudentCardAIO',
+            'subcomponent': 'text_area',
+            'aio_id': aio_id
+        }
+        progress_div = lambda aio_id: {
+            'component': 'StudentCardAIO',
+            'subcomponent': 'progress_div',
+            'aio_id': aio_id
+        }
+        transition_words = lambda aio_id: {
+            'component': 'StudentCardAIO',
+            'subcomponent': 'transition_words_progress',
+            'aio_id': aio_id
+        }
+        use_of_synonyms = lambda aio_id: {
+            'component': 'StudentCardAIO',
+            'subcomponent': 'use_of_synonyms_progress',
+            'aio_id': aio_id
+        }
+        sv_agreement = lambda aio_id: {
+            'component': 'StudentCardAIO',
+            'subcomponent': 'sv_agreement_progress',
+            'aio_id': aio_id
+        }
+        formal_language = lambda aio_id: {
+            'component': 'StudentCardAIO',
+            'subcomponent': 'formal_language_progress',
+            'aio_id': aio_id
+        }
 
     ids = ids
 
@@ -27,11 +78,108 @@ class StudentCardAIO(html.Div):
             [
                 dbc.Card(
                     [
-                        html.H4(student['name'])
+                        html.H4(student['name']),
+                        html.Div(
+                            [
+                                dbc.Badge(
+                                    id=self.ids.sentence_badge(aio_id),
+                                    color='info'
+                                ),
+                                dbc.Badge(
+                                    id=self.ids.paragraph_badge(aio_id),
+                                    color='info'
+                                ),
+                                dbc.Badge(
+                                    id=self.ids.time_on_task_badge(aio_id),
+                                    color='info'
+                                ),
+                                dbc.Badge(
+                                    id=self.ids.unique_words_badge(aio_id),
+                                    color='info'
+                                )
+                            ],
+                            className='d-flex justify-content-around flex-wrap'  # need to make sure the badges have gutters
+                        ),
+                        html.P(
+                            id=self.ids.text_area(aio_id)
+                        ),
+                        html.Div(
+                            [
+                                html.Div(
+                                    [
+                                        'Transition Words',
+                                        dbc.Progress(max=3, id=self.ids.transition_words(aio_id))
+                                    ]
+                                ),
+                                html.Div(
+                                    [
+                                        'Effective Use of Synonyms',
+                                        dbc.Progress(max=3, id=self.ids.use_of_synonyms(aio_id))
+                                    ]
+                                ),
+                                html.Div(
+                                    [
+                                        'Subject Verb Agreement',
+                                        dbc.Progress(max=3, id=self.ids.sv_agreement(aio_id))
+                                    ]
+                                ),
+                                html.Div(
+                                    [
+                                        'Formal Language',
+                                        dbc.Progress(max=3, id=self.ids.formal_language(aio_id))
+                                    ]
+                                )
+                            ],
+                            id=self.ids.progress_div(aio_id),
+                            className='m-1'
+                        )
                     ],
                     body=True,
                     id=self.ids.card(aio_id)
+                ),
+                WebSocket(
+                    id=self.ids.websocket(aio_id),
+                    url=f'ws://127.0.0.1:5000/student/{aio_id}'
                 )
             ],
             className='my-2 mx-1'
         )
+    
+    # populate student data
+    clientside_callback(
+        ClientsideFunction(namespace='clientside', function_name='update_student_card'),
+        Output(ids.card(MATCH), 'class_name'),
+        Output(ids.sentence_badge(MATCH), 'children'),
+        Output(ids.paragraph_badge(MATCH), 'children'),
+        Output(ids.time_on_task_badge(MATCH), 'children'),
+        Output(ids.unique_words_badge(MATCH), 'children'),
+        Output(ids.text_area(MATCH), 'children'),
+        Output(ids.transition_words(MATCH), 'value'),
+        Output(ids.use_of_synonyms(MATCH), 'value'),
+        Output(ids.sv_agreement(MATCH), 'value'),
+        Output(ids.formal_language(MATCH), 'value'),
+        Input(ids.websocket(MATCH), 'message')
+    )
+
+    # change the color of bars based on value
+    # each callback uses the same function
+    clientside_callback(
+        ClientsideFunction(namespace='clientside', function_name='update_student_progress_bars'),
+        Output(ids.transition_words(MATCH), 'color'),
+        Input(ids.transition_words(MATCH), 'value')
+    )
+    clientside_callback(
+        ClientsideFunction(namespace='clientside', function_name='update_student_progress_bars'),
+        Output(ids.use_of_synonyms(MATCH), 'color'),
+        Input(ids.use_of_synonyms(MATCH), 'value')
+    )
+    clientside_callback(
+        ClientsideFunction(namespace='clientside', function_name='update_student_progress_bars'),
+        Output(ids.sv_agreement(MATCH), 'color'),
+        Input(ids.sv_agreement(MATCH), 'value')
+    )
+    clientside_callback(
+        ClientsideFunction(namespace='clientside', function_name='update_student_progress_bars'),
+        Output(ids.formal_language(MATCH), 'color'),
+        Input(ids.formal_language(MATCH), 'value')
+    )

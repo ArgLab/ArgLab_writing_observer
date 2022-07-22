@@ -25,28 +25,28 @@ window.dash_clientside.clientside = {
         const sentences = `${data.sentences} sentences`
         const paragraphs = `${data.paragraphs} paragraphs`
         const words = `${data.unique_words} unique words`
-        const graph ={
-            data: [{
-                values: data.data,
-                type: 'pie',
-                marker: {
-                    colors: window.minty_colors,
-                    line: {
-                        color: '#000000',
-                        width: 1
-                    }
-                }
-            }],
-            layout: {
-                showlegend: false,
-                height: 300,
-                margin: {
-                    t: 5,
-                    b: 5
-                }
-            }
-        }
-        return [data.text, data.class_name, sentences, paragraphs, words, graph];
+        const time = `${data.time_on_task} minutes on task`
+        // TODO incorporate the no_update exception,
+        // so components that did not change, don't update
+        // should lead to better performance, so we don't
+        // initiate callbacks down the chain if we don't need to
+        return [
+            data.card_info,
+            sentences,
+            paragraphs,
+            time,
+            words,
+            data.text,
+            data.data.transition_words,
+            data.data.use_of_synonyms,
+            data.data.sv_agreement,
+            data.data.formal_language,
+        ];
+    },
+
+    update_student_progress_bars: function(value) {
+        const options = ['secondary', 'warning', 'primary'];
+        return options[value%3-1];
     },
 
     update_analysis_data: function(msg) {
@@ -77,40 +77,72 @@ window.dash_clientside.clientside = {
         return is_open
     },
 
-    hide_show_attributes: function(values) {
-        const students = 10;
-        let summary_class = 'd-none';
-        let sentences_class = 'd-none';
-        let paragraph_class = 'd-none';
-        let unique_class = 'd-none';
-        let time_on_task = 'd-none';
-        let chart_class = 'd-none';
-        if (values.includes('summary')) {
-            summary_class = '';
+    toggle_progress_checklist: function(values) {
+        if (values.includes('progress')) {
+            return true;
         }
+        return false;
+    },
+
+    hide_show_attributes: function(values, progress) {
+        // TODO figure out how to count the number of students
+        // we should likely use a store component for the course
+        // that way we can easily fetch course data needed such as # of studs
+        const students = 10;
+        let sentence_badge = 'd-none';
+        let paragraph_badge = 'd-none';
+        let time_on_task_badge = 'd-none';
+        let unique_words_badge = 'd-none';
+        let text_area = 'd-none';
+        let progress_div = 'd-none';
+        let transition_words = 'd-none';
+        let use_of_synonyms = 'd-none';
+        let sv_agreement = 'd-none';
+        let formal_language = 'd-none';
         if (values.includes('sentences')) {
-            sentences_class = '';
+            sentence_badge = 'mb-1';
         }
         if (values.includes('paragraphs')) {
-            paragraph_class = '';
+            paragraph_badge = 'mb-1';
         }
         if (values.includes('time_on_task')) {
-            time_on_task = '';
+            time_on_task_badge = 'mb-1';
         }
         if (values.includes('unique_words')) {
-            unique_class = '';
+            unique_words_badge = 'mb-1';
         }
-        if (values.includes('chart')) {
-            chart_class = '';
+        if (values.includes('text')) {
+            text_area = '';
         }
-        console.log(sentences_class)
+        if (values.includes('progress')) {
+            // TODO there is probably a better way to do this
+            // in more algorithmic way
+            // requires a deeper discussion on what is shown
+            progress_div = ''
+            if (progress.includes('transition_words')) {
+                transition_words = ''
+            }
+            if (progress.includes('use_of_synonyms')) {
+                use_of_synonyms = ''
+            }
+            if (progress.includes('sv_agreement')) {
+                sv_agreement = ''
+            }
+            if (progress.includes('formal_language')) {
+                formal_language = ''
+            }
+        }
         return [
-            Array(students).fill(summary_class),
-            Array(students).fill(sentences_class),
-            Array(students).fill(paragraph_class),
-            Array(students).fill(time_on_task),
-            Array(students).fill(unique_class),
-            Array(students).fill(chart_class)
+            Array(students).fill(sentence_badge),
+            Array(students).fill(paragraph_badge),
+            Array(students).fill(time_on_task_badge),
+            Array(students).fill(unique_words_badge),
+            Array(students).fill(text_area),
+            Array(students).fill(progress_div),
+            Array(students).fill(transition_words),
+            Array(students).fill(use_of_synonyms),
+            Array(students).fill(sv_agreement),
+            Array(students).fill(formal_language),
         ]
     }
 }

@@ -1,7 +1,7 @@
 # package imports
 import dash
-from dash import html
-import dash_bootstrap_components as dbc
+from dash import html, dcc
+import dash_mantine_components as dmc
 
 # local imports
 from .teacher_courses import teacher_courses
@@ -24,9 +24,9 @@ def layout():
 
     layout = html.Div(
         [
-            dbc.Breadcrumb(
-                items=[
-                    {'label': 'Courses', 'href': '/courses', 'active': True}
+            dmc.Breadcrumbs(
+                [
+                    dcc.Link('Courses', href='/courses', className='disabled')
                 ]
             ),
             courses

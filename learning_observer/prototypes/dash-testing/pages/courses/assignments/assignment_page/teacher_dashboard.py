@@ -1,6 +1,5 @@
 # package imports
-from re import M
-from dash import html, dcc, clientside_callback, ClientsideFunction, Output, Input, State
+from dash import html, dcc, clientside_callback, ClientsideFunction, Output, Input, State, ALL
 import dash_bootstrap_components as dbc
 
 # local imports
@@ -32,30 +31,36 @@ add_group_card = dbc.Col(
 show_hide_options_open = f'{prefix}-show-hide-open-button'
 show_hide_options_offcanvas = f'{prefix}-show-hide-offcanvcas'
 show_hide_options_checklist = f'{prefix}-show-hide-checklist'
+show_hide_options_progress_collapse = f'{prefix}-show-hide-progress-collapse'
+show_hide_options_progress_checklist = f'{prefix}-show-hide-progress-checklist'
 offcanvas = dbc.Offcanvas(
     [
         html.H4('Student Card'),
+        # TODO add checklist item for each of the bars in the chart
+        # the overall bar check will still be there.
+        # When selected we will show the options for the bars
+        # when not selected we will hide the bar options
         dcc.Checklist(
             options=[
                 {
-                    'label': html.Span('Summary text', className='fs-5 m-2'),
-                    'value': 'summary'
-                },
-                {
-                    'label': dbc.Badge('# sentences', color='info', class_name='fs-5 m-2'),
+                    'label': dbc.Badge('# sentences', color='info', class_name='fs-6 m-2'),
                     'value': 'sentences'
                 },
                 {
-                    'label': dbc.Badge('# paragraphs', color='info', class_name='fs-5 m-2'),
+                    'label': dbc.Badge('# paragraphs', color='info', class_name='fs-6 m-2'),
                     'value': 'paragraphs'
                 },
                 {
-                    'label': dbc.Badge('time on task', color='info', class_name='fs-5 m-2'),
+                    'label': dbc.Badge('time on task', color='info', class_name='fs-6 m-2'),
                     'value': 'time_on_task'
                 },
                 {
-                    'label': dbc.Badge('# unique words', color='info', class_name='fs-5 m-2'),
+                    'label': dbc.Badge('# unique words', color='info', class_name='fs-6 m-2'),
                     'value': 'unique_words'
+                },
+                {
+                    'label': html.Span('Summary text', className='fs-5 m-2'),
+                    'value': 'text'
                 },
                 {
                     'label': html.Span(
@@ -65,12 +70,39 @@ offcanvas = dbc.Offcanvas(
                         ],
                         className='fs-5 m-2'
                     ),
-                    'value': 'chart'
+                    'value': 'progress'
                 }
             ],
-            value=['sentences', 'paragraphs', 'summary', 'chart'],
+            value=['sentences', 'paragraphs', 'text', 'progress'],
             id=show_hide_options_checklist,
             labelClassName='d-block'
+        ),
+        dbc.Collapse(
+            dcc.Checklist(
+                options=[
+                    {
+                        'label': html.Span('Transition Words', className='fs-6 m-2'),
+                        'value': 'transition_words'
+                    },
+                    {
+                        'label': html.Span('Effective Use of Synonyms', className='fs-6 m-2'),
+                        'value': 'use_of_synonyms'
+                    },
+                    {
+                        'label': html.Span('Subject Verb Agreement', className='fs-6 m-2'),
+                        'value': 'sv_agreement'
+                    },
+                    {
+                        'label': html.Span('Formal Language', className='fs-6 m-2'),
+                        'value': 'formal_language'
+                    },
+                ],
+                value=['transition_words', 'use_of_synonyms', 'sv_agreement', 'formal_language'],
+                id=show_hide_options_progress_checklist,
+                labelClassName='d-block',
+                className='ms-3'
+            ),
+            id=show_hide_options_progress_collapse
         )
     ],
     id=show_hide_options_offcanvas,
@@ -150,9 +182,41 @@ def create_group_card(name, students):
     return card
 
 
+# make groups draggable
+clientside_callback(
+    ClientsideFunction(namespace='clientside', function_name='make_draggable'),
+    Output('group-row', 'data-drag'),
+    Input({'type': 'group-card', 'index': ALL}, 'id')
+)
+
+# open the offcanvas show/hide options checklist
 clientside_callback(
     ClientsideFunction(namespace='clientside', function_name='open_offcanvas'),
     Output(show_hide_options_offcanvas, 'is_open'),
     Input(show_hide_options_open, 'n_clicks'),
     State(show_hide_options_offcanvas, 'is_open')
+)
+
+# offcanvas checklist toggle
+clientside_callback(
+    ClientsideFunction(namespace='clientside', function_name='toggle_progress_checklist'),
+    Output(show_hide_options_progress_collapse, 'is_open'),
+    Input(show_hide_options_checklist, 'value')
+)
+
+# hide/show attributes
+clientside_callback(
+    ClientsideFunction(namespace='clientside', function_name='hide_show_attributes'),
+    Output(StudentCardAIO.ids.sentence_badge(ALL), 'className'),
+    Output(StudentCardAIO.ids.paragraph_badge(ALL), 'className'),
+    Output(StudentCardAIO.ids.time_on_task_badge(ALL), 'className'),
+    Output(StudentCardAIO.ids.unique_words_badge(ALL), 'className'),
+    Output(StudentCardAIO.ids.text_area(ALL), 'className'),
+    Output(StudentCardAIO.ids.progress_div(ALL), 'className'),
+    Output(StudentCardAIO.ids.transition_words(ALL), 'className'),
+    Output(StudentCardAIO.ids.use_of_synonyms(ALL), 'className'),
+    Output(StudentCardAIO.ids.sv_agreement(ALL), 'className'),
+    Output(StudentCardAIO.ids.formal_language(ALL), 'className'),
+    Input(show_hide_options_checklist, 'value'),
+    Input(show_hide_options_progress_checklist, 'value')
 )

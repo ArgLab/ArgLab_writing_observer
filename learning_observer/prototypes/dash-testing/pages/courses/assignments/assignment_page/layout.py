@@ -1,7 +1,7 @@
 # package imports
 import dash
-from dash import html
-import dash_bootstrap_components as dbc
+from dash import html, dcc
+import dash_mantine_components as dmc
 
 # local imports
 from ..course import Course
@@ -26,11 +26,11 @@ def layout(course_id=None, assignment_id=None):
         dashboard = 'No role'
     layout = html.Div(
         [
-            dbc.Breadcrumb(
-                items=[
-                    {'label': 'Courses', 'href': '/courses'},
-                    {'label': f'{course.name}', 'href': f'/course/{course.id}'},
-                    {'label': f'Assignment {assignment_id}', 'href': f'/course/{course.id}/assignment/{assignment_id}', 'active': True}
+            dmc.Breadcrumbs(
+                [
+                    dcc.Link('Courses', href='/courses'),
+                    dcc.Link(f'{course.name}', href=f'/course/{course.id}'),
+                    dcc.Link(f'Assignment {assignment_id}', href=f'/course/{course.id}/assignment/{assignment_id}', className='disabled')
                 ]
             ),
             dashboard

@@ -23,6 +23,14 @@
   }
 
 .container {
+  max-width: -webkit-fill-available;
   margin-left: 3em;
   margin-right: 3em;
 }
+
+a.disabled {
+    color: var(--bs-gray);
+    text-decoration: none;
+    pointer-events: none;
+}
+

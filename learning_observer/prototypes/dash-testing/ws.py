@@ -17,7 +17,7 @@ async def random_data():
 class_names = [
     'border-3 border-primary',
     'border-3 border-secondary',
-    'bg-warning',
+    'border-3 border-warning',
 ]
 @app.websocket('/student/<string:id>')
 async def student_data(id):
@@ -27,17 +27,25 @@ async def student_data(id):
         'sentences': random.randint(1, 4),
         'paragraphs': 1,
         'unique_words': random.randint(5, 20),
-        'data': [0]
+        'time_on_task': random.randint(10, 100),
+        'data': {}
     }
     while True:
-        data['class_name'] = random.choice(class_names)
+        sleep_time = random.randint(10, 60)
+        data['card_info'] = random.choice(class_names)
         data['sentences'] += random.randint(1, 10)
         data['paragraphs'] = int(data['sentences'] / random.randint(4, 8))
         data['unique_words'] += random.randint(5, 20)
-        data['data'] = [random.random() for _ in range(random.randint(3, 8))]
+        data['time_on_task'] += sleep_time
+        data['data'] =  {
+            'transition_words': random.randint(1,3),
+            'use_of_synonyms': random.randint(1,3),
+            'sv_agreement': random.randint(1,3),
+            'formal_language': random.randint(1,3),
+        }        
         output = json.dumps(data)
         await websocket.send(output)
-        await asyncio.sleep(random.randint(10, 60))
+        await asyncio.sleep(sleep_time)
 
 
 @app.websocket('/analysis/<string:id>')
