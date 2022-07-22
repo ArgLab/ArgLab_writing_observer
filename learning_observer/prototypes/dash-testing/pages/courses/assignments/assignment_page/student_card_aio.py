@@ -1,5 +1,5 @@
 # package imports
-from dash import html, clientside_callback, ClientsideFunction, Output, Input, State, MATCH
+from dash import html, clientside_callback, ClientsideFunction, Output, Input, MATCH
 import dash_bootstrap_components as dbc
 from dash_extensions import WebSocket
 

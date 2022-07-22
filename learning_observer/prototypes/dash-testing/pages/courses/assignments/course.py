@@ -26,7 +26,7 @@ class Course:
             {
                 'id': i,
                 'name': fake.name()
-            } for i in range(10)
+            } for i in range(35)
         ]
 
     def fetch_assignments(self):

@@ -36,10 +36,6 @@ show_hide_options_progress_checklist = f'{prefix}-show-hide-progress-checklist'
 offcanvas = dbc.Offcanvas(
     [
         html.H4('Student Card'),
-        # TODO add checklist item for each of the bars in the chart
-        # the overall bar check will still be there.
-        # When selected we will show the options for the bars
-        # when not selected we will hide the bar options
         dcc.Checklist(
             options=[
                 {
@@ -140,8 +136,9 @@ def create_assignment_board(assignment, students):
             ),
             dbc.Row(
                 [
-                    create_group_card('Group 1', students[:3]),
-                    create_group_card('Group 2', students[3:]),
+                    create_group_card('Group 1', students[:10]),
+                    create_group_card('Group 2', students[10:20]),
+                    create_group_card('Group 3', students[20:]),
                     add_group_card
                 ],
                 id='group-row',

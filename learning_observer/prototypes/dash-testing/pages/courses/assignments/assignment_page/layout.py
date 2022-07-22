@@ -28,8 +28,8 @@ def layout(course_id=None, assignment_id=None):
         [
             dmc.Breadcrumbs(
                 [
-                    dcc.Link('Courses', href='/courses'),
-                    dcc.Link(f'{course.name}', href=f'/course/{course.id}'),
+                    dcc.Link('Courses', href='/courses', refresh=True),
+                    dcc.Link(f'{course.name}', href=f'/course/{course.id}', refresh=True),
                     dcc.Link(f'Assignment {assignment_id}', href=f'/course/{course.id}/assignment/{assignment_id}', className='disabled')
                 ]
             ),

@@ -19,7 +19,7 @@ window.dash_clientside.clientside = {
 
     update_student_card: function(msg) {
         if(!msg) {
-            return ['', '', '', '', '', {}];
+            return ['', '', '', '', '', '', '', '', '', ''];
         }
         const data = JSON.parse(msg.data);
         const sentences = `${data.sentences} sentences`
