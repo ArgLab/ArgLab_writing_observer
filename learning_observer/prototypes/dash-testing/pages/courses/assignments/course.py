@@ -26,11 +26,11 @@ class Course:
             {
                 'id': i,
                 'name': fake.name()
-            } for i in range(35)
+            } for i in range(15)
         ]
 
     def fetch_assignments(self):
         return [
             Assignment(i, f'Assignment {i}', fake.text())
-            for i in range(4)
+            for i in range(12)
         ]

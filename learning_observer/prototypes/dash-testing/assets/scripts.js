@@ -17,31 +17,34 @@ window.dash_clientside.clientside = {
         return window.dash_clientside.no_update
     },
 
-    update_student_card: function(msg) {
-        if(!msg) {
+    update_student_card: function(data) {
+        if(!data) {
             return ['', '', '', '', '', '', '', '', '', ''];
         }
-        const data = JSON.parse(msg.data);
-        const sentences = `${data.sentences} sentences`
-        const paragraphs = `${data.paragraphs} paragraphs`
-        const words = `${data.unique_words} unique words`
-        const time = `${data.time_on_task} minutes on task`
         // TODO incorporate the no_update exception,
         // so components that did not change, don't update
         // should lead to better performance, so we don't
         // initiate callbacks down the chain if we don't need to
         return [
-            data.card_info,
-            sentences,
-            paragraphs,
-            time,
-            words,
+            `${data.card_info} shadow-card`,
+            `${data.sentences} sentences`,
+            `${data.paragraphs} paragraphs`,
+            `${data.time_on_task} minutes on task`,
+            `${data.unique_words} unique words`,
             data.text,
             data.data.transition_words,
             data.data.use_of_synonyms,
             data.data.sv_agreement,
             data.data.formal_language,
         ];
+    },
+
+    populate_student_data: function(msg) {
+        if (!msg) {
+            return []
+        }
+        const data = JSON.parse(msg.data);
+        return data;
     },
 
     update_student_progress_bars: function(value) {
@@ -84,11 +87,7 @@ window.dash_clientside.clientside = {
         return false;
     },
 
-    hide_show_attributes: function(values, progress) {
-        // TODO figure out how to count the number of students
-        // we should likely use a store component for the course
-        // that way we can easily fetch course data needed such as # of studs
-        const students = 10;
+    hide_show_attributes: function(values, progress, students) {
         let sentence_badge = 'd-none';
         let paragraph_badge = 'd-none';
         let time_on_task_badge = 'd-none';

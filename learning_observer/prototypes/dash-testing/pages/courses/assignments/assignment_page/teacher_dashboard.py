@@ -1,6 +1,7 @@
 # package imports
 from dash import html, dcc, clientside_callback, ClientsideFunction, Output, Input, State, ALL
 import dash_bootstrap_components as dbc
+from dash_extensions import WebSocket
 
 # local imports
 from .student_card_aio import StudentCardAIO
@@ -9,23 +10,6 @@ prefix = 'teacher-dashboard'
 
 # add group
 add_group_button = f'{prefix}-add-group-button'
-add_group_card = dbc.Col(
-    dbc.Card(
-        dbc.Button(
-            html.I(className='far fa-plus display-5'),
-            class_name='m-auto',
-            color='secondary',
-            id=add_group_button
-        ),
-        color='light',
-        class_name='h-100'
-    ),
-    class_name='h-100',
-    xxl=3,
-    lg=4,
-    md=6
-)
-
 
 # offcanvas options
 show_hide_options_open = f'{prefix}-show-hide-open-button'
@@ -108,6 +92,8 @@ offcanvas = dbc.Offcanvas(
 
 def create_teacher_dashboard(course, assignment):
     dashboard = dbc.Spinner(
+        # TODO change this to tabs
+        # Dashboard, Reports
         create_assignment_board(assignment, course.students),
         color='primary'
     )
@@ -125,26 +111,46 @@ def create_assignment_board(assignment, students):
                     ),
                     dbc.Button(
                         [
+                            html.I(className='fas fa-circle-plus me-1'),
+                            'Add Group'
+                        ],
+                        class_name='me-2',
+                        color='secondary',
+                        id=add_group_button
+                    ),
+                    dbc.Button(
+                        [
                             html.I(className='fas fa-gear me-1'),
                             'Options'
                         ],
-                        class_name='ms-2',
                         color='secondary',
                         id=show_hide_options_open
                     )
+                    # TODO include an export groups option here
+                    # generate a very basic page that displays
+                    # group names and students in each group only
                 ]
             ),
             dbc.Row(
                 [
                     create_group_card('Group 1', students[:10]),
-                    create_group_card('Group 2', students[10:20]),
-                    create_group_card('Group 3', students[20:]),
-                    add_group_card
+                    create_group_card('Group 2', students[10:])
                 ],
+                # TODO change this to a variable instead of hard-coding
                 id='group-row',
                 style={'height': '85vh'}
             ),
-            offcanvas
+            # TODO change this to a variable instead of hard-coding
+            WebSocket(
+                id='course-websocket',
+                url=f'ws://127.0.0.1:5000/courses/students/{len(students)}'
+            ),
+            offcanvas,
+            # TODO change this to a variable instead of hard-coding
+            dcc.Store(
+                id='student-counter',
+                data=len(students)
+            )
         ],
         class_name='m-0'
     )
@@ -158,6 +164,13 @@ def create_group_card(name, students):
                 html.H3(
                     name,
                     className='text-center my-2'
+                ),
+                dbc.Button(
+                    html.I(className='fas fa-pen text-body'),
+                    color='light',
+                    size='sm',
+                    class_name='position-absolute end-0 top-0',
+                    # TODO add an id and the functionality
                 ),
                 html.Div(
                     [StudentCardAIO(s) for s in students],
@@ -201,6 +214,13 @@ clientside_callback(
     Input(show_hide_options_checklist, 'value')
 )
 
+# update store
+clientside_callback(
+    ClientsideFunction(namespace='clientside', function_name='populate_student_data'),
+    Output(StudentCardAIO.ids.store(ALL), 'data'),
+    Input('course-websocket', 'message')
+)
+
 # hide/show attributes
 clientside_callback(
     ClientsideFunction(namespace='clientside', function_name='hide_show_attributes'),
@@ -215,5 +235,6 @@ clientside_callback(
     Output(StudentCardAIO.ids.sv_agreement(ALL), 'className'),
     Output(StudentCardAIO.ids.formal_language(ALL), 'className'),
     Input(show_hide_options_checklist, 'value'),
-    Input(show_hide_options_progress_checklist, 'value')
+    Input(show_hide_options_progress_checklist, 'value'),
+    State('student-counter', 'data')
 )

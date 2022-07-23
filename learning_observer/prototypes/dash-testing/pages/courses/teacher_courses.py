@@ -8,6 +8,7 @@ courses = [
     } for i in range (3)
 ]
 
+# TODO create cards for each course
 teacher_courses = html.Div(
     [
         html.A(course['name'], href=f'/course/{course["id"]}', className='me-3')

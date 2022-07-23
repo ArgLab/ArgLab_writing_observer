@@ -1,5 +1,5 @@
 # package imports
-from dash import html, clientside_callback, ClientsideFunction, Output, Input, MATCH
+from dash import html, dcc, clientside_callback, ClientsideFunction, Output, Input, MATCH
 import dash_bootstrap_components as dbc
 from dash_extensions import WebSocket
 
@@ -11,9 +11,14 @@ class StudentCardAIO(html.Div):
             'subcomponent': 'card',
             'aio_id': aio_id
         }
-        websocket = lambda aio_id: {
+        store = lambda aio_id: {
             'component': 'StudentCardAIO',
-            'subcomponent': 'websocket',
+            'subcomponent': 'store',
+            'aio_id': aio_id
+        }
+        more_info = lambda aio_id: {
+            'component': 'StudentCardAIO',
+            'subcomponent': 'more_info',
             'aio_id': aio_id
         }
         sentence_badge = lambda aio_id: {
@@ -79,6 +84,14 @@ class StudentCardAIO(html.Div):
                 dbc.Card(
                     [
                         html.H4(student['name']),
+                        dbc.Button(
+                            html.I(className='fas fa-up-right-and-down-left-from-center text-body'),
+                            id=self.ids.more_info(aio_id),
+                            color='white',
+                            size='sm',
+                            class_name='position-absolute end-0 top-0'
+                            # TODO implement functionality of more info
+                        ),
                         html.Div(
                             [
                                 dbc.Badge(
@@ -137,9 +150,9 @@ class StudentCardAIO(html.Div):
                     body=True,
                     id=self.ids.card(aio_id)
                 ),
-                WebSocket(
-                    id=self.ids.websocket(aio_id),
-                    url=f'ws://127.0.0.1:5000/student/{aio_id}'
+                dcc.Store(
+                    id=self.ids.store(aio_id),
+                    data=None
                 )
             ],
             className='my-2 mx-1'
@@ -158,7 +171,7 @@ class StudentCardAIO(html.Div):
         Output(ids.use_of_synonyms(MATCH), 'value'),
         Output(ids.sv_agreement(MATCH), 'value'),
         Output(ids.formal_language(MATCH), 'value'),
-        Input(ids.websocket(MATCH), 'message')
+        Input(ids.store(MATCH), 'data')
     )
 
     # change the color of bars based on value
