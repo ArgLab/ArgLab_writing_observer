@@ -32,26 +32,24 @@ window.dash_clientside.clientside = {
             `${data.time_on_task} minutes on task`,
             `${data.unique_words} unique words`,
             data.text,
-            data.data.transition_words,
-            data.data.use_of_synonyms,
-            data.data.sv_agreement,
-            data.data.formal_language,
+            data.transition_words,
+            data.use_of_synonyms,
+            data.sv_agreement,
+            data.formal_language,
         ];
     },
 
-    populate_student_data: function(msg) {
-        // TODO change the functionality of the websocket stuff
-        // We likely want an initial load that will take some time, but
-        // after that point we only want to update what we need to.
-        // We can accomplish this with window.dash_clientside.no_update.
-        // When an update is pushed, we only update that student and the rest get the no_update.
-        // We can then send data to the server when opening up a single student view
-        // to get all their information back, another possibly longer load.
+    populate_student_data: function(msg, old_data, students) {
         if (!msg) {
             return []
         }
+        let updates = Array(students).fill(window.dash_clientside.no_update);
         const data = JSON.parse(msg.data);
-        return data;
+        for (const up of data) {
+            let index = up.id
+            updates[index] = {...old_data[index], ...up};
+        }
+        return updates;
     },
 
     update_student_progress_bars: function(value) {

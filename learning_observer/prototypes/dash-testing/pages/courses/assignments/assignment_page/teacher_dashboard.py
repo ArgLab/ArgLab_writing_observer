@@ -218,7 +218,9 @@ clientside_callback(
 clientside_callback(
     ClientsideFunction(namespace='clientside', function_name='populate_student_data'),
     Output(StudentCardAIO.ids.store(ALL), 'data'),
-    Input('course-websocket', 'message')
+    Input('course-websocket', 'message'),
+    State(StudentCardAIO.ids.store(ALL), 'data'),
+    State('student-counter', 'data')
 )
 
 # hide/show attributes

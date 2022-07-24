@@ -4,7 +4,7 @@ from dash import html, dcc
 import dash_mantine_components as dmc
 
 # local imports
-from .teacher_courses import teacher_courses
+from .teacher_courses import list_courses
 
 dash.register_page(
     __name__,
@@ -16,7 +16,7 @@ role = 'teacher'
 
 def layout():
     if role == 'teacher':
-        courses = teacher_courses
+        courses = list_courses()
     elif role == 'student':
         courses = html.Div('Student dashboard')
     else:
