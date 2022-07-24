@@ -40,6 +40,13 @@ window.dash_clientside.clientside = {
     },
 
     populate_student_data: function(msg) {
+        // TODO change the functionality of the websocket stuff
+        // We likely want an initial load that will take some time, but
+        // after that point we only want to update what we need to.
+        // We can accomplish this with window.dash_clientside.no_update.
+        // When an update is pushed, we only update that student and the rest get the no_update.
+        // We can then send data to the server when opening up a single student view
+        // to get all their information back, another possibly longer load.
         if (!msg) {
             return []
         }
