@@ -37,3 +37,10 @@ a.disabled {
 .shadow-card:hover {
     box-shadow: 0 .5rem 1rem rgba(0,0,0,.15) !important;
 }
+
+.tab-content {
+  padding: 0.25rem;
+  border: var(--bs-gray-300) solid 1px;
+  border-top: 0px;
+  border-radius: 0rem 0rem 0.4rem 0.4rem;
+}

@@ -1,6 +1,7 @@
 # package imports
 import dash
 from dash import html, dcc
+import dash_bootstrap_components as dbc
 import dash_mantine_components as dmc
 
 # local imports
@@ -17,7 +18,24 @@ def layout(course_id=None):
     role = 'teacher'
     course = Course(course_id, role)
     if role == 'teacher':
-        dashboard = list_assignments(course)
+        # TODO abstract this into its own file, teacher course
+        dashboard = dbc.Spinner(
+            dbc.Tabs(
+                [
+                    dbc.Tab(
+                        list_assignments(course),
+                        label='Assignments',
+                        label_class_name='h2'
+                    ),
+                    dbc.Tab(
+                        html.Div('Some general course reports Paul made go here'),
+                        label='Reports',
+                        label_class_name='h2'
+                    )
+                ]
+            ),
+            color='primary'
+        )
     elif role == 'student':
         dashboard = 'Student'
     else:
@@ -28,7 +46,8 @@ def layout(course_id=None):
                 [
                     dcc.Link('Courses', href='/courses', refresh=True),
                     dcc.Link(f'{course.name}', href=f'/course/{course.id}', className='disabled')
-                ]
+                ],
+                class_name='mb-2'
             ),
             dashboard
         ]

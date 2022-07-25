@@ -92,9 +92,20 @@ offcanvas = dbc.Offcanvas(
 
 def create_teacher_dashboard(course, assignment):
     dashboard = dbc.Spinner(
-        # TODO change this to tabs
-        # Dashboard, Reports
-        create_assignment_board(assignment, course.students),
+        dbc.Tabs(
+            [
+                dbc.Tab(
+                    create_assignment_board(assignment, course.students),
+                    label='Groups',
+                    label_class_name='h2'
+                ),
+                dbc.Tab(
+                    html.Div('Some method of generating reports go here.'),
+                    label='Reports',
+                    label_class_name='h2'
+                )
+            ]
+        ),
         color='primary'
     )
     return dashboard
@@ -103,12 +114,8 @@ def create_teacher_dashboard(course, assignment):
 def create_assignment_board(assignment, students):
     container = dbc.Container(
         [
-            html.H2(
+            html.Div(
                 [
-                    html.P(
-                        'Groups',
-                        className='mt-1 d-inline'
-                    ),
                     dbc.Button(
                         [
                             html.I(className='fas fa-circle-plus me-1'),
@@ -129,7 +136,8 @@ def create_assignment_board(assignment, students):
                     # TODO include an export groups option here
                     # generate a very basic page that displays
                     # group names and students in each group only
-                ]
+                ],
+                className='my-2'
             ),
             dbc.Row(
                 [
@@ -141,6 +149,8 @@ def create_assignment_board(assignment, students):
                 style={'height': '85vh'}
             ),
             # TODO change this to a variable instead of hard-coding
+            # might want to move this to the the tab location as well to be used for all communication
+            # on the teacher dashboard
             WebSocket(
                 id='course-websocket',
                 url=f'ws://127.0.0.1:5000/courses/students/{len(students)}'

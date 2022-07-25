@@ -1,5 +1,4 @@
 import asyncio
-from turtle import update
 from faker import Faker
 import json
 import random

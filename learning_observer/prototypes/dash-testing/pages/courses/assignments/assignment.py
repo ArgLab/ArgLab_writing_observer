@@ -66,7 +66,7 @@ def create_assignment_card(assignment, course_id):
 def list_assignments(course):
     cards = html.Div(
         [
-            html.H2('Active'),
+            html.H3('Active'),
             dbc.Row(
                 [
                     create_assignment_card(assignment, course.id)
@@ -74,7 +74,7 @@ def list_assignments(course):
                 ],
                 class_name='g-3'
             ),
-            html.H2('Other'),
+            html.H3('Other'),
             dbc.Row(
                 [
                     create_assignment_card(assignment, course.id)

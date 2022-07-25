@@ -49,7 +49,8 @@ def create_course_card(course):
 def list_courses():
     cards = html.Div(
         [
-            html.H2('Active'),
+            html.H2('Courses'),
+            html.H3('Active'),
             dbc.Row(
                 [
                     create_course_card(course)
@@ -57,7 +58,7 @@ def list_courses():
                 ],
                 class_name='g-3'
             ),
-            html.H2('Old'),
+            html.H3('Old'),
             dbc.Accordion(
                 dbc.AccordionItem(
                     dbc.Row(
