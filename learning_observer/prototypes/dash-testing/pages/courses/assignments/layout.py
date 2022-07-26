@@ -28,7 +28,15 @@ def layout(course_id=None):
                         label_class_name='h2'
                     ),
                     dbc.Tab(
-                        html.Div('Some general course reports Paul made go here'),
+                        html.Div(
+                            [
+                                html.H3('Student Progress'),
+                                html.Img(
+                                    src='/assets/assignment-by-assignment.png',
+                                    className='w-75'
+                                )
+                            ],
+                        ),
                         label='Reports',
                         label_class_name='h2'
                     )

@@ -21,6 +21,7 @@ offcanvas = dbc.Offcanvas(
     [
         html.H4('Student Card'),
         dcc.Checklist(
+            # TODO add tooltips to every option
             options=[
                 {
                     'label': dbc.Badge('# sentences', color='info', class_name='fs-6 m-2'),
@@ -100,7 +101,15 @@ def create_teacher_dashboard(course, assignment):
                     label_class_name='h2'
                 ),
                 dbc.Tab(
-                    html.Div('Some method of generating reports go here.'),
+                    html.Div(
+                        [
+                            html.H3('Student Progress'),
+                            html.Img(
+                                src='/assets/organization.png',
+                                className='w-75'
+                            )
+                        ]
+                    ),
                     label='Reports',
                     label_class_name='h2'
                 )

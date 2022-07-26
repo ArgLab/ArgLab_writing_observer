@@ -84,6 +84,7 @@ class StudentCardAIO(html.Div):
                 dbc.Card(
                     [
                         html.H4(student['name']),
+                        # TODO add a direct link to google doc?
                         dbc.Button(
                             html.I(className='fas fa-up-right-and-down-left-from-center text-body'),
                             id=self.ids.more_info(aio_id),
