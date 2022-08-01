@@ -2,13 +2,16 @@
 import dash
 from dash import html
 import dash_bootstrap_components as dbc
+from dash_bootstrap_templates import load_figure_template
 
 # local imports
 from components import navbar
 
 dbc_css = (
-    "https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates@V1.0.2/dbc.min.css"
+    "https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates@V1.0.6/dbc.min.css"
 )
+
+load_figure_template('minty')
 
 app = dash.Dash(
     __name__,

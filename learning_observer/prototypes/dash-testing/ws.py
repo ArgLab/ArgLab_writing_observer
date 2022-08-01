@@ -1,4 +1,5 @@
 import asyncio
+from attr import attrib
 from faker import Faker
 import json
 import random
@@ -107,14 +108,27 @@ async def course_student_data(id):
 
 @app.websocket('/analysis/<string:id>')
 async def analysis_data(id):
-    data = {
-        'id': id
-    }
+    await websocket.accept()
     while True:
-        data['data'] = [random.random() for _ in range(10)]
+        msg = await websocket.receive()
+        data_in = json.loads(msg)
+        reports = data_in['reports']
+        all_reports = ['transition_words', 'use_of_synonyms', 'sv_agreement', 'formal_language']
+        assignments = 4
+        data = {
+            'x': [
+                [
+                    i for i in range(assignments)
+                ] if r in reports else [None for _ in range(assignments)] for r in all_reports 
+            ],
+            'y': [
+                [
+                    random.choice(['Low', 'Mid', 'High']) for _ in range(assignments)
+                ] if r in reports else [None for _ in range(assignments)] for r in all_reports
+            ],
+        }
         output = json.dumps(data)
         await websocket.send(output)
-        await asyncio.sleep(random.randint(10, 30))
 
 if __name__ == '__main__':
     app.run(port=5000)

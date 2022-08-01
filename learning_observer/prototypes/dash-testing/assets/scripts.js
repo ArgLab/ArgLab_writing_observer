@@ -57,27 +57,6 @@ window.dash_clientside.clientside = {
         return options[value%3-1];
     },
 
-    update_analysis_data: function(msg) {
-        if(!msg){
-            return {
-                data: [{y: [], type: "scatter"}]
-            };
-        }
-        const data = JSON.parse(msg.data);
-        return {
-            data: [{
-                y: data.data,
-                type: data.id,
-                marker: {
-                    color: window.minty_colors[0]
-                }
-            }],
-            layout: {
-                title: data.id,
-            }
-        };
-    },
-
     open_offcanvas: function(clicks, is_open) {
         if(clicks) {
             return !is_open
@@ -148,5 +127,27 @@ window.dash_clientside.clientside = {
             Array(students).fill(sv_agreement),
             Array(students).fill(formal_language),
         ]
+    },
+
+    send_websocket: function (reports, student) {
+        if (typeof student === "undefined") {
+            return window.dash_clientside.no_update;
+        }
+        const msg = {"reports":reports, "student":student};
+        return JSON.stringify(msg);
+    },
+
+    update_report_graph: function(msg) {
+        // TODO figure out a better way to update the data
+        // since we need to update the traces as well, I'm not sure
+        // its feasible to simple extend the data, might
+        // have to update the data of the figure
+        // eventually we'll have a lot of analysis so we having a trace
+        // for each one is probably not the best practice
+        if (!msg) {
+            return window.dash_clientside.no_update;
+        }
+        const data = JSON.parse(msg.data);
+        return [data, [0, 1, 2, 3], 4];
     }
 }
