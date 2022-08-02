@@ -1,5 +1,4 @@
 import asyncio
-from attr import attrib
 from faker import Faker
 import json
 import random
