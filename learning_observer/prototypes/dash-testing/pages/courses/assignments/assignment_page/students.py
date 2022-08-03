@@ -119,6 +119,7 @@ def create_student_tab(assignment, students):
                     ),
                     dbc.Button(
                         [
+                            html.I(className='fas fa-sort me-1'),
                             'Sort By: ',
                             html.Span('None', id='sort-by-dropdown-label')
                         ],
