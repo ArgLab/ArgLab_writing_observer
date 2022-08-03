@@ -3,7 +3,8 @@ import dash_bootstrap_components as dbc
 from dash_extensions import WebSocket
 
 # local imports
-from .groups import create_group_tab
+from .students import create_student_tab
+# from .groups import create_group_tab
 from .reports import create_reports_tab
 
 def create_teacher_dashboard(course, assignment):
@@ -14,20 +15,20 @@ def create_teacher_dashboard(course, assignment):
             [
                 dbc.Tab(
                     # create_group_tab(assignment, course.students),
-                    'disabled',
-                    label='Groups',
-                    tab_id='groups',
+                    create_student_tab(assignment, course.students),
+                    label='Students',
+                    tab_id='students',
                     label_class_name='h2'
                 ),
                 dbc.Tab(
                     # TODO this tab does the wrong analysis, we actually want to move this up a level
-                    create_reports_tab(course.students),
+                    # create_reports_tab(course.students),
                     label='Reports',
                     tab_id='reports',
                     label_class_name='h2'
                 )
             ],
-            active_tab='reports'
+            active_tab='students'
         ),
         color='primary'
     )

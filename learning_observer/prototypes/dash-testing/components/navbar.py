@@ -15,7 +15,8 @@ navbar = dbc.Navbar(
                     class_name='text-light'
                 )
             )
-        ]
+        ],
+        fluid=True
     ),
     sticky='fixed',
     color='primary',

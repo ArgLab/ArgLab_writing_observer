@@ -19,14 +19,13 @@ window.dash_clientside.clientside = {
 
     update_student_card: function(data) {
         if(!data) {
-            return ['', '', '', '', '', '', '', '', '', ''];
+            return ['', '', '', '', '', '', '', '', ''];
         }
         // TODO incorporate the no_update exception,
         // so components that did not change, don't update
         // should lead to better performance, so we don't
         // initiate callbacks down the chain if we don't need to
         return [
-            `${data.card_info} shadow-card`,
             `${data.sentences} sentences`,
             `${data.paragraphs} paragraphs`,
             `${data.time_on_task} minutes on task`,
@@ -37,6 +36,26 @@ window.dash_clientside.clientside = {
             data.sv_agreement,
             data.formal_language,
         ];
+    },
+
+    update_student_outline: function(order_by, data) {
+        if (!data) {
+            return ['gray-400', '']
+        }
+        const options = ['secondary', 'warning', 'primary'];
+        const value = data[order_by];
+        if (!value) {
+            return ['gray-400', '']
+        }
+        return [options[value-1], `order-${4-value}`];
+    },
+
+    sort_students: function(value, options, students) {
+        if (!value) {
+            return [Array(students).fill(window.dash_clientside.no_update), window.dash_clientside.no_update]
+        }
+        const option = options.filter(obj => {return obj.value === value});
+        return [Array(students).fill(value), option[0].label]
     },
 
     populate_student_data: function(msg, old_data, students) {
@@ -54,7 +73,7 @@ window.dash_clientside.clientside = {
 
     update_student_progress_bars: function(value) {
         const options = ['secondary', 'warning', 'primary'];
-        return options[value%3-1];
+        return options[value-1];
     },
 
     open_offcanvas: function(clicks, is_open) {
