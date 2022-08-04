@@ -1,5 +1,5 @@
 # package imports
-from dash import html, dcc, clientside_callback, ClientsideFunction, Output, Input, State, ALL
+from dash import html, dcc, callback, clientside_callback, ClientsideFunction, Output, Input, State, ALL
 import dash_bootstrap_components as dbc
 from dash_extensions import WebSocket
 
@@ -220,17 +220,8 @@ clientside_callback(
 
 # hide/show attributes
 clientside_callback(
-    ClientsideFunction(namespace='clientside', function_name='hide_show_attributes'),
-    Output(StudentCardAIO.ids.sentence_badge(ALL), 'className'),
-    Output(StudentCardAIO.ids.paragraph_badge(ALL), 'className'),
-    Output(StudentCardAIO.ids.time_on_task_badge(ALL), 'className'),
-    Output(StudentCardAIO.ids.unique_words_badge(ALL), 'className'),
-    Output(StudentCardAIO.ids.text_area(ALL), 'className'),
-    Output(StudentCardAIO.ids.progress_div(ALL), 'className'),
-    Output(StudentCardAIO.ids.transition_words_wrapper(ALL), 'className'),
-    Output(StudentCardAIO.ids.use_of_synonyms_wrapper(ALL), 'className'),
-    Output(StudentCardAIO.ids.sv_agreement_wrapper(ALL), 'className'),
-    Output(StudentCardAIO.ids.formal_language_wrapper(ALL), 'className'),
+    ClientsideFunction(namespace='clientside', function_name='populate_show_hide_data'),
+    Output(StudentCardAIO.ids.show_hide(ALL), 'data'),
     Input(show_hide_options_checklist, 'value'),
     Input(show_hide_options_progress_checklist, 'value'),
     State('student-counter', 'data')

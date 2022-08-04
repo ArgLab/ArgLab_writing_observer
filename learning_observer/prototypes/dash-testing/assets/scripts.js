@@ -148,6 +148,69 @@ window.dash_clientside.clientside = {
         ]
     },
 
+    hide_show_attributes_single: function(values) {
+        let sentence_badge = 'd-none';
+        let paragraph_badge = 'd-none';
+        let time_on_task_badge = 'd-none';
+        let unique_words_badge = 'd-none';
+        let text_area = 'd-none';
+        let progress_div = 'd-none';
+        let transition_words = 'd-none';
+        let use_of_synonyms = 'd-none';
+        let sv_agreement = 'd-none';
+        let formal_language = 'd-none';
+        if (values.includes('sentences')) {
+            sentence_badge = 'mb-1';
+        }
+        if (values.includes('paragraphs')) {
+            paragraph_badge = 'mb-1';
+        }
+        if (values.includes('time_on_task')) {
+            time_on_task_badge = 'mb-1';
+        }
+        if (values.includes('unique_words')) {
+            unique_words_badge = 'mb-1';
+        }
+        if (values.includes('text')) {
+            text_area = '';
+        }
+        if (values.includes('progress')) {
+            // TODO there is probably a better way to do this
+            // in more algorithmic way
+            // requires a deeper discussion on what is shown
+            progress_div = ''
+            if (values.includes('transition_words')) {
+                transition_words = ''
+            }
+            if (values.includes('use_of_synonyms')) {
+                use_of_synonyms = ''
+            }
+            if (values.includes('sv_agreement')) {
+                sv_agreement = ''
+            }
+            if (values.includes('formal_language')) {
+                formal_language = ''
+            }
+        }
+        return [
+            sentence_badge,
+            paragraph_badge,
+            time_on_task_badge,
+            unique_words_badge,
+            text_area,
+            progress_div,
+            transition_words,
+            use_of_synonyms,
+            sv_agreement,
+            formal_language,
+        ]
+    },
+
+    populate_show_hide_data: function(values, progress, students) {
+        const l = values.concat(progress);
+        return Array(students).fill(l)
+    },
+
     send_websocket: function (reports, student) {
         if (typeof student === "undefined") {
             return window.dash_clientside.no_update;

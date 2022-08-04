@@ -26,6 +26,11 @@ class StudentCardAIO(dbc.Col):
             'subcomponent': 'order_store',
             'aio_id': aio_id
         }
+        show_hide = lambda aio_id: {
+            'component': 'StudentCardAIO',
+            'subcomponent': 'show_hide_store',
+            'aio_id': aio_id
+        }
         more_info = lambda aio_id: {
             'component': 'StudentCardAIO',
             'subcomponent': 'more_info',
@@ -227,6 +232,10 @@ class StudentCardAIO(dbc.Col):
                 dcc.Store(
                     id=self.ids.order(aio_id),
                     data=1
+                ),
+                dcc.Store(
+                    id=self.ids.show_hide(aio_id),
+                    data=None
                 )
             ],
             id=self.ids.col(aio_id),
@@ -256,6 +265,21 @@ class StudentCardAIO(dbc.Col):
         Output(ids.col(MATCH), 'class_name'),
         Input(ids.order(MATCH), 'data'),
         Input(ids.store(MATCH), 'data')
+    )
+
+    clientside_callback(
+        ClientsideFunction(namespace='clientside', function_name='hide_show_attributes_single'),
+        Output(ids.sentence_badge(MATCH), 'className'),
+        Output(ids.paragraph_badge(MATCH), 'className'),
+        Output(ids.time_on_task_badge(MATCH), 'className'),
+        Output(ids.unique_words_badge(MATCH), 'className'),
+        Output(ids.text_area(MATCH), 'className'),
+        Output(ids.progress_div(MATCH), 'className'),
+        Output(ids.transition_words_wrapper(MATCH), 'className'),
+        Output(ids.use_of_synonyms_wrapper(MATCH), 'className'),
+        Output(ids.sv_agreement_wrapper(MATCH), 'className'),
+        Output(ids.formal_language_wrapper(MATCH), 'className'),
+        Input(ids.show_hide(MATCH), 'data')
     )
 
     clientside_callback(
