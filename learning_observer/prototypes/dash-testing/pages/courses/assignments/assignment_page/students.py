@@ -1,10 +1,10 @@
 # package imports
-from dash import html, dcc, callback, clientside_callback, ClientsideFunction, Output, Input, State, ALL
+from dash import html, dcc, clientside_callback, ClientsideFunction, Output, Input, State, ALL
 import dash_bootstrap_components as dbc
 from dash_extensions import WebSocket
 
 # local imports
-from .student_card_aio import StudentCardAIO
+import learning_observer_components as loc
 
 prefix = 'teacher-dashboard'
 
@@ -23,22 +23,24 @@ offcanvas = dbc.Offcanvas(
         dcc.Checklist(
             # TODO add tooltips to every option
             options=[
+                # TODO make a collapsible metric item
+                {
+                    'label': 'Metrics',
+                    'value': 'metrics'
+                },
                 {
                     'label': dbc.Badge('# sentences', color='info', class_name='fs-6 m-2'),
                     'value': 'sentences'
                 },
                 {
-                    'label': dbc.Badge('# paragraphs', color='info', class_name='fs-6 m-2'),
-                    'value': 'paragraphs'
+                    'label': dbc.Badge('# words in 5 minutes', color='info', class_name='fs-6 m-2'),
+                    'value': 'edits_per_min'
                 },
                 {
-                    'label': dbc.Badge('time on task', color='info', class_name='fs-6 m-2'),
-                    'value': 'time_on_task'
+                    'label': dbc.Badge('# minutes since last edit', color='info', class_name='fs-6 m-2'),
+                    'value': 'since_last_edit'
                 },
-                {
-                    'label': dbc.Badge('# unique words', color='info', class_name='fs-6 m-2'),
-                    'value': 'unique_words'
-                },
+                # TODO text needs to be more general like first/second paragraph
                 {
                     'label': html.Span('Summary text', className='fs-5 m-2'),
                     'value': 'text'
@@ -47,14 +49,14 @@ offcanvas = dbc.Offcanvas(
                     'label': html.Span(
                         [
                             html.I(className='fas fa-chart-bar me-1'),
-                            'Metric overview'
+                            'Indicators overview'
                         ],
                         className='fs-5 m-2'
                     ),
-                    'value': 'progress'
+                    'value': 'indicators'
                 }
             ],
-            value=['sentences', 'paragraphs', 'text', 'progress'],
+            value=['sentences', 'edits_per_min', 'text', 'indicators', 'metrics'],
             id=show_hide_options_checklist,
             labelClassName='d-block'
         ),
@@ -67,19 +69,11 @@ offcanvas = dbc.Offcanvas(
                         'value': 'transition_words'
                     },
                     {
-                        'label': html.Span('Effective Use of Synonyms', className='fs-6 m-2'),
-                        'value': 'use_of_synonyms'
-                    },
-                    {
-                        'label': html.Span('Subject Verb Agreement', className='fs-6 m-2'),
-                        'value': 'sv_agreement'
-                    },
-                    {
-                        'label': html.Span('Formal Language', className='fs-6 m-2'),
-                        'value': 'formal_language'
+                        'label': html.Span('Academic Language', className='fs-6 m-2'),
+                        'value': 'academic_language'
                     },
                 ],
-                value=['transition_words', 'use_of_synonyms', 'sv_agreement', 'formal_language'],
+                value=['transition_words', 'academic_language'],
                 id=show_hide_options_progress_checklist,
                 labelClassName='d-block',
                 className='ms-3'
@@ -134,7 +128,7 @@ def create_student_tab(assignment, students):
                                     options=[
                                         {'label': 'None', 'value': 'none'},
                                         {'label': 'Transition Words', 'value': 'transition_words'},
-                                        {'label': 'Use of Synonyms', 'value': 'use_of_synonyms'}
+                                        {'label': 'Academic Language', 'value': 'academic_language'}
                                     ],
                                     value='none',
                                     id='sort-by-radioitems'
@@ -151,9 +145,30 @@ def create_student_tab(assignment, students):
             dbc.Card(
                 dbc.Row(
                     [
-                        StudentCardAIO(s) for s in students
+                        dbc.Col(
+                            loc.StudentOverviewCard(
+                                id={
+                                    'type': 'student-card',
+                                    'index': s['id']
+                                },
+                                name=s['name'],
+                                data={
+                                    'indicators': [],
+                                    'metrics': [],
+                                    'text': ''
+                                },
+                                shown=['transition_words', 'academic_language', 'sentences', 'text']
+                            ),
+                            id={
+                                'type': 'student-col',
+                                'index': s['id']
+                            },
+                            xxl=3,
+                            lg=4,
+                            md=6
+                        ) for s in students
                     ],
-                    class_name='g-3 p-3'
+                    class_name='g-3 p-3 w-100'
                 ),
                 color='light'
             ),
@@ -176,14 +191,6 @@ def create_student_tab(assignment, students):
     return container
 
 
-# make groups draggable
-# TODO fix draggability on this page
-# clientside_callback(
-#     ClientsideFunction(namespace='clientside', function_name='make_draggable'),
-#     Output('group-row', 'data-drag'),
-#     Input({'type': 'group-card', 'index': ALL}, 'id')
-# )
-
 # open the offcanvas show/hide options checklist
 clientside_callback(
     ClientsideFunction(namespace='clientside', function_name='open_offcanvas'),
@@ -194,34 +201,33 @@ clientside_callback(
 
 # offcanvas checklist toggle
 clientside_callback(
-    ClientsideFunction(namespace='clientside', function_name='toggle_progress_checklist'),
+    ClientsideFunction(namespace='clientside', function_name='toggle_indicators_checklist'),
     Output(show_hide_options_progress_collapse, 'is_open'),
     Input(show_hide_options_checklist, 'value')
 )
 
-# update store
 clientside_callback(
     ClientsideFunction(namespace='clientside', function_name='populate_student_data'),
-    Output(StudentCardAIO.ids.store(ALL), 'data'),
+    Output({'type': 'student-card', 'index': ALL}, 'data'),
     Input('course-websocket', 'message'),
-    State(StudentCardAIO.ids.store(ALL), 'data'),
+    State({'type': 'student-card', 'index': ALL}, 'data'),
     State('student-counter', 'data')
 )
 
-# update store
 clientside_callback(
     ClientsideFunction(namespace='clientside', function_name='sort_students'),
-    Output(StudentCardAIO.ids.order(ALL), 'data'),
+    Output({'type': 'student-col', 'index': ALL}, 'class_name'),
     Output('sort-by-dropdown-label', 'children'),
     Input('sort-by-radioitems', 'value'),
     State('sort-by-radioitems', 'options'),
-    State('student-counter', 'data')
+    State('student-counter', 'data'),
+    State({'type': 'student-card', 'index': ALL}, 'data')
 )
 
 # hide/show attributes
 clientside_callback(
-    ClientsideFunction(namespace='clientside', function_name='populate_show_hide_data'),
-    Output(StudentCardAIO.ids.show_hide(ALL), 'data'),
+    ClientsideFunction(namespace='clientside', function_name='show_hide_data'),
+    Output({'type': 'student-card', 'index': ALL}, 'shown'),
     Input(show_hide_options_checklist, 'value'),
     Input(show_hide_options_progress_checklist, 'value'),
     State('student-counter', 'data')

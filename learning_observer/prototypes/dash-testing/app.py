@@ -23,7 +23,8 @@ app = dash.Dash(
         'https://epsi95.github.io/dash-draggable-css-scipt/dragula.css'
     ],
     external_scripts=[
-        'https://cdnjs.cloudflare.com/ajax/libs/dragula/3.7.2/dragula.min.js'
+        'https://cdnjs.cloudflare.com/ajax/libs/dragula/3.7.2/dragula.min.js',
+        'https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js'
     ],
     title='Learning Observer',
     suppress_callback_exceptions=True

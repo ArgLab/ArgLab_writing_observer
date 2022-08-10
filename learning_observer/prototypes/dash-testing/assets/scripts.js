@@ -50,23 +50,28 @@ window.dash_clientside.clientside = {
         return [options[value-1], `order-${4-value}`];
     },
 
-    sort_students: function(value, options, students) {
-        if (!value) {
-            return [Array(students).fill(window.dash_clientside.no_update), window.dash_clientside.no_update]
+    sort_students: function(value, options, students, data) {
+        let orders = Array(students).fill(window.dash_clientside.no_update)
+        if (!value | value === 'none') {
+            return [orders, window.dash_clientside.no_update]
         }
         const option = options.filter(obj => {return obj.value === value});
-        return [Array(students).fill(value), option[0].label]
+        for (let i = 0; i < data.length; i++) {
+            orders[i] = `order-${4 - data[i].indicators[value]['value']}`;
+        }
+        return [orders, option[0].label]
     },
 
     populate_student_data: function(msg, old_data, students) {
         if (!msg) {
-            return []
+            return old_data;
         }
         let updates = Array(students).fill(window.dash_clientside.no_update);
         const data = JSON.parse(msg.data);
         for (const up of data) {
-            let index = up.id
+            let index = up.id;
             updates[index] = {...old_data[index], ...up};
+            updates[index] = _.merge(old_data[index], up);
         }
         return updates;
     },
@@ -83,8 +88,8 @@ window.dash_clientside.clientside = {
         return is_open
     },
 
-    toggle_progress_checklist: function(values) {
-        if (values.includes('progress')) {
+    toggle_indicators_checklist: function(values) {
+        if (values.includes('indicators')) {
             return true;
         }
         return false;
@@ -206,7 +211,7 @@ window.dash_clientside.clientside = {
         ]
     },
 
-    populate_show_hide_data: function(values, progress, students) {
+    show_hide_data: function(values, progress, students) {
         const l = values.concat(progress);
         return Array(students).fill(l)
     },

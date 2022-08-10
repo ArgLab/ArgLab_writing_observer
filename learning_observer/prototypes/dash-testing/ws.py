@@ -7,84 +7,41 @@ from quart import websocket, Quart
 app = Quart(__name__)
 fake = Faker()
 
-@app.websocket('/random_data/')
-async def random_data():
-    while True:
-        output = json.dumps([random.random() for _ in range(10)])
-        await websocket.send(output)
-        await asyncio.sleep(10)
-
-class_names = [
-    'border-3 border-primary',
-    'border-3 border-secondary',
-    'border-3 border-warning',
-]
-
 def create_student(id):
     data = {
         'id': id,
         'text': fake.text(),
-        'sentences': random.randint(1, 4),
-        'paragraphs': 1,
-        'card_info': random.choice(class_names),
-        'unique_words': random.randint(5, 20),
-        'time_on_task': random.randint(10, 100),
-        'transition_words': random.randint(1, 3),
-        'use_of_synonyms': random.randint(1, 3),
-        'sv_agreement': random.randint(1, 3),
-        'formal_language': random.randint(1, 3)
+        'metrics': {
+            'sentences': {'id': 'sentences', 'value': random.randint(1, 4), 'label': ' sentences'},
+            'since_last_edit': {'id': 'since_last_edit', 'value': random.randint(10, 100), 'label': ' minutes since last edit'},
+            'edits_per_min': {'id': 'edits_per_min', 'value': random.randint(10, 100), 'label': ' words in 5 minutes'},
+        },
+        'indicators': {
+            'transition_words': {'id': 'transition_words', 'value': random.randint(1, 3), 'label': 'Transitions'},
+            'academic_language': {'id': 'academic_language', 'value': random.randint(1, 3), 'label': 'Academic Language'},
+        }
     }
     return data
 
 def update_student(data):
-    updates = {}
-    updates['id'] = data['id']
+    updates = {
+        'id': data['id'],
+        'metrics': {},
+        'indicators': {}
+    }
     # flip a coin for each update
     if bool(random.getrandbits(1)):
-        updates['sentences'] = data['sentences'] + random.randint(1, 10)
-    if bool(random.getrandbits(1)):
-        updates['paragraphs'] = data['paragraphs'] + int(data['sentences'] / random.randint(4, 8))
-    if bool(random.getrandbits(1)):
-        updates['unique_words'] = data['unique_words'] + random.randint(5, 20)
-    if bool(random.getrandbits(1)):
-        updates['time_on_task'] = data['time_on_task'] + random.randint(0, 60)
-    if bool(random.getrandbits(1)):
-        updates['transition_words'] = random.randint(1, 3)
-    if bool(random.getrandbits(1)):
-        updates['use_of_synonyms'] = random.randint(1, 3)
-    if bool(random.getrandbits(1)):
-        updates['sv_agreement'] = random.randint(1, 3)
-    if bool(random.getrandbits(1)):
-        updates['formal_language'] = random.randint(1, 3)
-    return updates
 
-@app.websocket('/student/<string:id>')
-async def student_data(id):
-    data = {
-        'id': id,
-        'text': fake.text(),
-        'sentences': random.randint(1, 4),
-        'paragraphs': 1,
-        'unique_words': random.randint(5, 20),
-        'time_on_task': random.randint(10, 100),
-        'data': {}
-    }
-    while True:
-        sleep_time = random.randint(10, 60)
-        data['card_info'] = random.choice(class_names)
-        data['sentences'] += random.randint(1, 10)
-        data['paragraphs'] = int(data['sentences'] / random.randint(4, 8))
-        data['unique_words'] += random.randint(5, 20)
-        data['time_on_task'] += sleep_time
-        data['data'] =  {
-            'transition_words': random.randint(1,3),
-            'use_of_synonyms': random.randint(1,3),
-            'sv_agreement': random.randint(1,3),
-            'formal_language': random.randint(1,3),
-        }        
-        output = json.dumps(data)
-        await websocket.send(output)
-        await asyncio.sleep(sleep_time)
+        updates['metrics']['sentences'] = {'value': data['metrics']['sentences']['value'] + random.randint(1, 10)}
+    if bool(random.getrandbits(1)):
+        updates['metrics']['since_last_edit'] = {'value': random.randint(0, 10)}
+    if bool(random.getrandbits(1)): 
+        updates['metrics']['edits_per_min'] = {'value': random.randint(5, 20)}
+    if bool(random.getrandbits(1)):
+        updates['indicators']['transition_words'] = {'value': random.randint(1, 3)}
+    if bool(random.getrandbits(1)):
+        updates['indicators']['academic_language'] = {'value': random.randint(1, 3)}
+    return updates
 
 
 @app.websocket('/courses/students/<string:id>')
