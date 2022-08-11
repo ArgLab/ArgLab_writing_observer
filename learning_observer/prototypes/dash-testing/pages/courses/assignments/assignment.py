@@ -19,17 +19,9 @@ class Assignment:
 
 def create_assignment_card(assignment, course_id):
     if assignment.active:
-        footer = f'Due: {assignment.end_date.strftime(date_format)}'
-        today = datetime.date.today()
-        if assignment.end_date < today:
-            color = 'danger'
-        elif assignment.end_date == today:
-            color = 'warning'
-        else:
-            color='primary'
+        color='primary'
     else:
-        footer = 'Completed'
-        color = None
+        color = 'light'
 
     card = dbc.Col(
         dbc.Card(
@@ -38,26 +30,28 @@ def create_assignment_card(assignment, course_id):
                     dbc.CardBody(
                         [
                             html.H4(assignment.name),
-                            assignment.description
+                            assignment.description,
+                            html.Div(
+                                dbc.Badge(
+                                    'Narrative',
+                                    pill=True
+                                )
+                            )
                         ]
-                    ),
-                    dbc.CardFooter(
-                        footer,
-                        class_name='mb-0'
                     )
                 ],
                 # TODO transfer most of this to css and replace with
                 # className='assignment-card'
                 href=f'/course/{course_id}/assignment/{assignment.id}',
-                className='text-reset text-decoration-none h-100 d-flex flex-column align-items-stretch'
+                className=f'text-decoration-none {"text-white" if color=="primary" else "text-body"} h-100 d-flex flex-column align-items-stretch'
             ),
-            outline=True,
-            class_name='shadow-card border-2 h-100',
+            class_name='shadow-card h-100',
             color=color
         ),
-        xxl=3,
-        lg=4,
-        md=6,
+        xxl=2,
+        lg=3,
+        md=4,
+        sm=6,
         align='stretch'
     )
     return card
@@ -66,21 +60,40 @@ def create_assignment_card(assignment, course_id):
 def list_assignments(course):
     cards = html.Div(
         [
-            html.H3('Active'),
-            dbc.Row(
+            html.Div(
                 [
-                    create_assignment_card(assignment, course.id)
-                    for assignment in course.assignments if assignment.active
+                    dbc.Button(
+                        [
+                            html.I(className='fas fa-circle-plus me-1'),
+                            'Add Assignment'
+                        ],
+                        class_name='me-2',
+                        color='secondary'
+                    ),
                 ],
-                class_name='g-3'
+                className='my-2'
             ),
-            html.H3('Other'),
-            dbc.Row(
+            dbc.Card(
                 [
-                    create_assignment_card(assignment, course.id)
-                    for assignment in course.assignments if not assignment.active
+                    html.H3('Active'),
+                    dbc.Row(
+                        [
+                            create_assignment_card(assignment, course.id)
+                            for assignment in course.assignments if assignment.active
+                        ],
+                        class_name='g-3'
+                    ),
+                    html.H3('Other'),
+                    dbc.Row(
+                        [
+                            create_assignment_card(assignment, course.id)
+                            for assignment in course.assignments if not assignment.active
+                        ],
+                        class_name='g-3'
+                    )
                 ],
-                class_name='g-3'
+                body=True,
+                color='light',
             )
         ]
     )

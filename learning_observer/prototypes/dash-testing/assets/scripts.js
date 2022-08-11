@@ -17,40 +17,7 @@ window.dash_clientside.clientside = {
         return window.dash_clientside.no_update
     },
 
-    update_student_card: function(data) {
-        if(!data) {
-            return ['', '', '', '', '', '', '', '', ''];
-        }
-        // TODO incorporate the no_update exception,
-        // so components that did not change, don't update
-        // should lead to better performance, so we don't
-        // initiate callbacks down the chain if we don't need to
-        return [
-            `${data.sentences} sentences`,
-            `${data.paragraphs} paragraphs`,
-            `${data.time_on_task} minutes on task`,
-            `${data.unique_words} unique words`,
-            data.text,
-            data.transition_words,
-            data.use_of_synonyms,
-            data.sv_agreement,
-            data.formal_language,
-        ];
-    },
-
-    update_student_outline: function(order_by, data) {
-        if (!data) {
-            return ['gray-400', '']
-        }
-        const options = ['secondary', 'warning', 'primary'];
-        const value = data[order_by];
-        if (!value) {
-            return ['gray-400', '']
-        }
-        return [options[value-1], `order-${4-value}`];
-    },
-
-    sort_students: function(value, options, students, data) {
+    sort_students: function(value, data, options, students) {
         let orders = Array(students).fill(window.dash_clientside.no_update)
         if (!value | value === 'none') {
             return [orders, window.dash_clientside.no_update]
@@ -76,11 +43,6 @@ window.dash_clientside.clientside = {
         return updates;
     },
 
-    update_student_progress_bars: function(value) {
-        const options = ['secondary', 'warning', 'primary'];
-        return options[value-1];
-    },
-
     open_offcanvas: function(clicks, is_open) {
         if(clicks) {
             return !is_open
@@ -88,6 +50,7 @@ window.dash_clientside.clientside = {
         return is_open
     },
 
+    // TODO there is probably a better way to handle the following functions
     toggle_indicators_checklist: function(values) {
         if (values.includes('indicators')) {
             return true;
@@ -95,124 +58,22 @@ window.dash_clientside.clientside = {
         return false;
     },
 
-    hide_show_attributes: function(values, progress, students) {
-        let sentence_badge = 'd-none';
-        let paragraph_badge = 'd-none';
-        let time_on_task_badge = 'd-none';
-        let unique_words_badge = 'd-none';
-        let text_area = 'd-none';
-        let progress_div = 'd-none';
-        let transition_words = 'd-none';
-        let use_of_synonyms = 'd-none';
-        let sv_agreement = 'd-none';
-        let formal_language = 'd-none';
-        if (values.includes('sentences')) {
-            sentence_badge = 'mb-1';
+    toggle_metrics_checklist: function(values) {
+        if (values.includes('metrics')) {
+            return true;
         }
-        if (values.includes('paragraphs')) {
-            paragraph_badge = 'mb-1';
-        }
-        if (values.includes('time_on_task')) {
-            time_on_task_badge = 'mb-1';
-        }
-        if (values.includes('unique_words')) {
-            unique_words_badge = 'mb-1';
-        }
-        if (values.includes('text')) {
-            text_area = '';
-        }
-        if (values.includes('progress')) {
-            // TODO there is probably a better way to do this
-            // in more algorithmic way
-            // requires a deeper discussion on what is shown
-            progress_div = ''
-            if (progress.includes('transition_words')) {
-                transition_words = ''
-            }
-            if (progress.includes('use_of_synonyms')) {
-                use_of_synonyms = ''
-            }
-            if (progress.includes('sv_agreement')) {
-                sv_agreement = ''
-            }
-            if (progress.includes('formal_language')) {
-                formal_language = ''
-            }
-        }
-        return [
-            Array(students).fill(sentence_badge),
-            Array(students).fill(paragraph_badge),
-            Array(students).fill(time_on_task_badge),
-            Array(students).fill(unique_words_badge),
-            Array(students).fill(text_area),
-            Array(students).fill(progress_div),
-            Array(students).fill(transition_words),
-            Array(students).fill(use_of_synonyms),
-            Array(students).fill(sv_agreement),
-            Array(students).fill(formal_language),
-        ]
+        return false;
     },
 
-    hide_show_attributes_single: function(values) {
-        let sentence_badge = 'd-none';
-        let paragraph_badge = 'd-none';
-        let time_on_task_badge = 'd-none';
-        let unique_words_badge = 'd-none';
-        let text_area = 'd-none';
-        let progress_div = 'd-none';
-        let transition_words = 'd-none';
-        let use_of_synonyms = 'd-none';
-        let sv_agreement = 'd-none';
-        let formal_language = 'd-none';
-        if (values.includes('sentences')) {
-            sentence_badge = 'mb-1';
-        }
-        if (values.includes('paragraphs')) {
-            paragraph_badge = 'mb-1';
-        }
-        if (values.includes('time_on_task')) {
-            time_on_task_badge = 'mb-1';
-        }
-        if (values.includes('unique_words')) {
-            unique_words_badge = 'mb-1';
-        }
+    toggle_text_checklist: function(values) {
         if (values.includes('text')) {
-            text_area = '';
+            return true;
         }
-        if (values.includes('progress')) {
-            // TODO there is probably a better way to do this
-            // in more algorithmic way
-            // requires a deeper discussion on what is shown
-            progress_div = ''
-            if (values.includes('transition_words')) {
-                transition_words = ''
-            }
-            if (values.includes('use_of_synonyms')) {
-                use_of_synonyms = ''
-            }
-            if (values.includes('sv_agreement')) {
-                sv_agreement = ''
-            }
-            if (values.includes('formal_language')) {
-                formal_language = ''
-            }
-        }
-        return [
-            sentence_badge,
-            paragraph_badge,
-            time_on_task_badge,
-            unique_words_badge,
-            text_area,
-            progress_div,
-            transition_words,
-            use_of_synonyms,
-            sv_agreement,
-            formal_language,
-        ]
+        return false;
     },
 
-    show_hide_data: function(values, progress, students) {
-        const l = values.concat(progress);
+    show_hide_data: function(values, metrics, indicators, students) {
+        const l = values.concat(metrics).concat(indicators);
         return Array(students).fill(l)
     },
 

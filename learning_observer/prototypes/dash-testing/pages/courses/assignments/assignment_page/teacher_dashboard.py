@@ -4,7 +4,6 @@ from dash_extensions import WebSocket
 
 # local imports
 from .students import create_student_tab
-# from .groups import create_group_tab
 from .reports import create_reports_tab
 
 def create_teacher_dashboard(course, assignment):
@@ -14,7 +13,6 @@ def create_teacher_dashboard(course, assignment):
         dbc.Tabs(
             [
                 dbc.Tab(
-                    # create_group_tab(assignment, course.students),
                     create_student_tab(assignment, course.students),
                     label='Students',
                     tab_id='students',

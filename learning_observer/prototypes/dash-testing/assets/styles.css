@@ -30,7 +30,15 @@ a.disabled {
 }
 
 .shadow-card:hover {
-    box-shadow: 0 .5rem 1rem rgba(0,0,0,.15) !important;
+    transition: all 0.2s ease-out;
+    box-shadow: 0px 4px 8px rgba(38, 38, 38, 0.2);
+    top: -4px;
+    border: 1px solid #cccccc;
+    background-color: white;
+}
+
+.shadow-card:hover:before {
+    transform: scale(2.15);
 }
 
 .tab-content {
@@ -39,3 +47,10 @@ a.disabled {
   border-top: 0px;
   border-radius: 0rem 0rem 0.4rem 0.4rem;
 }
+
+.student-card-text {
+    max-height: 250px;
+    overflow: auto;
+}
+
+.font-size-lg { font-size: 1.2rem; }

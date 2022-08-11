@@ -10,7 +10,8 @@ fake = Faker()
 def create_student(id):
     data = {
         'id': id,
-        'text': fake.text(),
+        'text': fake.text(max_nb_chars=1250),
+        'link': 'http://www.example.com',
         'metrics': {
             'sentences': {'id': 'sentences', 'value': random.randint(1, 4), 'label': ' sentences'},
             'since_last_edit': {'id': 'since_last_edit', 'value': random.randint(10, 100), 'label': ' minutes since last edit'},
@@ -55,6 +56,8 @@ async def course_student_data(id):
     await asyncio.sleep(30)
 
     while True:
+        # TODO figure out how to listen for specific updates, like which text to provide
+
         # flip a coin for each student to see if they have updates
         updates = [update_student(s) for s in students if bool(random.getrandbits(1))]
         output = json.dumps(updates)

@@ -17,14 +17,14 @@ app = dash.Dash(
     __name__,
     use_pages=True,
     external_stylesheets=[
-        dbc.themes.MINTY,
-        dbc.icons.FONT_AWESOME,
-        dbc_css,
-        'https://epsi95.github.io/dash-draggable-css-scipt/dragula.css'
+        dbc.themes.MINTY, # bootstrap styling
+        dbc.icons.FONT_AWESOME, # icons
+        dbc_css, # dcc bootstrap styling
+        'https://epsi95.github.io/dash-draggable-css-scipt/dragula.css' # draggable css
     ],
     external_scripts=[
-        'https://cdnjs.cloudflare.com/ajax/libs/dragula/3.7.2/dragula.min.js',
-        'https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js'
+        'https://cdnjs.cloudflare.com/ajax/libs/dragula/3.7.2/dragula.min.js', # draggable javascript
+        'https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js' # lodash B)
     ],
     title='Learning Observer',
     suppress_callback_exceptions=True

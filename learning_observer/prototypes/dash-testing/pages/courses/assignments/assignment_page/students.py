@@ -5,87 +5,12 @@ from dash_extensions import WebSocket
 
 # local imports
 import learning_observer_components as loc
+from .options_offcanvas import offcanvas, open_btn, show_hide_options_checklist, show_hide_options_metric_checklist, show_hide_options_indicator_checklist
 
 prefix = 'teacher-dashboard'
 
 # add group
 add_group_button = f'{prefix}-add-group-button'
-
-# offcanvas options
-show_hide_options_open = f'{prefix}-show-hide-open-button'
-show_hide_options_offcanvas = f'{prefix}-show-hide-offcanvcas'
-show_hide_options_checklist = f'{prefix}-show-hide-checklist'
-show_hide_options_progress_collapse = f'{prefix}-show-hide-progress-collapse'
-show_hide_options_progress_checklist = f'{prefix}-show-hide-progress-checklist'
-offcanvas = dbc.Offcanvas(
-    [
-        html.H4('Student Card'),
-        dcc.Checklist(
-            # TODO add tooltips to every option
-            options=[
-                # TODO make a collapsible metric item
-                {
-                    'label': 'Metrics',
-                    'value': 'metrics'
-                },
-                {
-                    'label': dbc.Badge('# sentences', color='info', class_name='fs-6 m-2'),
-                    'value': 'sentences'
-                },
-                {
-                    'label': dbc.Badge('# words in 5 minutes', color='info', class_name='fs-6 m-2'),
-                    'value': 'edits_per_min'
-                },
-                {
-                    'label': dbc.Badge('# minutes since last edit', color='info', class_name='fs-6 m-2'),
-                    'value': 'since_last_edit'
-                },
-                # TODO text needs to be more general like first/second paragraph
-                {
-                    'label': html.Span('Summary text', className='fs-5 m-2'),
-                    'value': 'text'
-                },
-                {
-                    'label': html.Span(
-                        [
-                            html.I(className='fas fa-chart-bar me-1'),
-                            'Indicators overview'
-                        ],
-                        className='fs-5 m-2'
-                    ),
-                    'value': 'indicators'
-                }
-            ],
-            value=['sentences', 'edits_per_min', 'text', 'indicators', 'metrics'],
-            id=show_hide_options_checklist,
-            labelClassName='d-block'
-        ),
-        dbc.Collapse(
-            dcc.Checklist(
-                # TODO-options abstract the analysis options into a file in /components
-                options=[
-                    {
-                        'label': html.Span('Transition Words', className='fs-6 m-2'),
-                        'value': 'transition_words'
-                    },
-                    {
-                        'label': html.Span('Academic Language', className='fs-6 m-2'),
-                        'value': 'academic_language'
-                    },
-                ],
-                value=['transition_words', 'academic_language'],
-                id=show_hide_options_progress_checklist,
-                labelClassName='d-block',
-                className='ms-3'
-            ),
-            id=show_hide_options_progress_collapse
-        )
-    ],
-    id=show_hide_options_offcanvas,
-    title='Display options',
-    is_open=False
-)
-
 
 def create_student_tab(assignment, students):
     # TODO remove the assignment parameter
@@ -102,15 +27,7 @@ def create_student_tab(assignment, students):
                         color='secondary',
                         id=add_group_button
                     ),
-                    dbc.Button(
-                        [
-                            html.I(className='fas fa-gear me-1'),
-                            'Options'
-                        ],
-                        class_name='me-2',
-                        color='secondary',
-                        id=show_hide_options_open
-                    ),
+                    open_btn,
                     dbc.Button(
                         [
                             html.I(className='fas fa-sort me-1'),
@@ -157,7 +74,8 @@ def create_student_tab(assignment, students):
                                     'metrics': [],
                                     'text': ''
                                 },
-                                shown=['transition_words', 'academic_language', 'sentences', 'text']
+                                shown=['transition_words', 'academic_language', 'sentences', 'text'],
+                                class_name='shadow-card'
                             ),
                             id={
                                 'type': 'student-col',
@@ -191,21 +109,6 @@ def create_student_tab(assignment, students):
     return container
 
 
-# open the offcanvas show/hide options checklist
-clientside_callback(
-    ClientsideFunction(namespace='clientside', function_name='open_offcanvas'),
-    Output(show_hide_options_offcanvas, 'is_open'),
-    Input(show_hide_options_open, 'n_clicks'),
-    State(show_hide_options_offcanvas, 'is_open')
-)
-
-# offcanvas checklist toggle
-clientside_callback(
-    ClientsideFunction(namespace='clientside', function_name='toggle_indicators_checklist'),
-    Output(show_hide_options_progress_collapse, 'is_open'),
-    Input(show_hide_options_checklist, 'value')
-)
-
 clientside_callback(
     ClientsideFunction(namespace='clientside', function_name='populate_student_data'),
     Output({'type': 'student-card', 'index': ALL}, 'data'),
@@ -219,16 +122,18 @@ clientside_callback(
     Output({'type': 'student-col', 'index': ALL}, 'class_name'),
     Output('sort-by-dropdown-label', 'children'),
     Input('sort-by-radioitems', 'value'),
+    Input({'type': 'student-card', 'index': ALL}, 'data'),
     State('sort-by-radioitems', 'options'),
-    State('student-counter', 'data'),
-    State({'type': 'student-card', 'index': ALL}, 'data')
+    State('student-counter', 'data')
 )
 
 # hide/show attributes
+# TODO add the text information to this callback
 clientside_callback(
     ClientsideFunction(namespace='clientside', function_name='show_hide_data'),
     Output({'type': 'student-card', 'index': ALL}, 'shown'),
     Input(show_hide_options_checklist, 'value'),
-    Input(show_hide_options_progress_checklist, 'value'),
+    Input(show_hide_options_metric_checklist, 'value'),
+    Input(show_hide_options_indicator_checklist, 'value'),
     State('student-counter', 'data')
 )
