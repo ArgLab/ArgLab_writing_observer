@@ -25,7 +25,8 @@ def create_student_tab(assignment, students):
                         ],
                         class_name='me-2',
                         color='secondary',
-                        id=add_group_button
+                        id=add_group_button,
+                        title='Open create groups menu'
                     ),
                     open_btn,
                     dbc.Button(
@@ -35,7 +36,8 @@ def create_student_tab(assignment, students):
                             html.Span('None', id='sort-by-dropdown-label')
                         ],
                         color='secondary',
-                        id='sort-by-dropdown'
+                        id='sort-by-dropdown',
+                        title='Arrange students by attributes'
                     ),
                     dbc.Popover(
                         [

@@ -51,6 +51,10 @@ a.disabled {
 .student-card-text {
     max-height: 250px;
     overflow: auto;
+    border: var(--bs-gray-300) solid 1px;
+    border-radius: 0.4rem;
+    padding: 2px;
+    margin: 1px;
 }
 
 .font-size-lg { font-size: 1.2rem; }

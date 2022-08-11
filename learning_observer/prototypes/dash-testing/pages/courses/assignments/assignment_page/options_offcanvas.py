@@ -21,7 +21,8 @@ open_btn = dbc.Button(
     ],
     class_name='me-2',
     color='secondary',
-    id=show_hide_options_open
+    id=show_hide_options_open,
+    title='Open options menu to show or hide different student attributes'
 )
 
 offcanvas = dbc.Offcanvas(
