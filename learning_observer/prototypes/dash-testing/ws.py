@@ -62,7 +62,7 @@ async def course_student_data(id):
         updates = [update_student(s) for s in students if bool(random.getrandbits(1))]
         output = json.dumps(updates)
         await websocket.send(output)
-        await asyncio.sleep(30)
+        await asyncio.sleep(5)
 
 
 @app.websocket('/analysis/<string:id>')

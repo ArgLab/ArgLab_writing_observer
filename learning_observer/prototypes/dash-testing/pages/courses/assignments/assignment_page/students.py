@@ -31,7 +31,18 @@ def create_student_tab(assignment, students):
                     open_btn,
                     dbc.Button(
                         [
-                            html.I(className='fas fa-sort me-1'),
+                            dcc.Checklist(
+                                options=[
+                                    {
+                                        'value': 'checked',
+                                        'label': html.I(id='sort-direction-icon')
+                                    }
+                                ],
+                                value=['checked'],
+                                id='sort-direction',
+                                inputClassName='d-none',
+                                className='d-inline',
+                            ),
                             'Sort By: ',
                             html.Span('None', id='sort-by-dropdown-label')
                         ],
@@ -41,17 +52,29 @@ def create_student_tab(assignment, students):
                     ),
                     dbc.Popover(
                         [
-                            dbc.PopoverHeader('Indicators:'),
                             dbc.PopoverBody(
-                                dbc.RadioItems(
-                                    options=[
-                                        {'label': 'None', 'value': 'none'},
-                                        {'label': 'Transition Words', 'value': 'transition_words'},
-                                        {'label': 'Academic Language', 'value': 'academic_language'}
-                                    ],
-                                    value='none',
-                                    id='sort-by-radioitems'
-                                )
+                                [
+                                    dcc.Checklist(
+                                        options=[
+                                            {'label': 'Transition Words', 'value': 'transition_words'},
+                                            {'label': 'Academic Language', 'value': 'academic_language'}
+                                        ],
+                                        value=[],
+                                        # TODO change this to a variable instead of hardcoding
+                                        id='sort-by-checklist',
+                                        labelClassName='form-check',
+                                        inputClassName='form-check-input'
+                                    ),
+                                    dbc.Button(
+                                        [
+                                            html.I(className='fas fa-rotate me-1'),
+                                            'Reset'
+                                        ],
+                                        # TODO change this to a variable instead of hardcoding
+                                        id='sort-by-reset',
+                                        size='sm'
+                                    )
+                                ]
                             )
                         ],
                         target='sort-by-dropdown',
@@ -101,6 +124,7 @@ def create_student_tab(assignment, students):
             ),
             offcanvas,
             # TODO change this to a variable instead of hard-coding
+            # there might be a better way to do handle storing the number of students
             dcc.Store(
                 id='student-counter',
                 data=len(students)
@@ -120,17 +144,31 @@ clientside_callback(
 )
 
 clientside_callback(
+    ClientsideFunction(namespace='clientside', function_name='change_sort_direction_icon'),
+    Output('sort-direction-icon', 'className'),
+    Input('sort-direction', 'value'),
+    Input('sort-by-checklist', 'value')
+)
+
+clientside_callback(
+    ClientsideFunction(namespace='clientside', function_name='reset_sort_options'),
+    Output('sort-by-checklist', 'value'),
+    Input('sort-by-reset', 'n_clicks')
+)
+
+clientside_callback(
     ClientsideFunction(namespace='clientside', function_name='sort_students'),
-    Output({'type': 'student-col', 'index': ALL}, 'class_name'),
+    Output({'type': 'student-col', 'index': ALL}, 'style'),
     Output('sort-by-dropdown-label', 'children'),
-    Input('sort-by-radioitems', 'value'),
+    Input('sort-by-checklist', 'value'),
+    Input('sort-direction', 'value'),
     Input({'type': 'student-card', 'index': ALL}, 'data'),
-    State('sort-by-radioitems', 'options'),
+    State('sort-by-checklist', 'options'),
     State('student-counter', 'data')
 )
 
 # hide/show attributes
-# TODO add the text information to this callback
+# TODO add the text radio items to this callback
 clientside_callback(
     ClientsideFunction(namespace='clientside', function_name='show_hide_data'),
     Output({'type': 'student-card', 'index': ALL}, 'shown'),

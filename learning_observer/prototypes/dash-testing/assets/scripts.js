@@ -17,16 +17,41 @@ window.dash_clientside.clientside = {
         return window.dash_clientside.no_update
     },
 
-    sort_students: function(value, data, options, students) {
-        let orders = Array(students).fill(window.dash_clientside.no_update)
-        if (!value | value === 'none') {
-            return [orders, window.dash_clientside.no_update]
+    change_sort_direction_icon: function(values, sort_values) {
+        if (sort_values.length == 0) {
+            return 'fas fa-sort me-1'
         }
-        const option = options.filter(obj => {return obj.value === value});
+        if (values.includes('checked')) {
+            return 'fas fa-sort-up me-1'
+        }
+        return 'fas fa-sort-down me-1'
+    },
+
+    reset_sort_options: function(clicks) {
+        if (clicks) {
+            return [];
+        }
+        return window.dash_clientside.no_update;
+    },
+
+    sort_students: function(values, direction, data, options, students) {
+        let orders = Array(students).fill(window.dash_clientside.no_update);
+        if (values.length === 0) {
+            // preserves current order when no values are present
+            return [orders, 'None']
+        }
+        let labels = options.map(obj => {return (values.includes(obj.value) ? obj.label : '')});
+        labels = labels.filter(e => e);
         for (let i = 0; i < data.length; i++) {
-            orders[i] = `order-${4 - data[i].indicators[value]['value']}`;
+            let score = 0;
+            values.forEach(function (item, index) {
+                score += data[i].indicators[item]['value'];
+            });
+            let order = (direction.includes('checked') ? (3*values.length + 1) - score : score);
+            orders[i] = {'order': order};
         }
-        return [orders, option[0].label]
+        console.log(orders);
+        return [orders, labels.join(', ')];
     },
 
     populate_student_data: function(msg, old_data, students) {
