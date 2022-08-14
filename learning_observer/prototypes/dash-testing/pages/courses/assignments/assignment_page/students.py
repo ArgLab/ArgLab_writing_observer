@@ -1,11 +1,12 @@
 # package imports
+from unicodedata import name
 from dash import html, dcc, clientside_callback, ClientsideFunction, Output, Input, State, ALL
 import dash_bootstrap_components as dbc
 from dash_extensions import WebSocket
 
 # local imports
 import learning_observer_components as loc
-from .options_offcanvas import offcanvas, open_btn, show_hide_options_checklist, show_hide_options_metric_checklist, show_hide_options_indicator_checklist
+from .options_offcanvas import offcanvas, open_btn, show_hide_options_checklist, show_hide_options_metric_checklist, show_hide_options_indicator_checklist, show_hide_options_open
 
 prefix = 'teacher-dashboard'
 
@@ -84,36 +85,48 @@ def create_student_tab(assignment, students):
                 ],
                 className='my-2'
             ),
-            dbc.Card(
-                dbc.Row(
-                    [
+            dbc.Row(
+                [
+                    dbc.Collapse(
                         dbc.Col(
-                            loc.StudentOverviewCard(
-                                id={
-                                    'type': 'student-card',
-                                    'index': s['id']
-                                },
-                                name=s['name'],
-                                data={
-                                    'indicators': [],
-                                    'metrics': [],
-                                    'text': ''
-                                },
-                                shown=['transition_words', 'academic_language', 'sentences', 'text'],
-                                class_name='shadow-card'
-                            ),
-                            id={
-                                'type': 'student-col',
-                                'index': s['id']
-                            },
-                            xxl=3,
-                            lg=4,
-                            md=6
-                        ) for s in students
-                    ],
-                    class_name='g-3 p-3 w-100'
-                ),
-                color='light'
+                            offcanvas,
+                            class_name='w-100 h-100'
+                        ),
+                        id='collapse',
+                        class_name='collapse-horizontal col-xxl-3 col-lg-4 col-md-6',
+                        is_open=False
+                    ),
+                    dbc.Col(
+                        dbc.Row(
+                            [
+                                dbc.Col(
+                                    loc.StudentOverviewCard(
+                                        id={
+                                            'type': 'student-card',
+                                            'index': s['id']
+                                        },
+                                        name=s['name'],
+                                        data={
+                                            'indicators': [],
+                                            'metrics': [],
+                                            'text': ''
+                                        },
+                                        shown=['transition_words', 'academic_language', 'sentences', 'text'],
+                                        class_name='shadow-card'
+                                    ),
+                                    id={
+                                        'type': 'student-col',
+                                        'index': s['id']
+                                    },
+                                ) for s in students
+                            ],
+                            class_name='g-3 p-3 w-100'
+                        ),
+                        id='student-grid',
+                        # classname set in callback
+                    )
+                ],
+                class_name='g-0'
             ),
             # TODO change this to a variable instead of hard-coding
             # might want to move this to the the tab location as well to be used for all communication
@@ -122,7 +135,6 @@ def create_student_tab(assignment, students):
                 id='course-websocket',
                 url=f'ws://127.0.0.1:5000/courses/students/{len(students)}'
             ),
-            offcanvas,
             # TODO change this to a variable instead of hard-coding
             # there might be a better way to do handle storing the number of students
             dcc.Store(
@@ -134,6 +146,17 @@ def create_student_tab(assignment, students):
     )
     return container
 
+    
+# open the offcanvas show/hide options checklist
+clientside_callback(
+    ClientsideFunction(namespace='clientside', function_name='open_offcanvas'),
+    Output('collapse', 'is_open'),
+    Output({'type': 'student-col', 'index': ALL}, 'class_name'),
+    Output('student-grid', 'class_name'),
+    Input(show_hide_options_open, 'n_clicks'),
+    State('collapse', 'is_open'),
+    State('student-counter', 'data')
+)
 
 clientside_callback(
     ClientsideFunction(namespace='clientside', function_name='populate_student_data'),

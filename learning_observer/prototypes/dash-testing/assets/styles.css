@@ -41,13 +41,6 @@ a.disabled {
     transform: scale(2.15);
 }
 
-.tab-content {
-  padding: 0.25rem;
-  border: var(--bs-gray-300) solid 1px;
-  border-top: 0px;
-  border-radius: 0rem 0rem 0.4rem 0.4rem;
-}
-
 .student-card-text {
     max-height: 250px;
     overflow: auto;

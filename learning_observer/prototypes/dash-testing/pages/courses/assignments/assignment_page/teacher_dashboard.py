@@ -16,14 +16,15 @@ def create_teacher_dashboard(course, assignment):
                     create_student_tab(assignment, course.students),
                     label='Students',
                     tab_id='students',
-                    label_class_name='h2'
+                    active_label_class_name='bg-primary text-white',
+                    label_class_name='btn-sm'
                 ),
                 dbc.Tab(
                     # TODO this tab does the wrong analysis, we actually want to move this up a level
                     # create_reports_tab(course.students),
                     label='Reports',
                     tab_id='reports',
-                    label_class_name='h2'
+                    label_class_name=''
                 )
             ],
             active_tab='students'

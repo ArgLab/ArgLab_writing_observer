@@ -19,15 +19,14 @@ open_btn = dbc.Button(
         html.I(className='fas fa-gear me-1'),
         'Options'
     ],
-    class_name='me-2',
-    color='secondary',
+    class_name='btn btn-secondary me-2',
     id=show_hide_options_open,
     title='Open options menu to show or hide different student attributes'
 )
 
-offcanvas = dbc.Offcanvas(
+offcanvas = dbc.Card(
     [
-        html.H4('Student Card'),
+        html.H4('Student Card Options'),
         dcc.Checklist(
             # TODO add tooltips to every option
             options=[
@@ -159,16 +158,8 @@ offcanvas = dbc.Offcanvas(
         ),
     ],
     id=show_hide_options_offcanvas,
-    title='Display options',
-    is_open=False
-)
-
-# open the offcanvas show/hide options checklist
-clientside_callback(
-    ClientsideFunction(namespace='clientside', function_name='open_offcanvas'),
-    Output(show_hide_options_offcanvas, 'is_open'),
-    Input(show_hide_options_open, 'n_clicks'),
-    State(show_hide_options_offcanvas, 'is_open')
+    body=True,
+    class_name='mt-3 sticky-top'
 )
 
 # offcanvas checklist toggle

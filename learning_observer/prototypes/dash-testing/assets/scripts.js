@@ -68,11 +68,11 @@ window.dash_clientside.clientside = {
         return updates;
     },
 
-    open_offcanvas: function(clicks, is_open) {
-        if(clicks) {
-            return !is_open
+    open_offcanvas: function(clicks, is_open, students) {
+        if(!is_open & clicks) {
+            return [true, Array(students).fill('col-lg-6 col-xxl-4'), 'col-xxl-9 col-lg-8 col-md-6'];
         }
-        return is_open
+        return [false, Array(students).fill('col-md-6 col-lg-4 col-xxl-3'), ''];
     },
 
     // TODO there is probably a better way to handle the following functions
