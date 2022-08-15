@@ -26,7 +26,9 @@ open_btn = dbc.Button(
 
 offcanvas = dbc.Card(
     [
-        html.H4('Student Card Options'),
+        html.H4('Settings'),
+        html.H5('Sort by'),
+        html.H5('Student Card Options'),
         dcc.Checklist(
             # TODO add tooltips to every option
             options=[

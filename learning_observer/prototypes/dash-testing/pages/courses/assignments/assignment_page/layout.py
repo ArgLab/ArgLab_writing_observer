@@ -1,7 +1,6 @@
 # package imports
 import dash
-from dash import html, dcc
-import dash_mantine_components as dmc
+from dash import html
 
 # local imports
 from ..course import Course
@@ -26,14 +25,6 @@ def layout(course_id=None, assignment_id=None):
         dashboard = 'No role'
     layout = html.Div(
         [
-            dmc.Breadcrumbs(
-                [
-                    dcc.Link('Courses', href='/courses', refresh=True),
-                    dcc.Link(f'{course.name}', href=f'/course/{course.id}', refresh=True),
-                    dcc.Link(f'Assignment {assignment_id}', href=f'/course/{course.id}/assignment/{assignment_id}', className='disabled')
-                ],
-                class_name='mb-2'
-            ),
             dashboard
         ]
     )

@@ -19,17 +19,26 @@ def create_student_tab(assignment, students):
         [
             html.Div(
                 [
-                    dbc.Button(
+                    html.H3(
                         [
-                            html.I(className='fas fa-circle-plus me-1'),
-                            'Create Groups'
+                            html.I(className='fas fa-file-lines me-1'),
+                            assignment.name
                         ],
-                        class_name='me-2',
-                        color='secondary',
-                        id=add_group_button,
-                        title='Open create groups menu'
+                        className='d-inline me-3'
                     ),
-                    open_btn,
+                    html.Div(
+                        [
+                            open_btn
+                        ],
+                        className='float-end'
+                    ),
+                    html.Br(),
+                    html.Small(assignment.description)
+                ],
+                className='my-1'
+            ),
+            html.Div(
+                [
                     dbc.Button(
                         [
                             dcc.Checklist(
