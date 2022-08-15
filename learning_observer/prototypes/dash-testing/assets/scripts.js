@@ -19,12 +19,12 @@ window.dash_clientside.clientside = {
 
     change_sort_direction_icon: function(values, sort_values) {
         if (sort_values.length == 0) {
-            return 'fas fa-sort me-1'
+            return ['fas fa-sort', 'None']
         }
         if (values.includes('checked')) {
-            return 'fas fa-sort-up me-1'
+            return ['fas fa-sort-down', 'Desc']
         }
-        return 'fas fa-sort-down me-1'
+        return ['fas fa-sort-up', 'Asc']
     },
 
     reset_sort_options: function(clicks) {
@@ -38,7 +38,7 @@ window.dash_clientside.clientside = {
         let orders = Array(students).fill(window.dash_clientside.no_update);
         if (values.length === 0) {
             // preserves current order when no values are present
-            return [orders, 'None']
+            return orders
         }
         let labels = options.map(obj => {return (values.includes(obj.value) ? obj.label : '')});
         labels = labels.filter(e => e);
@@ -50,8 +50,7 @@ window.dash_clientside.clientside = {
             let order = (direction.includes('checked') ? (3*values.length + 1) - score : score);
             orders[i] = {'order': order};
         }
-        console.log(orders);
-        return [orders, labels.join(', ')];
+        return orders;
     },
 
     populate_student_data: function(msg, old_data, students) {
@@ -68,11 +67,14 @@ window.dash_clientside.clientside = {
         return updates;
     },
 
-    open_offcanvas: function(clicks, is_open, students) {
-        if(!is_open & clicks) {
-            return [true, Array(students).fill('col-lg-6 col-xxl-4'), 'col-xxl-9 col-lg-8 col-md-6'];
+    open_offcanvas: function(clicks, close, is_open, students) {
+        const trig = dash_clientside.callback_context.triggered[0];
+        if(!is_open & (typeof trig !== 'undefined')) {
+            if (trig.prop_id === 'teacher-dashboard-settings-show-hide-open-button.n_clicks') {
+                return [true, Array(students).fill('col-12 col-lg-6 col-xxl-4'), 'col-xxl-9 col-lg-8 col-md-6'];
+            }
         }
-        return [false, Array(students).fill('col-md-6 col-lg-4 col-xxl-3'), ''];
+        return [false, Array(students).fill('col-12 col-md-6 col-lg-4 col-xxl-3'), ''];
     },
 
     // TODO there is probably a better way to handle the following functions

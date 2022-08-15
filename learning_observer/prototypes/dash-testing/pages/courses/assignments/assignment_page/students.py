@@ -6,7 +6,7 @@ from dash_extensions import WebSocket
 
 # local imports
 import learning_observer_components as loc
-from .options_offcanvas import offcanvas, open_btn, show_hide_options_checklist, show_hide_options_metric_checklist, show_hide_options_indicator_checklist, show_hide_options_open
+from . import settings
 
 prefix = 'teacher-dashboard'
 
@@ -21,14 +21,14 @@ def create_student_tab(assignment, students):
                 [
                     html.H3(
                         [
-                            html.I(className='fas fa-file-lines me-1'),
+                            html.I(className='fas fa-file-lines me-2'),
                             assignment.name
                         ],
                         className='d-inline me-3'
                     ),
                     html.Div(
                         [
-                            open_btn
+                            settings.open_btn
                         ],
                         className='float-end'
                     ),
@@ -37,68 +37,11 @@ def create_student_tab(assignment, students):
                 ],
                 className='my-1'
             ),
-            html.Div(
-                [
-                    dbc.Button(
-                        [
-                            dcc.Checklist(
-                                options=[
-                                    {
-                                        'value': 'checked',
-                                        'label': html.I(id='sort-direction-icon')
-                                    }
-                                ],
-                                value=['checked'],
-                                id='sort-direction',
-                                inputClassName='d-none',
-                                className='d-inline',
-                            ),
-                            'Sort By: ',
-                            html.Span('None', id='sort-by-dropdown-label')
-                        ],
-                        color='secondary',
-                        id='sort-by-dropdown',
-                        title='Arrange students by attributes'
-                    ),
-                    dbc.Popover(
-                        [
-                            dbc.PopoverBody(
-                                [
-                                    dcc.Checklist(
-                                        options=[
-                                            {'label': 'Transition Words', 'value': 'transition_words'},
-                                            {'label': 'Academic Language', 'value': 'academic_language'}
-                                        ],
-                                        value=[],
-                                        # TODO change this to a variable instead of hardcoding
-                                        id='sort-by-checklist',
-                                        labelClassName='form-check',
-                                        inputClassName='form-check-input'
-                                    ),
-                                    dbc.Button(
-                                        [
-                                            html.I(className='fas fa-rotate me-1'),
-                                            'Reset'
-                                        ],
-                                        # TODO change this to a variable instead of hardcoding
-                                        id='sort-by-reset',
-                                        size='sm'
-                                    )
-                                ]
-                            )
-                        ],
-                        target='sort-by-dropdown',
-                        trigger='hover',
-                        placement='bottom'
-                    )
-                ],
-                className='my-2'
-            ),
             dbc.Row(
                 [
                     dbc.Collapse(
                         dbc.Col(
-                            offcanvas,
+                            settings.panel,
                             class_name='w-100 h-100'
                         ),
                         id='collapse',
@@ -129,7 +72,7 @@ def create_student_tab(assignment, students):
                                     },
                                 ) for s in students
                             ],
-                            class_name='g-3 p-3 w-100'
+                            class_name='g-3 p-1 p-md-3 w-100'
                         ),
                         id='student-grid',
                         # classname set in callback
@@ -162,7 +105,8 @@ clientside_callback(
     Output('collapse', 'is_open'),
     Output({'type': 'student-col', 'index': ALL}, 'class_name'),
     Output('student-grid', 'class_name'),
-    Input(show_hide_options_open, 'n_clicks'),
+    Input(settings.show_hide_settings_open, 'n_clicks'),
+    Input('settings-close', 'n_clicks'),
     State('collapse', 'is_open'),
     State('student-counter', 'data')
 )
@@ -176,22 +120,8 @@ clientside_callback(
 )
 
 clientside_callback(
-    ClientsideFunction(namespace='clientside', function_name='change_sort_direction_icon'),
-    Output('sort-direction-icon', 'className'),
-    Input('sort-direction', 'value'),
-    Input('sort-by-checklist', 'value')
-)
-
-clientside_callback(
-    ClientsideFunction(namespace='clientside', function_name='reset_sort_options'),
-    Output('sort-by-checklist', 'value'),
-    Input('sort-by-reset', 'n_clicks')
-)
-
-clientside_callback(
     ClientsideFunction(namespace='clientside', function_name='sort_students'),
     Output({'type': 'student-col', 'index': ALL}, 'style'),
-    Output('sort-by-dropdown-label', 'children'),
     Input('sort-by-checklist', 'value'),
     Input('sort-direction', 'value'),
     Input({'type': 'student-card', 'index': ALL}, 'data'),
@@ -204,8 +134,8 @@ clientside_callback(
 clientside_callback(
     ClientsideFunction(namespace='clientside', function_name='show_hide_data'),
     Output({'type': 'student-card', 'index': ALL}, 'shown'),
-    Input(show_hide_options_checklist, 'value'),
-    Input(show_hide_options_metric_checklist, 'value'),
-    Input(show_hide_options_indicator_checklist, 'value'),
+    Input(settings.show_hide_settings_checklist, 'value'),
+    Input(settings.show_hide_settings_metric_checklist, 'value'),
+    Input(settings.show_hide_settings_indicator_checklist, 'value'),
     State('student-counter', 'data')
 )
