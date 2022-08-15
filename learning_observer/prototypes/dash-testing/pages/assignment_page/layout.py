@@ -3,7 +3,7 @@ import dash
 from dash import html
 
 # local imports
-from ..course import Course
+from components.course import Course
 from .teacher_dashboard import create_teacher_dashboard
 
 dash.register_page(

@@ -246,7 +246,8 @@ panel = dbc.Card(
             ],
             active_item=[f'item-{i}' for i in range(2)],
             always_open=True,
-            flush=True
+            flush=True,
+            class_name='border-top'
         ),        
     ],
     id=show_hide_settings_offcanvas,

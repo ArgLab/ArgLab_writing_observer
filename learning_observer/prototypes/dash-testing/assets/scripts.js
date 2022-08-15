@@ -77,6 +77,13 @@ window.dash_clientside.clientside = {
         return [false, Array(students).fill('col-12 col-md-6 col-lg-4 col-xxl-3'), ''];
     },
 
+    toggle_open_close: function(value, is_open) {
+        if (value) {
+            return !is_open;
+        }
+        return is_open;
+    },
+
     // TODO there is probably a better way to handle the following functions
     toggle_indicators_checklist: function(values) {
         if (values.includes('indicators')) {

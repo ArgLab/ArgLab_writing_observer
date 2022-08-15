@@ -31,7 +31,6 @@ def create_assignment_card(assignment, course_id):
                     dbc.CardBody(
                         [
                             html.H4(assignment.name),
-                            assignment.description,
                             html.Div(
                                 dbc.Badge(
                                     assignment.essay_type,
@@ -58,47 +57,3 @@ def create_assignment_card(assignment, course_id):
         align='stretch'
     )
     return card
-
-
-def list_assignments(course):
-    cards = html.Div(
-        [
-            html.Div(
-                [
-                    dbc.Button(
-                        [
-                            html.I(className='fas fa-circle-plus me-1'),
-                            'Add Assignment'
-                        ],
-                        class_name='me-2',
-                        color='secondary',
-                        title='Opens add assignment menu'
-                    ),
-                ],
-                className='my-2'
-            ),
-            dbc.Card(
-                [
-                    html.H3('Active'),
-                    dbc.Row(
-                        [
-                            create_assignment_card(assignment, course.id)
-                            for assignment in course.assignments if assignment.active
-                        ],
-                        class_name='g-3'
-                    ),
-                    html.H3('Other'),
-                    dbc.Row(
-                        [
-                            create_assignment_card(assignment, course.id)
-                            for assignment in course.assignments if not assignment.active
-                        ],
-                        class_name='g-3'
-                    )
-                ],
-                body=True,
-                color='light',
-            )
-        ]
-    )
-    return cards
