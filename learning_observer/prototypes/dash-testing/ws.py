@@ -32,7 +32,6 @@ def update_student(data):
     }
     # flip a coin for each update
     if bool(random.getrandbits(1)):
-
         updates['metrics']['sentences'] = {'value': data['metrics']['sentences']['value'] + random.randint(1, 10)}
     if bool(random.getrandbits(1)):
         updates['metrics']['since_last_edit'] = {'value': random.randint(0, 10)}

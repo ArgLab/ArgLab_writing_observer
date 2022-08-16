@@ -7,10 +7,7 @@ from dash_bootstrap_templates import load_figure_template
 # local imports
 from components import navbar
 
-dbc_css = (
-    "https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates@V1.0.6/dbc.min.css"
-)
-
+# load in minty templates as default plotly
 load_figure_template('minty')
 
 app = dash.Dash(
@@ -19,8 +16,8 @@ app = dash.Dash(
     external_stylesheets=[
         dbc.themes.MINTY, # bootstrap styling
         dbc.icons.FONT_AWESOME, # icons
-        dbc_css, # dcc bootstrap styling
-        'https://epsi95.github.io/dash-draggable-css-scipt/dragula.css' # draggable css
+        'https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates@V1.0.6/dbc.min.css', # dcc bootstrap styling
+        'https://epsi95.github.io/dash-draggable-css-scipt/dragula.css', # draggable css
     ],
     external_scripts=[
         'https://cdnjs.cloudflare.com/ajax/libs/dragula/3.7.2/dragula.min.js', # draggable javascript

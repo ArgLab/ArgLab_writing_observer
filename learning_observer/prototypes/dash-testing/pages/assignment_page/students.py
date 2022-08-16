@@ -14,7 +14,6 @@ prefix = 'teacher-dashboard'
 add_group_button = f'{prefix}-add-group-button'
 
 def create_student_tab(assignment, students):
-    # TODO remove the assignment parameter
     container = dbc.Container(
         [
             html.Div(
@@ -24,7 +23,7 @@ def create_student_tab(assignment, students):
                             html.I(className='fas fa-file-lines me-2'),
                             assignment.name
                         ],
-                        className='d-inline me-3'
+                        className='d-inline'
                     ),
                     html.Div(
                         [
@@ -33,7 +32,7 @@ def create_student_tab(assignment, students):
                         className='float-end'
                     ),
                     html.Br(),
-                    html.Small(assignment.description)
+                    html.P(assignment.description, className='font-size-sm')
                 ],
                 className='my-1'
             ),
