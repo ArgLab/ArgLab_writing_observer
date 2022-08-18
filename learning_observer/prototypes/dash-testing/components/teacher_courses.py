@@ -41,8 +41,6 @@ def create_course_card(course):
                     )
                 ],
                 href=f'/course/{course["id"]}',
-                # TODO transfer most of this to css and replace with
-                # className='course-card'
                 className='text-reset text-decoration-none h-100 d-flex flex-column align-items-stretch',
                 title=f'Opens dashboard for {course["name"]}'
             ),

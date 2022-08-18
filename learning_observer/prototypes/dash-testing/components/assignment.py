@@ -41,8 +41,6 @@ def create_assignment_card(assignment, course_id):
                         ]
                     )
                 ],
-                # TODO transfer most of this to css and replace with
-                # className='assignment-card'
                 href=f'/course/{course_id}/assignment/{assignment.id}',
                 className='text-decoration-none text-body h-100 d-flex flex-column align-items-stretch',
                 title=f'Opens dashboard for {assignment.name}'

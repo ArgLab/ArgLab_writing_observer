@@ -4,6 +4,13 @@ import dash_bootstrap_components as dbc
 
 prefix = 'teacher-dashboard-settings'
 # settings ids
+close_settings = f'{prefix}-close'
+sort_by_checklist = f'{prefix}-sort-by-checklist'
+sort_toggle = f'{prefix}-sort-by-toggle'
+sort_icon = f'{prefix}-sort-by-icon'
+sort_label = f'{prefix}-sort-by-label'
+sort_reset = f'{prefix}-sort-by-reset'
+
 show_hide_settings_open = f'{prefix}-show-hide-open-button'
 show_hide_settings_offcanvas = f'{prefix}-show-hide-offcanvcas'
 show_hide_settings_checklist = f'{prefix}-show-hide-checklist'
@@ -38,7 +45,7 @@ panel = dbc.Card(
                     html.I(className='fas fa-xmark'),
                     color='white',
                     class_name='float-end text-body',
-                    id='settings-close'
+                    id=close_settings
                 )
             ],
             className='m-2'
@@ -54,8 +61,7 @@ panel = dbc.Card(
                                     {'label': 'Academic Language', 'value': 'academic_language'}
                                 ],
                                 value=[],
-                                # TODO change this to a variable instead of hardcoding
-                                id='sort-by-checklist',
+                                id=sort_by_checklist,
                                 labelClassName='form-check',
                                 inputClassName='form-check-input'
                             ),
@@ -68,23 +74,22 @@ panel = dbc.Card(
                                                     options=[
                                                         {
                                                             'value': 'checked',
-                                                            'label': html.I(id='sort-direction-icon')
+                                                            'label': html.I(id=sort_icon)
                                                         }
                                                     ],
                                                     value=['checked'],
-                                                    id='sort-direction',
+                                                    id=sort_toggle,
                                                     inputClassName='d-none',
                                                     className='d-inline',
                                                 ),
                                                 html.Span(
                                                     'None',
-                                                    id='sort-direction-label',
+                                                    id=sort_label,
                                                     className='ms-1'
                                                 )
                                             ],
                                             outline=True,
                                             color='primary',
-                                            id='sort-by-dropdown',
                                             title='Arrange students by attributes',
                                         ),
                                         dbc.Button(
@@ -92,8 +97,7 @@ panel = dbc.Card(
                                                 html.I(className='fas fa-rotate me-1'),
                                                 'Reset Sort'
                                             ],
-                                            # TODO change this to a variable instead of hardcoding
-                                            id='sort-by-reset',
+                                            id=sort_reset,
                                             outline=True,
                                             color='primary'
                                         )
@@ -256,16 +260,16 @@ panel = dbc.Card(
 
 clientside_callback(
     ClientsideFunction(namespace='clientside', function_name='change_sort_direction_icon'),
-    Output('sort-direction-icon', 'className'),
-    Output('sort-direction-label', 'children'),
-    Input('sort-direction', 'value'),
-    Input('sort-by-checklist', 'value')
+    Output(sort_icon, 'className'),
+    Output(sort_label, 'children'),
+    Input(sort_toggle, 'value'),
+    Input(sort_by_checklist, 'value')
 )
 
 clientside_callback(
     ClientsideFunction(namespace='clientside', function_name='reset_sort_options'),
-    Output('sort-by-checklist', 'value'),
-    Input('sort-by-reset', 'n_clicks')
+    Output(sort_by_checklist, 'value'),
+    Input(sort_reset, 'n_clicks')
 )
 
 # offcanvas checklist toggle
