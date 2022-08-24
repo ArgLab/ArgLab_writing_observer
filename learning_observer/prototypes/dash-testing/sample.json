@@ -1,0 +1,1486 @@
+[
+    {
+        "id": "essay_4248.json",
+        "text": {
+            "emotionwords": {
+                "id": "emotionwords",
+                "value": [
+                    "sweet",
+                    "sorry",
+                    "felt",
+                    "wonder",
+                    "hate",
+                    "want",
+                    "missing",
+                    "worry",
+                    "love"
+                ],
+                "label": "Emotion words used"
+            },
+            "concretedetails": {
+                "id": "contretedetails",
+                "value": [
+                    "hone",
+                    "yelled",
+                    "stairs",
+                    "daddy",
+                    "package",
+                    "pitch",
+                    "sack",
+                    "teller",
+                    "envelopes",
+                    "ding"
+                ],
+                "label": "Concrete details"
+            },
+            "transitionwords": {
+                "id": "transitionwords",
+                "value": [
+                    "in two weeks",
+                    "but",
+                    "still",
+                    "every day",
+                    "yet"
+                ],
+                "label": "Transitions used"
+            }
+        },
+        "metrics": {
+            "sentences": {
+                "id": "sentences",
+                "value": 33,
+                "label": " sentences"
+            }
+        },
+        "indicators": {
+            "transitions": {
+                "id": "transitions",
+                "value": 81,
+                "label": "Transitions",
+                "help": "Percentile based on total number of transitions used"
+            },
+            "academiclanguage": {
+                "id": "academiclanguage",
+                "value": 8,
+                "label": "Academic Language",
+                "help": "Percentile based on percent of academic language used"
+            }
+        }
+    },
+    {
+        "id": "essay_3004.json",
+        "text": {
+            "emotionwords": {
+                "id": "emotionwords",
+                "value": [
+                    "overcome",
+                    "stress",
+                    "stress",
+                    "need",
+                    "faced",
+                    "face"
+                ],
+                "label": "Emotion words used"
+            },
+            "concretedetails": {
+                "id": "contretedetails",
+                "value": [
+                    "mast",
+                    "obstacles",
+                    "builders",
+                    "airship",
+                    "According",
+                    "modified",
+                    "accommodate",
+                    "obstacle",
+                    "builders",
+                    "constantly",
+                    "airship",
+                    "violently",
+                    "buffeted",
+                    "obstacle",
+                    "dirigibles",
+                    "hydrogen",
+                    "helium",
+                    "hydrogen",
+                    "flammable",
+                    "builders",
+                    "builders",
+                    "obstacles"
+                ],
+                "label": "Concrete details"
+            },
+            "transitionwords": {
+                "id": "transitionwords",
+                "value": [
+                    "firstly",
+                    "according to",
+                    "as a result",
+                    "due to",
+                    "finally",
+                    "rather than",
+                    "in conclusion"
+                ],
+                "label": "Transitions used"
+            }
+        },
+        "metrics": {
+            "sentences": {
+                "id": "sentences",
+                "value": 11,
+                "label": " sentences"
+            }
+        },
+        "indicators": {
+            "transitions": {
+                "id": "transitions",
+                "value": 47,
+                "label": "Transitions",
+                "help": "Percentile based on total number of transitions used"
+            },
+            "academiclanguage": {
+                "id": "academiclanguage",
+                "value": 95,
+                "label": "Academic Language",
+                "help": "Percentile based on percent of academic language used"
+            }
+        }
+    },
+    {
+        "id": "essay_875.json",
+        "text": {
+            "emotionwords": {
+                "id": "emotionwords",
+                "value": [
+                    "missing",
+                    "feelings",
+                    "need",
+                    "like",
+                    "like",
+                    "need",
+                    "need",
+                    "hurt"
+                ],
+                "label": "Emotion words used"
+            },
+            "concretedetails": {
+                "id": "contretedetails",
+                "value": [
+                    "snack",
+                    "snack",
+                    "homework",
+                    "helpful",
+                    "buckle",
+                    "predators",
+                    "obesity",
+                    "posture",
+                    "tunnel",
+                    "whittle"
+                ],
+                "label": "Concrete details"
+            },
+            "transitionwords": {
+                "id": "transitionwords",
+                "value": [
+                    "but",
+                    "or",
+                    "also",
+                    "so",
+                    "Many times in your life"
+                ],
+                "label": "Transitions used"
+            }
+        },
+        "metrics": {
+            "sentences": {
+                "id": "sentences",
+                "value": 23,
+                "label": " sentences"
+            }
+        },
+        "indicators": {
+            "transitions": {
+                "id": "transitions",
+                "value": 87,
+                "label": "Transitions",
+                "help": "Percentile based on total number of transitions used"
+            },
+            "academiclanguage": {
+                "id": "academiclanguage",
+                "value": 79,
+                "label": "Academic Language",
+                "help": "Percentile based on percent of academic language used"
+            }
+        }
+    },
+    {
+        "id": "essay_2128.json",
+        "text": {
+            "emotionwords": {
+                "id": "emotionwords",
+                "value": [
+                    "thankful",
+                    "grateful",
+                    "thankful",
+                    "grateful",
+                    "love",
+                    "appreciative",
+                    "loved",
+                    "thankful"
+                ],
+                "label": "Emotion words used"
+            },
+            "concretedetails": {
+                "id": "contretedetails",
+                "value": [
+                    "memoir",
+                    "paragraph",
+                    "sacrifice",
+                    "memoir"
+                ],
+                "label": "Concrete details"
+            },
+            "transitionwords": {
+                "id": "transitionwords",
+                "value": [
+                    "because",
+                    "also",
+                    "in addition",
+                    "therefore"
+                ],
+                "label": "Transitions used"
+            }
+        },
+        "metrics": {
+            "sentences": {
+                "id": "sentences",
+                "value": 8,
+                "label": " sentences"
+            }
+        },
+        "indicators": {
+            "transitions": {
+                "id": "transitions",
+                "value": 41,
+                "label": "Transitions",
+                "help": "Percentile based on total number of transitions used"
+            },
+            "academiclanguage": {
+                "id": "academiclanguage",
+                "value": 37,
+                "label": "Academic Language",
+                "help": "Percentile based on percent of academic language used"
+            }
+        }
+    },
+    {
+        "id": "essay_3159.json",
+        "text": {
+            "emotionwords": {
+                "id": "emotionwords",
+                "value": [
+                    "low"
+                ],
+                "label": "Emotion words used"
+            },
+            "concretedetails": {
+                "id": "contretedetails",
+                "value": [
+                    "mooring",
+                    "mast",
+                    "dirigible",
+                    "docked",
+                    "dirigibles",
+                    "hydrogen",
+                    "paragraph",
+                    "hydrogen",
+                    "flammable",
+                    "populated",
+                    "obstacle",
+                    "dirigible",
+                    "dirigibles",
+                    "moored",
+                    "airships",
+                    "urban",
+                    "paragraph"
+                ],
+                "label": "Concrete details"
+            },
+            "transitionwords": {
+                "id": "transitionwords",
+                "value": [
+                    "however",
+                    "so",
+                    "for example",
+                    "instead",
+                    "because",
+                    "due to",
+                    "if",
+                    "but",
+                    "lastly"
+                ],
+                "label": "Transitions used"
+            }
+        },
+        "metrics": {
+            "sentences": {
+                "id": "sentences",
+                "value": 12,
+                "label": " sentences"
+            }
+        },
+        "indicators": {
+            "transitions": {
+                "id": "transitions",
+                "value": 81,
+                "label": "Transitions",
+                "help": "Percentile based on total number of transitions used"
+            },
+            "academiclanguage": {
+                "id": "academiclanguage",
+                "value": 91,
+                "label": "Academic Language",
+                "help": "Percentile based on percent of academic language used"
+            }
+        }
+    },
+    {
+        "id": "essay_144.json",
+        "text": {
+            "emotionwords": {
+                "id": "emotionwords",
+                "value": [
+                    "want",
+                    "enjoy",
+                    "hope",
+                    "enjoy",
+                    "appreciate"
+                ],
+                "label": "Emotion words used"
+            },
+            "concretedetails": {
+                "id": "contretedetails",
+                "value": [
+                    "Reader",
+                    "helpful",
+                    "homework",
+                    "attendance",
+                    "attendance",
+                    "puppies"
+                ],
+                "label": "Concrete details"
+            },
+            "transitionwords": {
+                "id": "transitionwords",
+                "value": [
+                    "because",
+                    "for example",
+                    "like",
+                    "also",
+                    "my",
+                    "not only",
+                    "but"
+                ],
+                "label": "Transitions used"
+            }
+        },
+        "metrics": {
+            "sentences": {
+                "id": "sentences",
+                "value": 22,
+                "label": " sentences"
+            }
+        },
+        "indicators": {
+            "transitions": {
+                "id": "transitions",
+                "value": 58,
+                "label": "Transitions",
+                "help": "Percentile based on total number of transitions used"
+            },
+            "academiclanguage": {
+                "id": "academiclanguage",
+                "value": 54,
+                "label": "Academic Language",
+                "help": "Percentile based on percent of academic language used"
+            }
+        }
+    },
+    {
+        "id": "essay_2113.json",
+        "text": {
+            "emotionwords": {
+                "id": "emotionwords",
+                "value": [
+                    "love",
+                    "loves",
+                    "grateful"
+                ],
+                "label": "Emotion words used"
+            },
+            "concretedetails": {
+                "id": "contretedetails",
+                "value": [
+                    "memoir",
+                    "customs",
+                    "immigrants",
+                    "palace"
+                ],
+                "label": "Concrete details"
+            },
+            "transitionwords": {
+                "id": "transitionwords",
+                "value": [
+                    "because"
+                ],
+                "label": "Transitions used"
+            }
+        },
+        "metrics": {
+            "sentences": {
+                "id": "sentences",
+                "value": 8,
+                "label": " sentences"
+            }
+        },
+        "indicators": {
+            "transitions": {
+                "id": "transitions",
+                "value": 10,
+                "label": "Transitions",
+                "help": "Percentile based on total number of transitions used"
+            },
+            "academiclanguage": {
+                "id": "academiclanguage",
+                "value": 83,
+                "label": "Academic Language",
+                "help": "Percentile based on percent of academic language used"
+            }
+        }
+    },
+    {
+        "id": "essay_2196.json",
+        "text": {
+            "emotionwords": {
+                "id": "emotionwords",
+                "value": [
+                    "feeling",
+                    "gratefulness",
+                    "grateful",
+                    "admiration",
+                    "grateful",
+                    "valued",
+                    "grateful",
+                    "love",
+                    "gratefulness"
+                ],
+                "label": "Emotion words used"
+            },
+            "concretedetails": {
+                "id": "contretedetails",
+                "value": [
+                    "scratch",
+                    "materialistic",
+                    "paragraph",
+                    "sacrifice",
+                    "indicator"
+                ],
+                "label": "Concrete details"
+            },
+            "transitionwords": {
+                "id": "transitionwords",
+                "value": [
+                    "that is"
+                ],
+                "label": "Transitions used"
+            }
+        },
+        "metrics": {
+            "sentences": {
+                "id": "sentences",
+                "value": 8,
+                "label": " sentences"
+            }
+        },
+        "indicators": {
+            "transitions": {
+                "id": "transitions",
+                "value": 10,
+                "label": "Transitions",
+                "help": "Percentile based on total number of transitions used"
+            },
+            "academiclanguage": {
+                "id": "academiclanguage",
+                "value": 58,
+                "label": "Academic Language",
+                "help": "Percentile based on percent of academic language used"
+            }
+        }
+    },
+    {
+        "id": "essay_2767.json",
+        "text": {
+            "emotionwords": {
+                "id": "emotionwords",
+                "value": [
+                    "love",
+                    "feeling",
+                    "feeling",
+                    "love",
+                    "love"
+                ],
+                "label": "Emotion words used"
+            },
+            "concretedetails": {
+                "id": "contretedetails",
+                "value": [
+                    "memoir",
+                    "reader",
+                    "memoir",
+                    "Cuban",
+                    "paragraph",
+                    "paragraph",
+                    "backdrop",
+                    "memoir",
+                    "neighbors",
+                    "memoir",
+                    "reader"
+                ],
+                "label": "Concrete details"
+            },
+            "transitionwords": {
+                "id": "transitionwords",
+                "value": [
+                    "or",
+                    "if",
+                    "for example",
+                    "in the end",
+                    "but also",
+                    "also"
+                ],
+                "label": "Transitions used"
+            }
+        },
+        "metrics": {
+            "sentences": {
+                "id": "sentences",
+                "value": 13,
+                "label": " sentences"
+            }
+        },
+        "indicators": {
+            "transitions": {
+                "id": "transitions",
+                "value": 58,
+                "label": "Transitions",
+                "help": "Percentile based on total number of transitions used"
+            },
+            "academiclanguage": {
+                "id": "academiclanguage",
+                "value": 50,
+                "label": "Academic Language",
+                "help": "Percentile based on percent of academic language used"
+            }
+        }
+    },
+    {
+        "id": "essay_1192.json",
+        "text": {
+            "emotionwords": {
+                "id": "emotionwords",
+                "value": [
+                    "distress",
+                    "offensive",
+                    "feels",
+                    "offensive",
+                    "feel",
+                    "offensive",
+                    "hope",
+                    "overcome",
+                    "offensive"
+                ],
+                "label": "Emotion words used"
+            },
+            "concretedetails": {
+                "id": "contretedetails",
+                "value": [
+                    "shelves",
+                    "educational",
+                    "conveys",
+                    "arena",
+                    "famous",
+                    "incarceration",
+                    "shelves",
+                    "fragile"
+                ],
+                "label": "Concrete details"
+            },
+            "transitionwords": {
+                "id": "transitionwords",
+                "value": [
+                    "in that",
+                    "but",
+                    "reason to",
+                    "because",
+                    "then",
+                    "however",
+                    "such as",
+                    "my",
+                    "reason for",
+                    "i think",
+                    "i believe",
+                    "so that",
+                    "that is"
+                ],
+                "label": "Transitions used"
+            }
+        },
+        "metrics": {
+            "sentences": {
+                "id": "sentences",
+                "value": 13,
+                "label": " sentences"
+            }
+        },
+        "indicators": {
+            "transitions": {
+                "id": "transitions",
+                "value": 95,
+                "label": "Transitions",
+                "help": "Percentile based on total number of transitions used"
+            },
+            "academiclanguage": {
+                "id": "academiclanguage",
+                "value": 62,
+                "label": "Academic Language",
+                "help": "Percentile based on percent of academic language used"
+            }
+        }
+    },
+    {
+        "id": "essay_4678.json",
+        "text": {
+            "emotionwords": {
+                "id": "emotionwords",
+                "value": [
+                    "liked",
+                    "wanted",
+                    "care",
+                    "want",
+                    "love",
+                    "face",
+                    "loving",
+                    "feeling",
+                    "comforting",
+                    "need",
+                    "need",
+                    "love",
+                    "regretted",
+                    "smiled"
+                ],
+                "label": "Emotion words used"
+            },
+            "concretedetails": {
+                "id": "contretedetails",
+                "value": [
+                    "whined",
+                    "escalating",
+                    "wail",
+                    "sighed",
+                    "glare",
+                    "fullers",
+                    "preschool",
+                    "driveway",
+                    "battered",
+                    "trail",
+                    "dust",
+                    "grinning",
+                    "clown",
+                    "cute",
+                    "yells",
+                    "shunning",
+                    "hog",
+                    "yelling"
+                ],
+                "label": "Concrete details"
+            },
+            "transitionwords": {
+                "id": "transitionwords",
+                "value": [
+                    "all day",
+                    "but",
+                    "besides",
+                    "if",
+                    "two weeks ago",
+                    "anyway",
+                    "like",
+                    "still"
+                ],
+                "label": "Transitions used"
+            }
+        },
+        "metrics": {
+            "sentences": {
+                "id": "sentences",
+                "value": 37,
+                "label": " sentences"
+            }
+        },
+        "indicators": {
+            "transitions": {
+                "id": "transitions",
+                "value": 58,
+                "label": "Transitions",
+                "help": "Percentile based on total number of transitions used"
+            },
+            "academiclanguage": {
+                "id": "academiclanguage",
+                "value": 20,
+                "label": "Academic Language",
+                "help": "Percentile based on percent of academic language used"
+            }
+        }
+    },
+    {
+        "id": "essay_1822.json",
+        "text": {
+            "emotionwords": {
+                "id": "emotionwords",
+                "value": [
+                    "needs",
+                    "struggles"
+                ],
+                "label": "Emotion words used"
+            },
+            "concretedetails": {
+                "id": "contretedetails",
+                "value": [
+                    "terrain",
+                    "destination",
+                    "elderly",
+                    "protagonist",
+                    "refill",
+                    "pump",
+                    "acid",
+                    "conserve",
+                    "automobiles",
+                    "depleting",
+                    "sips"
+                ],
+                "label": "Concrete details"
+            },
+            "transitionwords": {
+                "id": "transitionwords",
+                "value": [
+                    "After getting outdated directions from some elderly locals",
+                    "thereafter",
+                    "then"
+                ],
+                "label": "Transitions used"
+            }
+        },
+        "metrics": {
+            "sentences": {
+                "id": "sentences",
+                "value": 11,
+                "label": " sentences"
+            }
+        },
+        "indicators": {
+            "transitions": {
+                "id": "transitions",
+                "value": 29,
+                "label": "Transitions",
+                "help": "Percentile based on total number of transitions used"
+            },
+            "academiclanguage": {
+                "id": "academiclanguage",
+                "value": 70,
+                "label": "Academic Language",
+                "help": "Percentile based on percent of academic language used"
+            }
+        }
+    },
+    {
+        "id": "essay_1706.json",
+        "text": {
+            "emotionwords": {
+                "id": "emotionwords",
+                "value": [
+                    "wonder",
+                    "offensive",
+                    "offensive",
+                    "need",
+                    "need",
+                    "interest",
+                    "celebrate",
+                    "like",
+                    "hateful",
+                    "interesting"
+                ],
+                "label": "Emotion words used"
+            },
+            "concretedetails": {
+                "id": "contretedetails",
+                "value": [
+                    "Censorship",
+                    "slavery",
+                    "slavery",
+                    "illegal",
+                    "published",
+                    "ancestors",
+                    "teenage",
+                    "reader",
+                    "accustomed",
+                    "fiction",
+                    "comprehend",
+                    "fiction",
+                    "poetry",
+                    "consideration"
+                ],
+                "label": "Concrete details"
+            },
+            "transitionwords": {
+                "id": "transitionwords",
+                "value": [
+                    "today",
+                    "these days",
+                    "that is",
+                    "yet",
+                    "although",
+                    "still",
+                    "if",
+                    "then",
+                    "even though",
+                    "though",
+                    "or",
+                    "also",
+                    "however",
+                    "i believe"
+                ],
+                "label": "Transitions used"
+            }
+        },
+        "metrics": {
+            "sentences": {
+                "id": "sentences",
+                "value": 23,
+                "label": " sentences"
+            }
+        },
+        "indicators": {
+            "transitions": {
+                "id": "transitions",
+                "value": 100,
+                "label": "Transitions",
+                "help": "Percentile based on total number of transitions used"
+            },
+            "academiclanguage": {
+                "id": "academiclanguage",
+                "value": 87,
+                "label": "Academic Language",
+                "help": "Percentile based on percent of academic language used"
+            }
+        }
+    },
+    {
+        "id": "essay_1942.json",
+        "text": {
+            "emotionwords": {
+                "id": "emotionwords",
+                "value": [
+                    "want"
+                ],
+                "label": "Emotion words used"
+            },
+            "concretedetails": {
+                "id": "contretedetails",
+                "value": [
+                    "melt",
+                    "geese",
+                    "hibiscus"
+                ],
+                "label": "Concrete details"
+            },
+            "transitionwords": {
+                "id": "transitionwords",
+                "value": [
+                    "but",
+                    "so"
+                ],
+                "label": "Transitions used"
+            }
+        },
+        "metrics": {
+            "sentences": {
+                "id": "sentences",
+                "value": 3,
+                "label": " sentences"
+            }
+        },
+        "indicators": {
+            "transitions": {
+                "id": "transitions",
+                "value": 20,
+                "label": "Transitions",
+                "help": "Percentile based on total number of transitions used"
+            },
+            "academiclanguage": {
+                "id": "academiclanguage",
+                "value": 29,
+                "label": "Academic Language",
+                "help": "Percentile based on percent of academic language used"
+            }
+        }
+    },
+    {
+        "id": "essay_2040.json",
+        "text": {
+            "emotionwords": {
+                "id": "emotionwords",
+                "value": [
+                    "wanted",
+                    "hope"
+                ],
+                "label": "Emotion words used"
+            },
+            "concretedetails": {
+                "id": "contretedetails",
+                "value": [
+                    "retake",
+                    "flowers",
+                    "captivity",
+                    "retake",
+                    "captivity"
+                ],
+                "label": "Concrete details"
+            },
+            "transitionwords": {
+                "id": "transitionwords",
+                "value": [
+                    "after",
+                    "The"
+                ],
+                "label": "Transitions used"
+            }
+        },
+        "metrics": {
+            "sentences": {
+                "id": "sentences",
+                "value": 8,
+                "label": " sentences"
+            }
+        },
+        "indicators": {
+            "transitions": {
+                "id": "transitions",
+                "value": 20,
+                "label": "Transitions",
+                "help": "Percentile based on total number of transitions used"
+            },
+            "academiclanguage": {
+                "id": "academiclanguage",
+                "value": 41,
+                "label": "Academic Language",
+                "help": "Percentile based on percent of academic language used"
+            }
+        }
+    },
+    {
+        "id": "essay_4400.json",
+        "text": {
+            "emotionwords": {
+                "id": "emotionwords",
+                "value": [],
+                "label": "Emotion words used"
+            },
+            "concretedetails": {
+                "id": "contretedetails",
+                "value": [
+                    "package",
+                    "porch",
+                    "package"
+                ],
+                "label": "Concrete details"
+            },
+            "transitionwords": {
+                "id": "transitionwords",
+                "value": [
+                    "10 years",
+                    "then",
+                    "the week before",
+                    "so",
+                    "A week",
+                    "the time",
+                    "also"
+                ],
+                "label": "Transitions used"
+            }
+        },
+        "metrics": {
+            "sentences": {
+                "id": "sentences",
+                "value": 20,
+                "label": " sentences"
+            }
+        },
+        "indicators": {
+            "transitions": {
+                "id": "transitions",
+                "value": 47,
+                "label": "Transitions",
+                "help": "Percentile based on total number of transitions used"
+            },
+            "academiclanguage": {
+                "id": "academiclanguage",
+                "value": 4,
+                "label": "Academic Language",
+                "help": "Percentile based on percent of academic language used"
+            }
+        }
+    },
+    {
+        "id": "essay_3783.json",
+        "text": {
+            "emotionwords": {
+                "id": "emotionwords",
+                "value": [
+                    "misses",
+                    "pleasure",
+                    "want"
+                ],
+                "label": "Emotion words used"
+            },
+            "concretedetails": {
+                "id": "contretedetails",
+                "value": [
+                    "soccer",
+                    "gym",
+                    "soccer",
+                    "sailing",
+                    "soccer",
+                    "soccer"
+                ],
+                "label": "Concrete details"
+            },
+            "transitionwords": {
+                "id": "transitionwords",
+                "value": [
+                    "but"
+                ],
+                "label": "Transitions used"
+            }
+        },
+        "metrics": {
+            "sentences": {
+                "id": "sentences",
+                "value": 16,
+                "label": " sentences"
+            }
+        },
+        "indicators": {
+            "transitions": {
+                "id": "transitions",
+                "value": 20,
+                "label": "Transitions",
+                "help": "Percentile based on total number of transitions used"
+            },
+            "academiclanguage": {
+                "id": "academiclanguage",
+                "value": 12,
+                "label": "Academic Language",
+                "help": "Percentile based on percent of academic language used"
+            }
+        }
+    },
+    {
+        "id": "essay_3861.json",
+        "text": {
+            "emotionwords": {
+                "id": "emotionwords",
+                "value": [
+                    "broken",
+                    "boring",
+                    "wanted"
+                ],
+                "label": "Emotion words used"
+            },
+            "concretedetails": {
+                "id": "contretedetails",
+                "value": [
+                    "nurse",
+                    "nurse",
+                    "layers",
+                    "cloth",
+                    "layers"
+                ],
+                "label": "Concrete details"
+            },
+            "transitionwords": {
+                "id": "transitionwords",
+                "value": [
+                    "finally",
+                    "so",
+                    "then",
+                    "like",
+                    "but"
+                ],
+                "label": "Transitions used"
+            }
+        },
+        "metrics": {
+            "sentences": {
+                "id": "sentences",
+                "value": 13,
+                "label": " sentences"
+            }
+        },
+        "indicators": {
+            "transitions": {
+                "id": "transitions",
+                "value": 70,
+                "label": "Transitions",
+                "help": "Percentile based on total number of transitions used"
+            },
+            "academiclanguage": {
+                "id": "academiclanguage",
+                "value": 16,
+                "label": "Academic Language",
+                "help": "Percentile based on percent of academic language used"
+            }
+        }
+    },
+    {
+        "id": "essay_1188.json",
+        "text": {
+            "emotionwords": {
+                "id": "emotionwords",
+                "value": [
+                    "offend",
+                    "offend",
+                    "offensive",
+                    "fine",
+                    "likes",
+                    "dislikes",
+                    "dislikes",
+                    "want",
+                    "want",
+                    "offend"
+                ],
+                "label": "Emotion words used"
+            },
+            "concretedetails": {
+                "id": "contretedetails",
+                "value": [
+                    "slowly",
+                    "colorful"
+                ],
+                "label": "Concrete details"
+            },
+            "transitionwords": {
+                "id": "transitionwords",
+                "value": [
+                    "but",
+                    "if",
+                    "yet",
+                    "because of",
+                    "i think",
+                    "also",
+                    "so",
+                    "therefore"
+                ],
+                "label": "Transitions used"
+            }
+        },
+        "metrics": {
+            "sentences": {
+                "id": "sentences",
+                "value": 18,
+                "label": " sentences"
+            }
+        },
+        "indicators": {
+            "transitions": {
+                "id": "transitions",
+                "value": 70,
+                "label": "Transitions",
+                "help": "Percentile based on total number of transitions used"
+            },
+            "academiclanguage": {
+                "id": "academiclanguage",
+                "value": 33,
+                "label": "Academic Language",
+                "help": "Percentile based on percent of academic language used"
+            }
+        }
+    },
+    {
+        "id": "essay_2736.json",
+        "text": {
+            "emotionwords": {
+                "id": "emotionwords",
+                "value": [
+                    "feel",
+                    "happy"
+                ],
+                "label": "Emotion words used"
+            },
+            "concretedetails": {
+                "id": "contretedetails",
+                "value": [
+                    "memoir",
+                    "traditional",
+                    "Cuban",
+                    "unselfish",
+                    "segregation"
+                ],
+                "label": "Concrete details"
+            },
+            "transitionwords": {
+                "id": "transitionwords",
+                "value": [
+                    "because",
+                    "first",
+                    "even if",
+                    "because of"
+                ],
+                "label": "Transitions used"
+            }
+        },
+        "metrics": {
+            "sentences": {
+                "id": "sentences",
+                "value": 6,
+                "label": " sentences"
+            }
+        },
+        "indicators": {
+            "transitions": {
+                "id": "transitions",
+                "value": 37,
+                "label": "Transitions",
+                "help": "Percentile based on total number of transitions used"
+            },
+            "academiclanguage": {
+                "id": "academiclanguage",
+                "value": 45,
+                "label": "Academic Language",
+                "help": "Percentile based on percent of academic language used"
+            }
+        }
+    },
+    {
+        "id": "essay_327.json",
+        "text": {
+            "emotionwords": {
+                "id": "emotionwords",
+                "value": [],
+                "label": "Emotion words used"
+            },
+            "concretedetails": {
+                "id": "contretedetails",
+                "value": [
+                    "reader",
+                    "helpful",
+                    "helpful"
+                ],
+                "label": "Concrete details"
+            },
+            "transitionwords": {
+                "id": "transitionwords",
+                "value": [
+                    "i think",
+                    "in that",
+                    "such as",
+                    "on the other hand",
+                    "also",
+                    "because",
+                    "not enough",
+                    "but",
+                    "so",
+                    "if",
+                    "or",
+                    "like"
+                ],
+                "label": "Transitions used"
+            }
+        },
+        "metrics": {
+            "sentences": {
+                "id": "sentences",
+                "value": 6,
+                "label": " sentences"
+            }
+        },
+        "indicators": {
+            "transitions": {
+                "id": "transitions",
+                "value": 91,
+                "label": "Transitions",
+                "help": "Percentile based on total number of transitions used"
+            },
+            "academiclanguage": {
+                "id": "academiclanguage",
+                "value": 66,
+                "label": "Academic Language",
+                "help": "Percentile based on percent of academic language used"
+            }
+        }
+    },
+    {
+        "id": "essay_1760.json",
+        "text": {
+            "emotionwords": {
+                "id": "emotionwords",
+                "value": [
+                    "needed"
+                ],
+                "label": "Emotion words used"
+            },
+            "concretedetails": {
+                "id": "contretedetails",
+                "value": [
+                    "sweating"
+                ],
+                "label": "Concrete details"
+            },
+            "transitionwords": {
+                "id": "transitionwords",
+                "value": [
+                    "if",
+                    "also",
+                    "or",
+                    "so"
+                ],
+                "label": "Transitions used"
+            }
+        },
+        "metrics": {
+            "sentences": {
+                "id": "sentences",
+                "value": 7,
+                "label": " sentences"
+            }
+        },
+        "indicators": {
+            "transitions": {
+                "id": "transitions",
+                "value": 33,
+                "label": "Transitions",
+                "help": "Percentile based on total number of transitions used"
+            },
+            "academiclanguage": {
+                "id": "academiclanguage",
+                "value": 75,
+                "label": "Academic Language",
+                "help": "Percentile based on percent of academic language used"
+            }
+        }
+    },
+    {
+        "id": "essay_2947.json",
+        "text": {
+            "emotionwords": {
+                "id": "emotionwords",
+                "value": [],
+                "label": "Emotion words used"
+            },
+            "concretedetails": {
+                "id": "contretedetails",
+                "value": [
+                    "memoir"
+                ],
+                "label": "Concrete details"
+            },
+            "transitionwords": {
+                "id": "transitionwords",
+                "value": [],
+                "label": "Transitions used"
+            }
+        },
+        "metrics": {
+            "sentences": {
+                "id": "sentences",
+                "value": 1,
+                "label": " sentences"
+            }
+        },
+        "indicators": {
+            "transitions": {
+                "id": "transitions",
+                "value": 4,
+                "label": "Transitions",
+                "help": "Percentile based on total number of transitions used"
+            },
+            "academiclanguage": {
+                "id": "academiclanguage",
+                "value": 100,
+                "label": "Academic Language",
+                "help": "Percentile based on percent of academic language used"
+            }
+        }
+    },
+    {
+        "id": "essay_1911.json",
+        "text": {
+            "emotionwords": {
+                "id": "emotionwords",
+                "value": [
+                    "bearing",
+                    "hope",
+                    "felt",
+                    "relieved"
+                ],
+                "label": "Emotion words used"
+            },
+            "concretedetails": {
+                "id": "contretedetails",
+                "value": [
+                    "timers",
+                    "desert",
+                    "knees",
+                    "acid",
+                    "paragraph",
+                    "pedaled",
+                    "terrain",
+                    "dehydrated",
+                    "abandoned",
+                    "pebbles",
+                    "thirst"
+                ],
+                "label": "Concrete details"
+            },
+            "transitionwords": {
+                "id": "transitionwords",
+                "value": [
+                    "though",
+                    "just as",
+                    "so",
+                    "then"
+                ],
+                "label": "Transitions used"
+            }
+        },
+        "metrics": {
+            "sentences": {
+                "id": "sentences",
+                "value": 12,
+                "label": " sentences"
+            }
+        },
+        "indicators": {
+            "transitions": {
+                "id": "transitions",
+                "value": 70,
+                "label": "Transitions",
+                "help": "Percentile based on total number of transitions used"
+            },
+            "academiclanguage": {
+                "id": "academiclanguage",
+                "value": 25,
+                "label": "Academic Language",
+                "help": "Percentile based on percent of academic language used"
+            }
+        }
+    }
+]
