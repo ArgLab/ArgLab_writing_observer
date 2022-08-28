@@ -32,7 +32,7 @@ a.disabled {
 
 .shadow-card:hover {
     transition: all 0.2s ease-out;
-    box-shadow: 0px 4px 8px rgba(38, 38, 38, 0.2);
+    box-shadow: 0px 2px 8px var(--bs-primary);
     top: -4px;
     border: 1px solid #cccccc;
     background-color: white;
@@ -45,9 +45,8 @@ a.disabled {
 .student-card-text {
     max-height: 250px;
     overflow: auto;
-    border: var(--bs-gray-300) solid 1px;
+    border: var(--bs-gray-100) solid 1px;
     border-radius: 0.4rem;
-    padding: 2px;
     margin: 1px;
 }
 

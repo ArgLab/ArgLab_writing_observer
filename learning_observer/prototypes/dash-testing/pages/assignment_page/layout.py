@@ -18,7 +18,7 @@ def layout(course_id=None, assignment_id=None):
     if not role or not course_id or not assignment_id:
         return 'BRUH'
     if role == 'teacher':
-        dashboard = create_teacher_dashboard(course, course.assignments[int(assignment_id)])
+        dashboard = create_teacher_dashboard(course, course.assignments[0])
     elif role == 'student':
         dashboard = 'Student'
     else:

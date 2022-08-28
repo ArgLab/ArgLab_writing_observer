@@ -1,11 +1,17 @@
 # package imports
-import dash_bootstrap_components as dbc
 from faker import Faker
+import json
+import os
 
 # local imports
 from .assignment import Assignment
 
 fake = Faker()
+
+cwd = os.getcwd()
+data_in = os.path.join(cwd, 'data', 'set_2_data.json')
+with open(data_in, 'r') as f:
+    assignment = json.load(f)
 
 class Course:
     def __init__(self, id, role):
@@ -15,7 +21,7 @@ class Course:
 
         if role == 'teacher':
             self.students = self.fetch_students()
-            self.assignments = self.fetch_assignments()
+            self.assignments = [Assignment(0, assignment['name'], assignment['description'])]
         elif role == 'student':
             self.dashboard = 'BRUH'
         else:
@@ -26,11 +32,5 @@ class Course:
             {
                 'id': i,
                 'name': fake.name()
-            } for i in range(15)
-        ]
-
-    def fetch_assignments(self):
-        return [
-            Assignment(i, f'Assignment {i}', fake.text())
-            for i in range(12)
+            } for i in range(24)
         ]

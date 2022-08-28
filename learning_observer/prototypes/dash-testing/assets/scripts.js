@@ -4,18 +4,6 @@ if (!window.dash_clientside) {
 window.minty_colors = ['#78c2ad', '#f3969a', '#6cc3d5', '#ffce67', '#ff7851']
 window.drake = dragula();
 window.dash_clientside.clientside = {
-    make_draggable: function() {
-        let args = Array.from(arguments)[0];
-        var els = [];
-        window.drake.destroy();
-        setTimeout(function() {
-            for (i = 0; i < args.length; i++){
-                els[i] = document.getElementById(JSON.stringify(args[i]));
-            }
-            window.drake = dragula(els);
-        }, 1)
-        return window.dash_clientside.no_update
-    },
 
     change_sort_direction_icon: function(values, sort_values) {
         if (sort_values.length == 0) {
@@ -47,7 +35,7 @@ window.dash_clientside.clientside = {
             values.forEach(function (item, index) {
                 score += data[i].indicators[item]['value'];
             });
-            let order = (direction.includes('checked') ? (3*values.length + 1) - score : score);
+            let order = (direction.includes('checked') ? (100*values.length) - score : score);
             orders[i] = {'order': order};
         }
         return orders;
@@ -106,9 +94,9 @@ window.dash_clientside.clientside = {
         return false;
     },
 
-    show_hide_data: function(values, metrics, indicators, students) {
-        const l = values.concat(metrics).concat(indicators);
-        return Array(students).fill(l)
+    show_hide_data: function(values, metrics, text, indicators, students) {
+        const l = values.concat(metrics).concat(text).concat(indicators);
+        return Array(students).fill(l);
     },
 
     send_websocket: function (reports, student) {
@@ -117,19 +105,5 @@ window.dash_clientside.clientside = {
         }
         const msg = {"reports":reports, "student":student};
         return JSON.stringify(msg);
-    },
-
-    update_report_graph: function(msg) {
-        // TODO figure out a better way to update the data
-        // since we need to update the traces as well, I'm not sure
-        // its feasible to simple extend the data, might
-        // have to update the data of the figure
-        // eventually we'll have a lot of analysis so we having a trace
-        // for each one is probably not the best practice
-        if (!msg) {
-            return window.dash_clientside.no_update;
-        }
-        const data = JSON.parse(msg.data);
-        return [data, [0, 1, 2, 3], 4];
     }
 }

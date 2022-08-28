@@ -57,8 +57,9 @@ panel = dbc.Card(
                         [
                             dcc.Checklist(
                                 options=[
-                                    {'label': 'Transition Words', 'value': 'transition_words'},
-                                    {'label': 'Academic Language', 'value': 'academic_language'}
+                                    {'label': 'Transition Words', 'value': 'transitions'},
+                                    {'label': 'Academic Language', 'value': 'academiclanguage'},
+                                    {'label': 'Argument Language', 'value': 'argumentlanguage'}
                                 ],
                                 value=[],
                                 id=sort_by_checklist,
@@ -69,25 +70,27 @@ panel = dbc.Card(
                                 dbc.ButtonGroup(
                                     [
                                         dbc.Button(
-                                            [
-                                                dcc.Checklist(
-                                                    options=[
-                                                        {
-                                                            'value': 'checked',
-                                                            'label': html.I(id=sort_icon)
-                                                        }
-                                                    ],
-                                                    value=['checked'],
-                                                    id=sort_toggle,
-                                                    inputClassName='d-none',
-                                                    className='d-inline',
-                                                ),
-                                                html.Span(
-                                                    'None',
-                                                    id=sort_label,
-                                                    className='ms-1'
-                                                )
-                                            ],
+                                            dcc.Checklist(
+                                                options=[
+                                                    {
+                                                        'value': 'checked',
+                                                        'label': html.Span(
+                                                            [
+                                                                html.I(id=sort_icon),
+                                                                html.Span(
+                                                                    'None',
+                                                                    id=sort_label,
+                                                                    className='ms-1'
+                                                                )
+                                                            ]
+                                                        )
+                                                    }
+                                                ],
+                                                value=['checked'],
+                                                id=sort_toggle,
+                                                inputClassName='d-none',
+                                                className='d-inline',
+                                            ),
                                             outline=True,
                                             color='primary',
                                             title='Arrange students by attributes',
@@ -115,7 +118,6 @@ panel = dbc.Card(
                 dbc.AccordionItem(
                     [
                         dcc.Checklist(
-                                    # TODO add tooltips to every option
                                     options=[
                                         {
                                             'label': html.Span(
@@ -131,19 +133,15 @@ panel = dbc.Card(
                                                         dcc.Checklist(
                                                             options=[
                                                                 {
-                                                                    'label': dbc.Badge('# sentences', color='info'),
+                                                                    'label': dbc.Badge(
+                                                                        '# sentences',
+                                                                        color='info',
+                                                                        title='Total number of sentences'
+                                                                    ),
                                                                     'value': 'sentences'
                                                                 },
-                                                                {
-                                                                    'label': dbc.Badge('# words in 5 minutes', color='info'),
-                                                                    'value': 'edits_per_min'
-                                                                },
-                                                                {
-                                                                    'label': dbc.Badge('# minutes since last edit', color='info'),
-                                                                    'value': 'since_last_edit'
-                                                                }
                                                             ],
-                                                            value=['sentences', 'edits_per_min'],
+                                                            value=['sentences'],
                                                             id=show_hide_settings_metric_checklist,
                                                             labelClassName='form-check',
                                                             inputClassName='form-check-input'
@@ -161,7 +159,7 @@ panel = dbc.Card(
                                                     html.Span(
                                                         [
                                                             html.I(className='fas fa-file me-1'),
-                                                            'Summary text',
+                                                            'Text',
                                                         ],
                                                         className='font-size-lg'
                                                     ),
@@ -169,31 +167,27 @@ panel = dbc.Card(
                                                         dbc.RadioItems(
                                                             options=[
                                                                 {
-                                                                    'label': 'Topic Sentence',
-                                                                    'value': 'text_topic'
+                                                                    'label': 'Student text',
+                                                                    'value': 'studenttext'
                                                                 },
                                                                 {
-                                                                    'label': '1st Paragraph',
-                                                                    'value': 'paragraph_1'
+                                                                    'label': 'Emotion words',
+                                                                    'value': 'emotionwords'
                                                                 },
                                                                 {
-                                                                    'label': '2nd Paragraph',
-                                                                    'value': 'paragraph_2'
+                                                                    'label': 'Concrete details',
+                                                                    'value': 'concretedetails'
                                                                 },
                                                                 {
-                                                                    'label': '3rd Paragraph',
-                                                                    'value': 'paragraph_3'
+                                                                    'label': 'Argument words',
+                                                                    'value': 'argumentwords'
                                                                 },
                                                                 {
-                                                                    'label': '4th Paragraph',
-                                                                    'value': 'paragraph_4'
-                                                                },
-                                                                {
-                                                                    'label': '5th Paragraph',
-                                                                    'value': 'paragraph_5'
-                                                                },
+                                                                    'label': 'Transitions used',
+                                                                    'value': 'transitionwords'
+                                                                }
                                                             ],
-                                                            value='text_topic',
+                                                            value='studenttext',
                                                             id=show_hide_settings_text_radioitems
                                                         ),
                                                         id=show_hide_settings_text_collapse,
@@ -214,18 +208,36 @@ panel = dbc.Card(
                                                         className='font-size-lg'
                                                     ),
                                                     dbc.Collapse(
+                                                        # TODO need a better way to pull this information from the server
+                                                        # currently all options are hardcoded on both sides :P
                                                         dcc.Checklist(
                                                             options=[
                                                                 {
-                                                                    'label': html.Span('Transition Words', className='fs-6 m-1'),
-                                                                    'value': 'transition_words'
+                                                                    'label': html.Span(
+                                                                        'Transitions',
+                                                                        className='fs-6 m-1',
+                                                                        title='Percentile based on total number of transitions used'
+                                                                    ),
+                                                                    'value': 'transitions'
                                                                 },
                                                                 {
-                                                                    'label': html.Span('Academic Language', className='fs-6 m-1'),
-                                                                    'value': 'academic_language'
+                                                                    'label': html.Span(
+                                                                        'Academic Language',
+                                                                        className='fs-6 m-1',
+                                                                        title='Percentile based on percent of academic language used'
+                                                                    ),
+                                                                    'value': 'academiclanguage'
+                                                                },
+                                                                {
+                                                                    'label': html.Span(
+                                                                        'Argument Language',
+                                                                        className='fs-6 m-1',
+                                                                        title='Percentile based on percent of argument words used'
+                                                                    ),
+                                                                    'value': 'argumentlanguage'
                                                                 },
                                                             ],
-                                                            value=['transition_words', 'academic_language'],
+                                                            value=['transitions', 'academiclanguage', 'argumentlanguage'],
                                                             id=show_hide_settings_indicator_checklist,
                                                             labelClassName='form-check',
                                                             inputClassName='form-check-input'
@@ -255,7 +267,7 @@ panel = dbc.Card(
         ),        
     ],
     id=show_hide_settings_offcanvas,
-    class_name='m-2 mx-md-0 mb-md-0 mt-md-3 sticky-top'
+    class_name='me-2 mb-2 sticky-top'
 )
 
 clientside_callback(

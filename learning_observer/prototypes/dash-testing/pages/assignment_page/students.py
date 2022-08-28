@@ -16,6 +16,13 @@ websocket = f'{prefix}-websocket'
 student_counter = f'{prefix}-student-counter'
 
 def create_student_tab(assignment, students):
+    # split description based on new lines
+    description = []
+    for e in assignment.description.split('\n'):
+        description.append(e)
+        description.append(html.Br())
+    description.pop()
+
     container = dbc.Container(
         [
             html.Div(
@@ -34,9 +41,8 @@ def create_student_tab(assignment, students):
                         className='float-end'
                     ),
                     html.Br(),
-                    html.P(assignment.description, className='font-size-sm')
-                ],
-                className='my-1'
+                    html.P(description)
+                ]
             ),
             dbc.Row(
                 [
@@ -60,11 +66,11 @@ def create_student_tab(assignment, students):
                                         },
                                         name=s['name'],
                                         data={
-                                            'indicators': [],
-                                            'metrics': [],
-                                            'text': ''
+                                            'indicators': {},
+                                            'metrics': {},
+                                            'text': {}
                                         },
-                                        shown=['transition_words', 'academic_language', 'sentences', 'text'],
+                                        shown=[],
                                         class_name='shadow-card'
                                     ),
                                     id={
@@ -73,7 +79,7 @@ def create_student_tab(assignment, students):
                                     },
                                 ) for s in students
                             ],
-                            class_name='g-3 p-1 p-md-3 w-100'
+                            class_name='g-2 w-100'
                         ),
                         id=student_grid,
                         # classname set in callback
@@ -126,12 +132,12 @@ clientside_callback(
 )
 
 # hide/show attributes
-# TODO add the text radio items to this callback
 clientside_callback(
     ClientsideFunction(namespace='clientside', function_name='show_hide_data'),
     Output({'type': student_card, 'index': ALL}, 'shown'),
     Input(settings.show_hide_settings_checklist, 'value'),
     Input(settings.show_hide_settings_metric_checklist, 'value'),
+    Input(settings.show_hide_settings_text_radioitems, 'value'),
     Input(settings.show_hide_settings_indicator_checklist, 'value'),
     State(student_counter, 'data')
 )
