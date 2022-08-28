@@ -8,12 +8,14 @@ from .teacher_dashboard import create_teacher_dashboard
 
 dash.register_page(
     __name__,
-    path_template='/course/<course_id>/assignment/<assignment_id>',
+    path_template='/dashboard',
     title='Dashboard'
 )
 
-def layout(course_id=None, assignment_id=None):
+def layout():
     role = 'teacher'
+    course_id = 1
+    assignment_id = 1
     course = Course(course_id, role)
     if not role or not course_id or not assignment_id:
         return 'BRUH'

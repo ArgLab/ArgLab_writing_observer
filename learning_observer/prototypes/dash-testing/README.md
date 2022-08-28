@@ -4,6 +4,9 @@ Required packages
 ```bash
 cd learning_observer/prototypes/dash-testing
 pip install requirements.txt
+pip install learning_observer_components-0.0.1.tar.gz # these components are not published anywhere so manual install is necessary
+mkdir data  # create a directory for the data (not shared through Git)
+# add the data files to this location
 ```
 
 Running. Since you'll need two servers running, you'll need two terminals.
@@ -13,7 +16,7 @@ python ws.py    # simple websocket server to connect to
 python app.py   # dash application
 ```
 
-Under `pages/teacher_dashboard.py` you'll see a bunch of `clientside_callbacks`. Those are Javascript functions, see `assets/scripts.js` for more.
+Navigate to [http://127.0.0.1:8050/dashboard](http://127.0.0.1:8050/dashboard) to see the working prototype.
 
 The websockets are connected through a clientside callback using `from dash_extensions import WebSocket`.
 
