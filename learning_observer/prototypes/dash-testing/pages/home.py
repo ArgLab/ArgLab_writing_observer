@@ -12,6 +12,6 @@ dash.register_page(
 layout = html.Div(
     [
         html.H1('Welcome to Learning Observer'),
-        html.A('Courses', href='/courses')
+        html.A('Dashboard', href='/dashboard')
     ]
 )
