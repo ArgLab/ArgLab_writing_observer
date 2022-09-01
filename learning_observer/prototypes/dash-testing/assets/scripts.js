@@ -95,7 +95,7 @@ window.dash_clientside.clientside = {
     },
 
     show_hide_data: function(values, metrics, text, indicators, students) {
-        const l = values.concat(metrics).concat(text).concat(indicators);
+        const l = values.concat(metrics).concat(text).concat(indicators).concat('coresentences', 'extendedcoresentences', 'contentsegments', 'highlight', 'adverbs', 'adjectives', 'timeontask', 'recentwords');
         return Array(students).fill(l);
     },
 

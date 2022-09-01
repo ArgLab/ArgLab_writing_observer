@@ -2,10 +2,18 @@
 from dash import html, dcc, clientside_callback, ClientsideFunction, Output, Input, State, ALL
 import dash_bootstrap_components as dbc
 from dash_extensions import WebSocket
+import json
+import os
 
 # local imports
 import learning_observer_components as loc
 from . import settings
+
+# read in raw data (no websocket connection)
+cwd = os.getcwd()
+data_in = os.path.join(cwd, 'data', 'sample.json')
+with open(data_in, 'r') as f_obj:
+    data = json.load(f_obj)
 
 prefix = 'teacher-dashboard'
 student_card = f'{prefix}-student-card'
@@ -65,11 +73,7 @@ def create_student_tab(assignment, students):
                                             'index': s['id']
                                         },
                                         name=s['name'],
-                                        data={
-                                            'indicators': {},
-                                            'metrics': {},
-                                            'text': {}
-                                        },
+                                        data=data[i],
                                         shown=[],
                                         class_name='shadow-card'
                                     ),
@@ -77,7 +81,7 @@ def create_student_tab(assignment, students):
                                         'type': student_col,
                                         'index': s['id']
                                     },
-                                ) for s in students
+                                ) for i, s in enumerate(students)
                             ],
                             class_name='g-2 w-100'
                         ),
@@ -87,10 +91,11 @@ def create_student_tab(assignment, students):
                 ],
                 class_name='g-0'
             ),
-            WebSocket(
-                id=websocket,
-                url=f'ws://127.0.0.1:5000/courses/students/{len(students)}'
-            ),
+            # TODO uncomment this out for the websocket connection
+            # WebSocket(
+            #     id=websocket,
+            #     url=f'ws://127.0.0.1:5000/courses/students/{len(students)}'
+            # ),
             dcc.Store(
                 id=student_counter,
                 data=len(students)
@@ -113,13 +118,14 @@ clientside_callback(
     State(student_counter, 'data')
 )
 
-clientside_callback(
-    ClientsideFunction(namespace='clientside', function_name='populate_student_data'),
-    Output({'type': student_card, 'index': ALL}, 'data'),
-    Input(websocket, 'message'),
-    State({'type': student_card, 'index': ALL}, 'data'),
-    State(student_counter, 'data')
-)
+# TODO uncomment this out for the connection
+# clientside_callback(
+#     ClientsideFunction(namespace='clientside', function_name='populate_student_data'),
+#     Output({'type': student_card, 'index': ALL}, 'data'),
+#     Input(websocket, 'message'),
+#     State({'type': student_card, 'index': ALL}, 'data'),
+#     State(student_counter, 'data')
+# )
 
 clientside_callback(
     ClientsideFunction(namespace='clientside', function_name='sort_students'),
