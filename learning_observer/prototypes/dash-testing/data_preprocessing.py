@@ -4,7 +4,6 @@ import os
 import random
 import re
 from scipy import stats
-import sys
 
 def normalize(text):
     text = text.replace('&nbsp;',' ')

@@ -17,10 +17,8 @@ app = dash.Dash(
         dbc.themes.MINTY, # bootstrap styling
         dbc.icons.FONT_AWESOME, # icons
         'https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates@V1.0.6/dbc.min.css', # dcc bootstrap styling
-        'https://epsi95.github.io/dash-draggable-css-scipt/dragula.css', # draggable css
     ],
     external_scripts=[
-        'https://cdnjs.cloudflare.com/ajax/libs/dragula/3.7.2/dragula.min.js', # draggable javascript
         'https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js' # lodash B)
     ],
     title='Learning Observer',
@@ -40,7 +38,10 @@ def serve_layout():
         className='dbc'
     )
 
+dash.register_page('document', path='/document', layout=html.Div(['This link will take you to the student\'s document in the future.']))
+dash.register_page('student', path='/student', layout=html.Div(['This page will provide an overview of a specific student in the future.']))
+
 app.layout = serve_layout
 
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run_server(debug=False)

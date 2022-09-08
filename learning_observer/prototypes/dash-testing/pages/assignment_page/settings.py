@@ -14,10 +14,16 @@ sort_reset = f'{prefix}-sort-by-reset'
 show_hide_settings_open = f'{prefix}-show-hide-open-button'
 show_hide_settings_offcanvas = f'{prefix}-show-hide-offcanvcas'
 show_hide_settings_checklist = f'{prefix}-show-hide-checklist'
+
 show_hide_settings_metric_collapse = f'{prefix}-show-hide-metric-collapse'
 show_hide_settings_metric_checklist = f'{prefix}-show-hide-metric-checklist'
+
 show_hide_settings_text_collapse = f'{prefix}-show-hide-text-collapse'
 show_hide_settings_text_radioitems = f'{prefix}-show-hide-text-radioitems'
+
+show_hide_settings_highlight_collapse = f'{prefix}-show-hide-highlight-collapse'
+show_hide_settings_highlight_checklist = f'{prefix}-show-hide-highlight-radioitems'
+
 show_hide_settings_indicator_collapse = f'{prefix}-show-hide-indicator-collapse'
 show_hide_settings_indicator_checklist = f'{prefix}-show-hide-indicator-checklist'
 
@@ -59,11 +65,14 @@ panel = dbc.Card(
                                 options=[
                                     {'label': 'Transition Words', 'value': 'transitions'},
                                     {'label': 'Academic Language', 'value': 'academiclanguage'},
-                                    {'label': 'Argument Language', 'value': 'argumentlanguage'}
+                                    {'label': 'Argument Language', 'value': 'argumentlanguage'},
+                                    {'label': 'Attributions', 'value': 'attributions'},
+                                    {'label': 'Citations', 'value': 'cites'},
+                                    {'label': 'Sources', 'value': 'sources'}
                                 ],
                                 value=[],
                                 id=sort_by_checklist,
-                                labelClassName='form-check',
+                                labelClassName='form-check nested-form',
                                 inputClassName='form-check-input'
                             ),
                             html.Div(
@@ -140,16 +149,55 @@ panel = dbc.Card(
                                                                     ),
                                                                     'value': 'sentences'
                                                                 },
+                                                                {
+                                                                    'label': dbc.Badge(
+                                                                        '# adverbs',
+                                                                        color='info',
+                                                                        title='Total number of adverbs'
+                                                                    ),
+                                                                    'value': 'adverbs'
+                                                                },
+                                                                {
+                                                                    'label': dbc.Badge(
+                                                                        '# adjectives',
+                                                                        color='info',
+                                                                        title='Total number of adjectives'
+                                                                    ),
+                                                                    'value': 'adjectives'
+                                                                },
+                                                                {
+                                                                    'label': dbc.Badge(
+                                                                        '# quoted words',
+                                                                        color='info',
+                                                                        title='Total number of quoted words'
+                                                                    ),
+                                                                    'value': 'quotedwords'
+                                                                },
+                                                                {
+                                                                    'label': dbc.Badge(
+                                                                        '# minutes on task',
+                                                                        color='info',
+                                                                        title='Total minutes on task'
+                                                                    ),
+                                                                    'value': 'timeontask'
+                                                                },
+                                                                {
+                                                                    'label': dbc.Badge(
+                                                                        '# words in last 5 min',
+                                                                        color='info',
+                                                                        title='Total words in last 5 minutes'
+                                                                    ),
+                                                                    'value': 'recentwords'
+                                                                },
                                                             ],
-                                                            value=['sentences'],
+                                                            value=['sentences', 'adverbs', 'adjectives', 'timeontask'],
                                                             id=show_hide_settings_metric_checklist,
-                                                            labelClassName='form-check',
+                                                            labelClassName='form-check nested-form',
                                                             inputClassName='form-check-input'
                                                         ),
                                                         id=show_hide_settings_metric_collapse,
                                                     )
                                                 ],
-                                                className='m-2'
                                             ),
                                             'value': 'metrics'
                                         },
@@ -164,20 +212,20 @@ panel = dbc.Card(
                                                         className='font-size-lg'
                                                     ),
                                                     dbc.Collapse(
-                                                        dbc.RadioItems(
+                                                        dcc.RadioItems(
                                                             options=[
                                                                 {
                                                                     'label': 'Student text',
                                                                     'value': 'studenttext'
                                                                 },
-                                                                {
-                                                                    'label': 'Emotion words',
-                                                                    'value': 'emotionwords'
-                                                                },
-                                                                {
-                                                                    'label': 'Concrete details',
-                                                                    'value': 'concretedetails'
-                                                                },
+                                                                # {
+                                                                #     'label': 'Emotion words',
+                                                                #     'value': 'emotionwords'
+                                                                # },
+                                                                # {
+                                                                #     'label': 'Concrete details',
+                                                                #     'value': 'concretedetails'
+                                                                # },
                                                                 {
                                                                     'label': 'Argument words',
                                                                     'value': 'argumentwords'
@@ -188,14 +236,52 @@ panel = dbc.Card(
                                                                 }
                                                             ],
                                                             value='studenttext',
-                                                            id=show_hide_settings_text_radioitems
+                                                            id=show_hide_settings_text_radioitems,
+                                                            labelClassName='form-check nested-form',
+                                                            inputClassName='form-check-input'
                                                         ),
                                                         id=show_hide_settings_text_collapse,
                                                     )
                                                 ],
-                                                className='m-2'
                                             ),
                                             'value': 'text'
+                                        },
+                                        {
+                                            'label': html.Span(
+                                                [
+                                                    html.Span(
+                                                        [
+                                                            html.I(className='fas fa-highlighter fa-flip-horizontal me-1'),
+                                                            'Highlight',
+                                                        ],
+                                                        className='font-size-lg'
+                                                    ),
+                                                    dbc.Collapse(
+                                                        dcc.Checklist(
+                                                            options=[
+                                                                {
+                                                                    'label': html.Span('Main ideas', className='bg-success bg-opacity-50'),
+                                                                    'value': 'coresentences'
+                                                                },
+                                                                {
+                                                                    'label': html.Span('Supporting ideas', className='bg-danger bg-opacity-50'),
+                                                                    'value': 'extendedcoresentences'
+                                                                },
+                                                                {
+                                                                    'label': html.Span('Argument details', className='bg-warning bg-opacity-50'),
+                                                                    'value': 'contentsegments'
+                                                                }
+                                                            ],
+                                                            value=['coresentences', 'extendedcoresentences'],
+                                                            id=show_hide_settings_highlight_checklist,
+                                                            labelClassName='form-check nested-form',
+                                                            inputClassName='form-check-input'
+                                                        ),
+                                                        id=show_hide_settings_highlight_collapse,
+                                                    )
+                                                ],
+                                            ),
+                                            'value': 'highlight'
                                         },
                                         {
                                             'label': html.Span(
@@ -215,7 +301,6 @@ panel = dbc.Card(
                                                                 {
                                                                     'label': html.Span(
                                                                         'Transitions',
-                                                                        className='fs-6 m-1',
                                                                         title='Percentile based on total number of transitions used'
                                                                     ),
                                                                     'value': 'transitions'
@@ -223,7 +308,6 @@ panel = dbc.Card(
                                                                 {
                                                                     'label': html.Span(
                                                                         'Academic Language',
-                                                                        className='fs-6 m-1',
                                                                         title='Percentile based on percent of academic language used'
                                                                     ),
                                                                     'value': 'academiclanguage'
@@ -231,26 +315,46 @@ panel = dbc.Card(
                                                                 {
                                                                     'label': html.Span(
                                                                         'Argument Language',
-                                                                        className='fs-6 m-1',
                                                                         title='Percentile based on percent of argument words used'
                                                                     ),
                                                                     'value': 'argumentlanguage'
                                                                 },
+                                                                {
+                                                                    'label': html.Span(
+                                                                        'Attributions',
+                                                                        title='Percentile based on total attributes'
+                                                                    ),
+                                                                    'value': 'attributions'
+                                                                },
+                                                                {
+                                                                    'label': html.Span(
+                                                                        'Citations',
+                                                                        title='Percentile based on total citations'
+                                                                    ),
+                                                                    'value': 'cites'
+                                                                },
+                                                                {
+                                                                    'label': html.Span(
+                                                                        'Sources',
+                                                                        title='Percentile based on total sources'
+                                                                    ),
+                                                                    'value': 'sources'
+                                                                },
                                                             ],
                                                             value=['transitions', 'academiclanguage', 'argumentlanguage'],
                                                             id=show_hide_settings_indicator_checklist,
-                                                            labelClassName='form-check',
+                                                            labelClassName='form-check nested-form',
                                                             inputClassName='form-check-input'
                                                         ),
                                                         id=show_hide_settings_indicator_collapse,
                                                     )
                                                 ],
-                                                className='m-2'
+                                                className='bruh-test'
                                             ),
                                             'value': 'indicators'
                                         }
                                     ],
-                                    value=['text', 'indicators', 'metrics'],
+                                    value=['text', 'highlight', 'indicators', 'metrics'],
                                     id=show_hide_settings_checklist,
                                     labelClassName='form-check',
                                     inputClassName='form-check-input'
@@ -267,7 +371,11 @@ panel = dbc.Card(
         ),        
     ],
     id=show_hide_settings_offcanvas,
-    class_name='me-2 mb-2 sticky-top'
+    # TODO eventually we want sticky-top in the classname however
+    # if the screen height is short enough we won't be able to
+    # see all options available.
+    # need to add overflow to the last accordian item
+    class_name='me-2 mb-2'
 )
 
 clientside_callback(
@@ -302,5 +410,12 @@ clientside_callback(
 clientside_callback(
     ClientsideFunction(namespace='clientside', function_name='toggle_text_checklist'),
     Output(show_hide_settings_text_collapse, 'is_open'),
+    Input(show_hide_settings_checklist, 'value')
+)
+
+# offcanvas checklist toggle
+clientside_callback(
+    ClientsideFunction(namespace='clientside', function_name='toggle_highlight_checklist'),
+    Output(show_hide_settings_highlight_collapse, 'is_open'),
     Input(show_hide_settings_checklist, 'value')
 )

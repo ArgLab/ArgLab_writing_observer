@@ -144,6 +144,7 @@ clientside_callback(
     Input(settings.show_hide_settings_checklist, 'value'),
     Input(settings.show_hide_settings_metric_checklist, 'value'),
     Input(settings.show_hide_settings_text_radioitems, 'value'),
+    Input(settings.show_hide_settings_highlight_checklist, 'value'),
     Input(settings.show_hide_settings_indicator_checklist, 'value'),
     State(student_counter, 'data')
 )

@@ -2,7 +2,6 @@ if (!window.dash_clientside) {
     window.dash_clientside = {};
 }
 window.minty_colors = ['#78c2ad', '#f3969a', '#6cc3d5', '#ffce67', '#ff7851']
-window.drake = dragula();
 window.dash_clientside.clientside = {
 
     change_sort_direction_icon: function(values, sort_values) {
@@ -94,8 +93,15 @@ window.dash_clientside.clientside = {
         return false;
     },
 
-    show_hide_data: function(values, metrics, text, indicators, students) {
-        const l = values.concat(metrics).concat(text).concat(indicators).concat('coresentences', 'extendedcoresentences', 'contentsegments', 'highlight', 'adverbs', 'adjectives', 'timeontask', 'recentwords');
+    toggle_highlight_checklist: function(values) {
+        if (values.includes('highlight')) {
+            return true;
+        }
+        return false;
+    },
+
+    show_hide_data: function(values, metrics, text, highlights, indicators, students) {
+        const l = values.concat(metrics).concat(text).concat(highlights).concat(indicators);
         return Array(students).fill(l);
     },
 
