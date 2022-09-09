@@ -6,6 +6,7 @@ import dash_bootstrap_components as dbc
 from .assignment import create_assignment_card
 from .teacher_courses import courses, create_course_card
 from .course import Course
+from components.login import login_info
 
 sample_course = Course(0, 'teacher')
 
@@ -19,12 +20,8 @@ navbar = html.Div(
                             'Learning Observer',
                             href='/'
                         ),
-                        dbc.NavItem(
-                            dbc.NavLink(
-                                'Courses',
-                                id='courses-open',
-                                class_name='text-light'
-                            )
+                        html.Div(
+                            login_info
                         )
                     ],
                     fluid=True

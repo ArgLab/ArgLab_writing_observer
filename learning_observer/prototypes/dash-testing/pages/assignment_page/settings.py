@@ -190,7 +190,7 @@ panel = dbc.Card(
                                                                     'value': 'recentwords'
                                                                 },
                                                             ],
-                                                            value=['sentences', 'adverbs', 'adjectives', 'timeontask'],
+                                                            value=['sentences', 'timeontask'],
                                                             id=show_hide_settings_metric_checklist,
                                                             labelClassName='form-check nested-form',
                                                             inputClassName='form-check-input'
@@ -272,7 +272,7 @@ panel = dbc.Card(
                                                                     'value': 'contentsegments'
                                                                 }
                                                             ],
-                                                            value=['coresentences', 'extendedcoresentences'],
+                                                            value=['coresentences'],
                                                             id=show_hide_settings_highlight_checklist,
                                                             labelClassName='form-check nested-form',
                                                             inputClassName='form-check-input'
@@ -341,15 +341,14 @@ panel = dbc.Card(
                                                                     'value': 'sources'
                                                                 },
                                                             ],
-                                                            value=['transitions', 'academiclanguage', 'argumentlanguage'],
+                                                            value=['transitions'],
                                                             id=show_hide_settings_indicator_checklist,
                                                             labelClassName='form-check nested-form',
                                                             inputClassName='form-check-input'
                                                         ),
                                                         id=show_hide_settings_indicator_collapse,
                                                     )
-                                                ],
-                                                className='bruh-test'
+                                                ]
                                             ),
                                             'value': 'indicators'
                                         }

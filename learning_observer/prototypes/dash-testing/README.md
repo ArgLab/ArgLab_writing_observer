@@ -9,6 +9,13 @@ mkdir data  # create a directory for the data (not shared through Git)
 # add the data files to this location
 ```
 
+Additionally, you'll need to create a `logins.json` file with the following format:
+```json
+{
+    "username": "password"
+}
+```
+
 Running. Since you'll need two servers running, you'll need two terminals.
 ```bash
 cd learning_observer/prototypes/dash-testing

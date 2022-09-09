@@ -65,3 +65,7 @@ a.disabled {
     box-shadow: 0px 0px 5px var(--bs-gray-300);
     border-radius: 0.4rem;
 }
+
+.user-icon:hover {
+    background-color: transparent;
+}
