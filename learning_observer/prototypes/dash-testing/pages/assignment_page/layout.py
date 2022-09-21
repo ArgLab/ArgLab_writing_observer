@@ -6,11 +6,11 @@ from dash import html
 from components.course import Course
 from .teacher_dashboard import create_teacher_dashboard
 
-# dash.register_page(
-#     __name__,
-#     path_template='/dashboard',
-#     title='Dashboard'
-# )
+dash.register_page(
+    __name__,
+    path_template='/dashboard',
+    title='Dashboard'
+)
 
 def layout():
     role = 'teacher'
