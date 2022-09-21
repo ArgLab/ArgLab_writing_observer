@@ -1,7 +1,7 @@
 # package imports
 from dash import html, dcc, clientside_callback, ClientsideFunction, Output, Input, State, ALL
 import dash_bootstrap_components as dbc
-from dash_extensions import WebSocket
+# from dash_extensions import WebSocket
 import json
 import os
 
