@@ -1,4 +1,4 @@
-# Writing Observer and Learning Observer
+## Writing Observer and Learning Observer
 
 ![Writing Observer Logo](learning_observer/learning_observer/static/media/logo-clean.jpg)
 
