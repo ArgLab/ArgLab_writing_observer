@@ -59,8 +59,6 @@ async def student_event_pipeline(metadata):
     '''
     Create an event pipeline, based on header metadata
     '''
-    print(">>> Event pipe: ", metadata)
-
     client_source = metadata["source"]
     debug_log("client_source", client_source)
     debug_log("Module", stream_analytics.reducer_modules(client_source))
@@ -116,6 +114,9 @@ async def student_event_pipeline(metadata):
             processed_analytics = []
             # Go through all the analytics modules
             for am in analytics_modules:
+
+                print(">>> Handle AM: ", am)
+
                 debug_log("Scope", am['scope'])
                 event_fields = {}
                 skip = False
@@ -183,6 +184,7 @@ async def handle_incoming_client_event(metadata):
         }
 
         # Log to the main event log file
+        print(">>> LOGGING: ",event)
         log_event.log_event(event)
         # Log the same thing to our study log file. This isn't a good final format, since we
         # mix data with auth, but we want this for now.
