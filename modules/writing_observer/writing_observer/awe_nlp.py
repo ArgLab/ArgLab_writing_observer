@@ -24,11 +24,16 @@ import time
 
 import writing_observer.nlp_indicators
 
+# import EssaySAVE
+
 def init_nlp():
     '''
     Initialize the spacy pipeline with the AWE components. This takes a while
     to run.
     '''
+    # Added to prompt GPU usage.
+    spacy.prefer_gpu()
+
     nlp = spacy.load("en_core_web_lg")
 
     # Adding all of the components, since
@@ -162,7 +167,7 @@ async def process_texts_parallel(texts):
     '''
     global executor
     if executor is None:
-        executor = ProcessPoolExecutor()
+        executor = ProcessPoolExecutor(max_workers=24)
 
     loop = asyncio.get_running_loop()
     result_futures = []
@@ -187,6 +192,7 @@ if  __name__ == '__main__':
     import writing_observer.sample_essays
     # Run over a sample text
     example_texts = writing_observer.sample_essays.SHORT_STORIES
+    # example_texts = EssaySAVE.ESSAYS
     t1 = time.time()
     results = process_text(example_texts[0])
     t2 = time.time()
