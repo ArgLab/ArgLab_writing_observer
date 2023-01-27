@@ -120,6 +120,16 @@ We are not including it directly in the install because it acts oddly across
 platforms so you may need to install some version manually.
 
 
+GPU/cuda
+------------------------------------------------
+Writing Observer will work without the GPU.  However if you wish to install it
+then you must add the following to the GPU.  A script will be added for post-hoc
+installation.
+
+pip install -U spacy[<cupy-version>]
+pip install -U spacy[cuda11x]
+
+
 Additional Notes
 ===================
 At present the system also uses static content that is served from a repo.

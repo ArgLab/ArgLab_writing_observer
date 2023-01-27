@@ -22,8 +22,8 @@ PIP_CMD="pip"
 # Argument Parsing
 # -----------------------------------------------
 
-VIRTUAL_ENV_LOC=$2
-VIRTUAL_ENV_NAME=$1
+VIRTUAL_ENV_LOC="$2"
+VIRTUAL_ENV_NAME="$1"
 
 # Execution
 # ---------------------------------------------------------

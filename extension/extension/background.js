@@ -218,7 +218,8 @@ loggers_enabled = [
 
     // Adapted to NCSU Setup.
     websocket_logger("wss://observer.csc.ncsu.edu/wsapi/in/")
-    //websocket_logger("wss://writing.learning-observer.org/wsapi/in/")
+    // websocket_logger("wss://writing.learning-observer.org/wsapi/in/")
+    
 ];
 
 function log_event(event_type, event) {
