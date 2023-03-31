@@ -53,6 +53,11 @@ function add_event_metadata(event_type, event) {
      */
     event['event'] = event_type;
 
+    // Add the event_type if not present
+    if (!event.hasOwnProperty('event_type')) {
+	event['event_type'] = event_type;
+    }
+    
     event['source'] = 'org.mitros.writing_analytics';
     event['version'] = 'alpha';
     event['ts'] = Date.now();
