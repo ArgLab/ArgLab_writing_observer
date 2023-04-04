@@ -409,31 +409,22 @@ chrome.webRequest.onBeforeRequest.addListener(
 
 // re-injected scripts when chrome extension is reloaded, upgraded or re-installed
 // https://stackoverflow.com/questions/10994324/chrome-extension-content-script-re-injection-after-upgrade-or-install
-
-chrome.runtime.onInstalled.addListener(async () => {
-  for (const contentScript of chrome.runtime.getManifest().content_scripts) {
-    for (const tab of await chrome.tabs.query({url: contentScript.matches})) {
-      // Unload the dead content script by removing its code from the page
-      chrome.scripting.executeScript({
-        target: { tabId: tab.id, allFrames: true },
-        func: function() {
-          var scripts = document.getElementsByTagName('script');
-          for(var i = scripts.length - 1; i >= 0; i--) {
-            if(scripts[i].src === `chrome-extension://${chrome.runtime.id}/writing.js`) {
-              scripts[i].remove();
-            }
-          }
+chrome.runtime.onInstalled.addListener(reinjectContentScripts);
+async function reinjectContentScripts() {
+    for (const contentScript of chrome.runtime.getManifest().content_scripts) {
+        for (const tab of await chrome.tabs.query({url: contentScript.matches})) {
+            // re-inject content script
+            await chrome.scripting.executeScript({
+                target: {tabId: tab.id, allFrames: true},
+                files: contentScript.js,
+            }, function () {
+                if (!chrome.runtime.lastError) {
+                    console.log('Content script re-injected successfully');
+                }
+            });
         }
-      });
-
-      // re-inject content script
-      chrome.scripting.executeScript({
-        target: {tabId: tab.id, allFrames: true},
-        files: contentScript.js,
-      });
     }
-  }
-});
+}
 
 // Let the server know we've loaded.
 log_event("extension_loaded", {});
