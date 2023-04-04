@@ -46,7 +46,8 @@ function log_event(event_type, event) {
     // uncomment to watch events being logged from the client side with devtools
     // console.log(event);
 
-    if (chrome.runtime.id !== undefined) {
+    // Check if the extension runtime still has its context
+    if (chrome.runtime?.id !== undefined) {
         chrome.runtime.sendMessage(event);
     }
 }
@@ -699,14 +700,14 @@ var MUTATION_OBSERVER_OPTIONS = {
 // OK, now create the MutationObserver and start running it
 // on the document.
 observer = prepare_mutation_observer();
-chrome.runtime.onMessage.addListener(function(message) {	
-    if (message === 'startObserving') {	
-        // Start observing the target node for configured mutations	
-        observer.observe(editor, MUTATION_OBSERVER_OPTIONS);	
-    } else if (message === 'stopObserving') {	
-        // Stop observing the target node	
-        observer.disconnect();	
-    }	
+chrome.runtime.onMessage.addListener(function(message) {
+    if (message === 'startObserving') {
+        // Start observing the target node for configured mutations
+        observer.observe(editor, MUTATION_OBSERVER_OPTIONS);
+    } else if (message === 'stopObserving') {
+        // Stop observing the target node
+        observer.disconnect();
+    }
 });
 
 /*

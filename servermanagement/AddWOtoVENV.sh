@@ -36,11 +36,33 @@ source "$VIRTUAL_ENV/bin/activate"
 
 # Installation
 # ----------------------------------------------------------
+# If we plan to use a GPU then this line must also
+# be run.  Comment out the code below if you do
+# not want cuda installed or edit it for your
+# library version.
+#
+# Note that by default we seem to be unable to rely
+# on spacy to pull the right cuda on its own
+echo -e "\n=== Installing Spacy CUDA, comment out if not needed. ==="
+echo -e "\n    Using CUDA v. 117"
+"$PIP_CMD" install spacy[cuda117]
+
+# If you are using cuda 12.1 as we are on some
+# systems then spacy's passthrough install will
+# not work.  Therefore you will need a two-step
+# process.
+#echo -e "\n    Using CUDA v. 12.x"
+#"$PIP_CMD" install cupy-cuda12x
+#"$PIP_CMD" install spacy[cuda12x]
+
 
 # Install basic requirements.
 echo -e "\n=== Installing Requirements.txt ==="
 cd ..
 "$PIP_CMD" install -r requirements.txt
+
+
+
 
 echo -e "\n=== Installing Learning Observer ==="
 cd learning_observer
@@ -53,6 +75,6 @@ cd ../modules/writing_observer
 
 
 echo -e "\n=== Installing Brad's Dashboard ==="
-cd ../../learning_observer/prototypes/dash_wo_teacher_dashboard
+cd ../wo_highlight_dashboard
 "$PYTHON_CMD" setup.py develop
 
