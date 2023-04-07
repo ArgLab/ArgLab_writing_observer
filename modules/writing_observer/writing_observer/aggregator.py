@@ -184,7 +184,7 @@ async def get_latest_student_documents(student_data):
     
     print(writing_data)
     
-    return writing_data
+    return writing_data, active_students
 
 
 async def remove_extra_data(writing_data):
@@ -202,11 +202,15 @@ async def merge_with_student_data(writing_data, student_data):
     '''
     Add the student metadata to each text
     '''
-
+    print("MERGE writing: {}".format(writing_data))
+    print("MERGE student: {}".format(student_data))
+    
     for item, student in zip(writing_data, student_data):
         if 'edit_metadata' in item:
             del item['edit_metadata']
         item['student'] = student
+
+    print("MERGE result: {}".format(writing_data))
     return writing_data
 
 
@@ -238,8 +242,9 @@ async def latest_data(student_data, options=None):
     object interface that hides some of this from the user 
     but for the now we'll roll with this.  
     '''
-    # Get the latest documents with the students appended.
-    writing_data = await get_latest_student_documents(student_data)
+    # Get the latest documents with the students appended. And
+    # get the active students for later merge.
+    writing_data, active_students = await get_latest_student_documents(student_data)
 
     # Strip out the unnecessary extra data.
     writing_data = await remove_extra_data(writing_data)
@@ -247,10 +252,9 @@ async def latest_data(student_data, options=None):
     print(">>> WRITE DATA-premerge: {}".format(writing_data))
     
     # This is the error.  Skipping now.
-    writing_data_merge = await merge_with_student_data(writing_data, student_data)
+    writing_data_merge = await merge_with_student_data(writing_data, active_students)
     print(">>> WRITE DATA-postmerge: {}".format(writing_data_merge))
 
-    
     # #print(">>>> PRINT WRITE DATA: Merge")
     # #print(writing_data)
 
@@ -262,7 +266,9 @@ async def latest_data(student_data, options=None):
     #     if annotated_text != "Error":
     #         single_doc.update(annotated_text)
 
-    writing_data = await merge_with_student_data(writing_data, student_data)
-    writing_data = await processor(writing_data, options)
-            
-    return {'latest_writing_data': writing_data}
+    # latest_writing_data = await merge_with_student_data(writing_data, student_data)
+    latest_writing_data = await processor(writing_data_merge, options)
+    result = {'latest_writing_data': latest_writing_data}
+    print(">>> WRITE writing data: {}".format(result))
+    
+    return result
