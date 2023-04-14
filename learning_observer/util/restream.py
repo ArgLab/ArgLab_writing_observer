@@ -71,11 +71,25 @@ async def restream(
         async with session.ws_connect(url) as web_socket:
             async with aiofiles.open(filename) as log_file:
                 async for line in log_file:
+
+                    print("LINE CHECK {}".format(line))
+                    jline = json.loads(line)
+                    
+                    # If this is a skip event then jump over it.
+                    if jline.get('client', {}).get('event') in skip:
+                        continue
+                    
+                    # Failing that we will handle rate changes and
+                    # pauses if needed.
                     if rate is not None:
-                        jline = json.loads(line)
-                        if jline['client']['event'] in skip:
-                            continue
-                        new_ts = jline["server"]["time"]
+
+                        # For client lines we pull the server time.  For all
+                        # others use just 'ts'
+                        if (jline.get("client") != None):
+                            new_ts = jline["server"]["time"]
+                        else: new_ts = jline["ts"]                            
+
+                        # Now perform the actual delay as needed.
                         if old_ts is not None:
                             delay = (new_ts - old_ts) / rate
                             if max_wait is not None:
@@ -84,17 +98,25 @@ async def restream(
                             print(delay)
                             await asyncio.sleep(delay)
                         old_ts = new_ts
+                            
+                    # Then handle the extraction and renaming if
+                    # Either one is required and this is a client
+                    # line.  
                     if extract_client or rename:
-                        json_line = json.loads(line)
-                        if extract_client:
-                            json_line = json_line['client']
-                        print(json.dumps(json_line, indent=2))
-                        if rename:
-                            if 'auth' not in json_line:
-                                json_line['auth'] = {}
-                            json_line['auth']['user_id'] = new_id
-                        line = json.dumps(json_line)
-
+                        if (jline.get("client") == None):
+                            continue
+                        else:
+                            if extract_client:
+                                jline = jline['client']
+                            print(json.dumps(jline, indent=2))
+                            if rename:
+                                if 'auth' not in jline:
+                                    jline['auth'] = {}
+                                jline['auth']['user_id'] = new_id
+                            line = json.dumps(jline)
+                                
+                        
+                    print("Sending {}".format(line.strip()))
                     await web_socket.send_str(line.strip())
         return True
 
