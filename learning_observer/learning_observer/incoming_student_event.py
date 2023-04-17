@@ -173,8 +173,9 @@ async def handle_incoming_client_event(metadata):
         '''
         This is the handler for incoming client events.
         '''
+        debug_log("handler: {}".format(client_event))
         client_event = adapter.canonicalize_event(client_event)
-        debug_log("Compiling event for reducer: " + client_event["event"])
+        debug_log("Compiling event for reducer: " + client_event.get("event", "NONE"))
         event = {
             "client": client_event,
             "server": compile_server_data(request),
@@ -328,7 +329,7 @@ async def incoming_websocket_handler(request):
                 print("Bad message:", msg)
                 raise
             header_events.append(json_msg)
-            if json_msg["event"] == "metadata_finished":
+            if json_msg.get("event") == "metadata_finished":
                 break
     else:
         # This is a path for the old way of doing auth, which was to
