@@ -103,11 +103,13 @@ def outputIndicator(doc, indicatorName, itype, stype=None, text=None, added_filt
     return indicator
 
 
-def process_text(text, options=None):
+def process_text(text, doc=None, options=None):
     '''
     This will extract a dictionary of metadata using Paul's AWE Workbench code.
     '''
-    doc = nlp(text)
+    if doc == None:
+        doc = nlp(text)
+
     results = {}
 
     if options is None:
@@ -130,7 +132,7 @@ def process_text(text, options=None):
     return results
 
 
-async def process_texts_serial(texts, options=None):
+async def process_texts_serial(texts, doc, options=None):
     '''
     Process a list of texts, in serial.
 
@@ -141,7 +143,7 @@ async def process_texts_serial(texts, options=None):
     annotated = []
     for text in texts:
         print(text)
-        annotations = process_text(text, options)
+        annotations = process_text(text, doc, options)
         annotations['text'] = text
         annotated.append(annotations)
 
@@ -170,7 +172,7 @@ def run_in_fork(func):
         os._exit(0)
 
 
-async def process_texts_parallel(texts, options=None):
+async def process_texts_parallel(texts, doc, options=None):
     '''
     This will spin up as many processes as we have cores, and process texts
     in parallel. Note that we should confirm issues of thread safety. If
@@ -185,7 +187,7 @@ async def process_texts_parallel(texts, options=None):
     loop = asyncio.get_running_loop()
     result_futures = []
     for text in texts:
-        processor = functools.partial(process_text, text, options)
+        processor = functools.partial(process_text, text, doc, options)
         # forked_processor = functools.partial(run_in_fork, processor)
         result_futures.append(loop.run_in_executor(executor, processor))
 
@@ -260,6 +262,15 @@ async def process_texts(writing_data, options=None, mode=RUN_MODES.MULTIPROCESSI
                 results.append(writing)
                 continue
 
+        if 'spacy_doc' not in text_cache_data:
+            doc = nlp(text)
+            text_cache_data['spacy_doc'] = doc.to_json()
+            print("\nDid not find doc in cache\n")
+        else:
+            # print("\n***Cache Data: {}**\n".format(text_cache_data['spacy_doc']))
+            print("\nFound doc in cache\n")
+            doc = spacy.tokens.Doc(nlp.vocab).from_json(text_cache_data['spacy_doc'])
+
         # Check if some options are a subset of features_running
         # features that are needed but are already running
         run_successful = False
@@ -294,7 +305,7 @@ async def process_texts(writing_data, options=None, mode=RUN_MODES.MULTIPROCESSI
         text_cache_data['start_time'] = str(datetime.datetime.now())
         text_cache_data['stop_time'] = "running"
         await cache.set(text_hash, text_cache_data)
-        annotated_text = process_text(writing.get("text", ""), list(not_found))
+        annotated_text = process_text(writing.get("text", ""), doc, list(not_found))
         text_cache_data['features_running'] = json.dumps([])
         text_cache_data['stop_time'] = str(datetime.datetime.now())
         text_cache_data['features_available'].update(annotated_text)
