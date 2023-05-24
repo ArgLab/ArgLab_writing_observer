@@ -9,7 +9,8 @@ var RAW_DEBUG = false;
 /* This variable must be manually updated to specify the server that
  * the data will be sent to.  
 */
-var WEBSOCKET_SERVER_URL = "wss://learning-observer.org/wsapi/in/" 
+var WEBSOCKET_SERVER_URL = "wss://gayaan.csc.ncsu.edu/wsapi/in/"
+// var WEBSOCKET_SERVER_URL = "ws://localhost:8888/wsapi/in/"
 
 
 /*
@@ -96,6 +97,10 @@ function websocket_logger(server) {
             event = JSON.stringify(event);
             queue.push(event);
         };
+        socket.onmessage = function(event) {
+            const message = event.data;
+            console.log('Received message:', message);
+        }
         socket.onclose = function(event) {
             console.log("Lost connection");
             var event = { "issue": "Lost connection", "code": event.code };
