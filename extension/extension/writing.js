@@ -46,6 +46,20 @@ function log_event(event_type, event) {
     // uncomment to watch events being logged from the client side with devtools
     // console.log(event);
 
+    if ('WebSocket' in window) {
+        // WebSocket API is supported
+        if ('CLOSING' in WebSocket || 'close' in WebSocket.prototype) {
+          // Feature available in WebSocket API (version 7+)
+          console.log('WebSocket API supports closing');
+        } else {
+          // Feature not available in WebSocket API
+          console.log('WebSocket API does not support closing');
+        }
+      } else {
+        // WebSocket API is not supported
+        console.log('WebSocket API is not supported in this browser');
+      }
+
     // Check if the extension runtime still has its context
     if (chrome.runtime?.id !== undefined) {
         chrome.runtime.sendMessage(event);

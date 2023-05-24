@@ -322,6 +322,7 @@ async def incoming_websocket_handler(request):
     if INIT_PIPELINE:
         async for msg in ws:
             debug_log("Auth", msg.data)
+            await ws.send_str('Acknowledgment received')
             try:
                 json_msg = json.loads(msg.data)
             except Exception:
