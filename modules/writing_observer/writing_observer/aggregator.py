@@ -158,8 +158,6 @@ async def get_latest_student_documents(student_data):
             },
             KeyStateType.INTERNAL
         ) for s in active_students]) 
-
-    print(document_keys)
     
     kvs_data = await kvs.multiget(keys=document_keys)
 
@@ -181,8 +179,6 @@ async def get_latest_student_documents(student_data):
         # Now insert the student data and pass it along.
         doc['student'] = student
         writing_data.append(doc)
-    
-    print(writing_data)
     
     return writing_data
 
@@ -213,7 +209,7 @@ async def merge_with_student_data(writing_data, student_data):
 if learning_observer.settings.module_setting('writing_observer', 'use_nlp', False):
     try:
         import writing_observer.awe_nlp
-        processor = writing_observer.awe_nlp.process_texts
+        processor = writing_observer.awe_nlp.process_writings_with_caching
     except ImportError as e:
         print(e)
         print('AWE Components is not installed. To install, please see https://github.com/ETS-Next-Gen/AWE_Components')
@@ -238,17 +234,17 @@ async def latest_data(student_data, options=None):
     object interface that hides some of this from the user 
     but for the now we'll roll with this.  
     '''
-ã    # Get the latest documents with the students appended.
+    # Get the latest documents with the students appended.
     writing_data = await get_latest_student_documents(student_data)
 
     # Strip out the unnecessary extra data.
     writing_data = await remove_extra_data(writing_data)
 
-    print(">>> WRITE DATA-premerge: {}".format(writing_data))
+    # print(">>> WRITE DATA-premerge: {}".format(writing_data))
     
     # This is the error.  Skipping now.
     writing_data_merge = await merge_with_student_data(writing_data, student_data)
-    print(">>> WRITE DATA-postmerge: {}".format(writing_data_merge))
+    # print(">>> WRITE DATA-postmerge: {}".format(writing_data_merge))
 
     
     # #print(">>>> PRINT WRITE DATA: Merge")
