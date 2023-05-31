@@ -282,6 +282,18 @@ def event_decoder_and_logger(
         return json_event
     return decode_and_log_event
 
+blacklisted_orgs = []
+
+def check_if_blacklisted(identity, ws):
+    email = identity["email"]
+    email_org = email.split('@')[1]
+    
+    status = 'deny' if email_org in blacklisted_orgs else 'allow'
+     
+    ws.send_str(status)
+    debug_log("Ack sent")
+    return status
+
 
 async def incoming_websocket_handler(request):
     '''
@@ -319,16 +331,23 @@ async def incoming_websocket_handler(request):
 
     INIT_PIPELINE = settings.settings.get("init_pipeline", True)
     json_msg = None
+    stream_permission = None
+    ws.send_str('Acknowledgment received')
     if INIT_PIPELINE:
         async for msg in ws:
             debug_log("Auth", msg.data)
-            await ws.send_str('Acknowledgment received')
             try:
                 json_msg = json.loads(msg.data)
             except Exception:
                 print("Bad message:", msg)
                 raise
             header_events.append(json_msg)
+            
+            if json_msg["event"] == "chrome_identity":
+                status = check_if_blacklisted(json_msg["chrome_identity"], ws)
+
+            stream_permission = True if status == 'allow' else False 
+            
             if json_msg["event"] == "metadata_finished":
                 break
     else:
@@ -341,6 +360,10 @@ async def incoming_websocket_handler(request):
         msg = await ws.receive()
         json_msg = json.loads(msg.data)
         header_events.append(json_msg)
+
+    if not stream_permission:
+        debug_log("Don't send")
+        return ws 
 
     first_event = header_events[0]
     event_metadata['source'] = first_event['source']
