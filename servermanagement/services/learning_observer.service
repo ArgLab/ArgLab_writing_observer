@@ -1,0 +1,18 @@
+[Unit]
+Description=Learning Observer Service
+After=network.target
+
+[Service]
+ExecStart=/bin/bash -c 'source /usr/local/share/projects/WritingObserver-Pradeep/VirtualENVs/WOvenv/bin/activate && cd /usr/local/share/projects/WritingObserver-Pradeep/Repositories/ArgLab_writing_observer/learning_observer && nohup python learning_observer >/usr/local/share/projects/WritingObserver-Pradeep/Repositories/ArgLab_writing_observer/learning_observer/logs/learning_observer_service_$(date "+%%m-%%d-%%Y--%%H-%%M-%%S").log 2>&1 & echo $! > /usr/local/share/projects/WritingObserver-Pradeep/Repositories/ArgLab_writing_observer/learning_observer/logs/run.pid; prlimit --pid $! --nofile=8192'
+WorkingDirectory=/usr/local/share/projects/WritingObserver-Pradeep/Repositories/ArgLab_writing_observer/learning_observer
+User=pmuthuk2
+Group=NCSU
+Restart=always
+RestartSec=3
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=learning_observer
+
+[Install]
+WantedBy=multi-user.target
+
