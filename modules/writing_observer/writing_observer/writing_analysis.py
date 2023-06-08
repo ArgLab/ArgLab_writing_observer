@@ -169,8 +169,7 @@ async def last_document(event, internal_state):
     functions for the analysis.  Over time these may age off with a better
     model.
     '''
-
-    document_id = get_doc_id_wrapper(event)
+    document_id = get_doc_id(event)
 
     if document_id is not None:
         state = {"document_id": document_id}
@@ -228,11 +227,14 @@ def is_keystroke_eventp(event):
 # Document URls are as follows:
 #  https://docs.google.com/document/d/18JAnmxzVD_lGSfa8t6Se66KLZm30YFrC_4M-D2zdYG4/edit
 
-DOC_URL_re = re.compile("^https://docs.google.com/document/d/(?P<DOCID>[^\s/]+)/(?P<ACT>[a-zA-Z]+)")
+DOC_URL_re = re.compile("^https://docs.google.com/document/d/(?P<DOCID>[^/\s]+)/(?P<ACT>[a-zA-Z]+)")  # noqa: W605 \s is invalid escape
 
 
-def get_doc_id_wrapper(event):
+def get_doc_id(event):
     """
+    HACK: This is interim until we have more consistent events
+    from the extension
+
     Some of the event types (e.g. 'google_docs_save') have
     a 'doc_id' which provides a link to the google document.
     Others, notably the 'visibility' and 'keystroke' events
@@ -252,15 +254,15 @@ def get_doc_id_wrapper(event):
     this.
     """
 
-    # Handle standard Doc_ID cases first.
-    Doc_ID = event.get('client', {}).get('doc_id', None)
-    if (Doc_ID is not None):
-        return Doc_ID
+    client = event.get('client', {})
+    doc_id = client.get('doc_id')
+    if doc_id:
+        return doc_id
 
     # Failing that pull out the url event.
     # Object_value = event.get('client', {}).get('object', None)
-    URL_value = event.get('client', {}).get('object', {}).get('url', None)
-    if (URL_value is None):
+    url = client.get('object', {}).get('url')
+    if not url:
         return None
 
     # Now test if the object has a URL and if that corresponds
@@ -268,9 +270,9 @@ def get_doc_id_wrapper(event):
     # if so return the id from it.  In the off chance the id
     # is still not present or is none then this will return
     # none.
-    URLMatch = DOC_URL_re.match(URL_value)
-    if (URLMatch is None):
+    url_match = DOC_URL_re.match(url)
+    if not url_match:
         return None
 
-    Doc_ID = event.get('client', {}).get('object', {}).get('id', None)
-    return Doc_ID
+    doc_id = client.get('object', {}).get('id')
+    return doc_id
