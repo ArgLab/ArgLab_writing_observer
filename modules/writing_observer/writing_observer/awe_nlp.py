@@ -330,7 +330,6 @@ async def process_writings_with_caching(writing_data, options=None, mode=RUN_MOD
     :param wait_time_for_running_features: The time in seconds to wait for features already running (default: 60).
     :return: The results list.
     '''
-    debug_log("\n\n\n\ninside caching \n\n\n\n")
     results = []
     cache = learning_observer.kvs.KVS()
     requested_features = set(options if options else [])
