@@ -24,6 +24,7 @@ import asyncio
 import urllib.parse
 import secrets
 import sys
+import re
 
 import aiohttp_session
 import aiohttp.web
@@ -201,7 +202,6 @@ async def local_storage_auth(request, headers, first_event, source):
         'providence': 'ls'  # local storage
     }
 
-
 @register_event_auth("chromebook")
 async def chromebook_auth(request, headers, first_event, source):
     '''
@@ -230,12 +230,18 @@ async def chromebook_auth(request, headers, first_event, source):
     if untrusted_google_id is None:
         return False
 
+    payload_for_validation = authdata.get('chrome_identity', {})
+    
+    auth_response = authenticate_payload(payload_for_validation)
+    
     gc_uid = learning_observer.auth.utils.google_id_to_user_id(untrusted_google_id)
-    return {
+    
+    return { 
+        **auth_response, 
         'sec': auth,
         'user_id': gc_uid,
         'safe_user_id': gc_uid,
-        'providence': 'gcu'  # Google Chrome, unauthenticated
+        'providence': 'gcu'  # Google Chrome, unauthenticated }
     }
 
 
@@ -321,13 +327,17 @@ async def authenticate(request, headers, first_event, source):
     for auth_method in learning_observer.settings.settings['event_auth']:
         auth_metadata = await AUTH_METHODS[auth_method](request, headers, first_event, source)
         if auth_metadata:
+            if "status_code" in auth_metadata and auth_metadata.get("status_code") == 403:
+                print("Forbidden.")
+                raise aiohttp.web.HTTPForbidden(reason=auth_metadata.get("msg"))
+            
             if "safe_user_id" not in auth_metadata:
                 auth_metadata['safe_user_id'] = encode_id(
                     source=auth_metadata["providence"],
                     unsafe_id=auth_metadata['user_id']
                 )
             return auth_metadata
-
+    
     print("All authentication methods failed. Unauthorized.")
     raise aiohttp.web.HTTPUnauthorized()
 
@@ -347,6 +357,63 @@ def check_event_auth_config():
                     auth_method,
                     list(AUTH_METHODS.keys())
                 ))
+
+RULES_RESPONSES = {
+    "allow": {
+        "msg": "Allow events to be sent",
+        "status_code": 200
+    },
+    "deny": {
+        "msg": "Deny events from being sent",
+        "status_code": 403
+    },
+    "deny_for_two_days": {
+        "msg": "Deny events from being sent for two days",
+        "status_code": 403
+    }
+}
+
+RULES_PATTERNS = {
+    "deny": [
+        {
+            "type": "email",
+            "patterns": ["^.*@ncsu.edu"]
+        },
+        {
+            "type": "google_id",
+            "patterns": ["1234"]
+        }
+    ],
+    "deny_for_two_days": [
+        {
+            "type": "email",
+            "patterns": ["^.*@ncsu.edu"]
+        }
+    ]
+}
+
+RULE_TYPES_BY_PRIORITIES = ["deny", "deny_for_two_days"]
+
+def authenticate_payload(payload, rules_patterns):
+    def sort_list_based_on_reference(input_list, reference_list):
+        return sorted(input_list, key=reference_list.index)
+    
+    failed_rule_types = []
+    for rule_type, rules in rules_patterns.items():
+        for rule in rules:
+            field = rule["type"]
+            patterns = rule["patterns"]
+            value = payload.get(field)
+
+            if value:
+                for pattern in patterns:
+                    if re.match(pattern, value):
+                        failed_rule_types.append(rule_type)
+
+    sorted_failed_rule_types = sort_list_based_on_reference(failed_rule_types, RULE_TYPES_BY_PRIORITIES)
+    response_key = sorted_failed_rule_types[0] if sorted_failed_rule_types else "allow"
+
+    return RULES_RESPONSES[response_key]
 
 
 if __name__ == "__main__":
