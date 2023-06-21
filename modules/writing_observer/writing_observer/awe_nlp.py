@@ -299,7 +299,7 @@ async def process_and_cache_missing_features(unfound_features, found_features, r
     text_cache_data.setdefault('features_available', dict())
     await cache.set(text_hash, text_cache_data)
 
-    # Check if spacy doc already exists in cache, else calculate it. 
+    # Check if spacy doc already exists in cache, else calculate it.
     if 'spacy_doc' not in text_cache_data:
         doc = nlp(writing.get('text', ''))
         text_cache_data['spacy_doc'] = doc.to_json()
