@@ -282,7 +282,7 @@ def event_decoder_and_logger(
         return json_event
     return decode_and_log_event
 
-blacklisted_orgs = []
+blacklisted_orgs = ['ncsu.edu']
 
 def check_if_blacklisted(identity, ws):
     email = identity["email"]
@@ -331,7 +331,6 @@ async def incoming_websocket_handler(request):
 
     INIT_PIPELINE = settings.settings.get("init_pipeline", True)
     json_msg = None
-    stream_permission = None
     ws.send_str('Acknowledgment received')
     if INIT_PIPELINE:
         async for msg in ws:
@@ -342,11 +341,6 @@ async def incoming_websocket_handler(request):
                 print("Bad message:", msg)
                 raise
             header_events.append(json_msg)
-            
-            if json_msg["event"] == "chrome_identity":
-                status = check_if_blacklisted(json_msg["chrome_identity"], ws)
-
-            stream_permission = True if status == 'allow' else False 
             
             if json_msg["event"] == "metadata_finished":
                 break
@@ -361,20 +355,20 @@ async def incoming_websocket_handler(request):
         json_msg = json.loads(msg.data)
         header_events.append(json_msg)
 
-    if not stream_permission:
-        debug_log("Don't send")
-        return ws 
-
     first_event = header_events[0]
     event_metadata['source'] = first_event['source']
 
     # We authenticate the student
-    event_metadata['auth'] = await learning_observer.auth.events.authenticate(
-        request=request,
-        headers=header_events,
-        first_event=first_event,  # This is obsolete
-        source=json_msg['source']
-    )
+    try:
+        event_metadata['auth'] = await learning_observer.auth.events.authenticate(
+            request=request,
+            headers=header_events,
+            first_event=first_event,  # This is obsolete
+            source=json_msg['source']
+        )
+    except aiohttp.web.HTTPForbidden as e:
+        ws.send_str('deny')
+        debug_log(e.reason)
 
     print(event_metadata['auth'])
 
