@@ -248,7 +248,11 @@ async def check_and_wait_for_running_features(writing, requested_features, found
     :return: A tuple containing the unfound features, found features, and the updated writing data.
     """
     text_cache_data = await get_latest_cache_data_for_text(cache, text_hash)  # Get latest cache
-    running_features = set(json.loads(text_cache_data['running_features'])) if 'running_features' in text_cache_data else set()
+    if 'running_features' in text_cache_data:
+        running_features = set(json.loads(text_cache_data['running_features']))
+    else:
+        running_features = set()
+
     run_successful = False
     unfound_features = requested_features - found_features
     needed_running_features = set()  # Features that are needed but are already processing
@@ -282,23 +286,27 @@ async def process_and_cache_missing_features(unfound_features, found_features, r
     :param writing: The writing data.
     :return: The updated writing data.
     """
+    # Calculate the features required and prepare the temporary cache dict
     unfound_features = requested_features - found_features
     running_features = unfound_features
     temp_cache_dict = {'running_features': json.dumps(list(running_features)),
                        'start_time': timestamp(),
                        'stop_time': "running"}
 
+    # Read the cache and update it with new running features, start and stop time
     text_cache_data = await get_latest_cache_data_for_text(cache, text_hash)  # Get latest cache
     text_cache_data.update(temp_cache_dict)
     text_cache_data.setdefault('features_available', dict())
     await cache.set(text_hash, text_cache_data)
 
+    # Check if spacy doc already exists in cache, else calculate it.
     if 'spacy_doc' not in text_cache_data:
         doc = nlp(writing.get('text', ''))
         text_cache_data['spacy_doc'] = doc.to_json()
     else:
         doc = spacy.tokens.Doc(nlp.vocab).from_json(text_cache_data['spacy_doc'])
 
+    # Get the nlp features for the text and update the cache
     annotated_text = process_text(writing.get("text", ""), doc, list(unfound_features))
     text_cache_data['running_features'] = json.dumps([])
     text_cache_data['stop_time'] = timestamp()
