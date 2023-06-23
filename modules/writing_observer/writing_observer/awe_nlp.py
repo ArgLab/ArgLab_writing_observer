@@ -102,11 +102,13 @@ def outputIndicator(doc, indicatorName, itype, stype=None, text=None, added_filt
     return indicator
 
 
-def process_text(text, options=None):
+def process_text(text, doc=None, options=None):
     '''
     This will extract a dictionary of metadata using Paul's AWE Workbench code.
     '''
-    doc = nlp(text)
+    if doc is None:
+        doc = nlp(text)
+
     results = {}
 
     if options is None:
@@ -129,7 +131,7 @@ def process_text(text, options=None):
     return results
 
 
-async def process_texts_serial(texts, options=None):
+async def process_texts_serial(texts, doc=None, options=None):
     '''
     Process a list of texts, in serial.
 
@@ -140,7 +142,7 @@ async def process_texts_serial(texts, options=None):
     annotated = []
     for text in texts:
         print(text)
-        annotations = process_text(text, options)
+        annotations = process_text(text, doc, options)
         annotations['text'] = text
         annotated.append(annotations)
 
@@ -169,7 +171,7 @@ def run_in_fork(func):
         os._exit(0)
 
 
-async def process_texts_parallel(texts, options=None):
+async def process_texts_parallel(texts, doc=None, options=None):
     '''
     This will spin up as many processes as we have cores, and process texts
     in parallel. Note that we should confirm issues of thread safety. If
@@ -184,7 +186,7 @@ async def process_texts_parallel(texts, options=None):
     loop = asyncio.get_running_loop()
     result_futures = []
     for text in texts:
-        processor = functools.partial(process_text, text, options)
+        processor = functools.partial(process_text, text, doc, options)
         # forked_processor = functools.partial(run_in_fork, processor)
         result_futures.append(loop.run_in_executor(executor, processor))
 
@@ -246,7 +248,11 @@ async def check_and_wait_for_running_features(writing, requested_features, found
     :return: A tuple containing the unfound features, found features, and the updated writing data.
     """
     text_cache_data = await get_latest_cache_data_for_text(cache, text_hash)  # Get latest cache
-    running_features = set(json.loads(text_cache_data['running_features'])) if 'running_features' in text_cache_data else set()
+    if 'running_features' in text_cache_data:
+        running_features = set(json.loads(text_cache_data['running_features']))
+    else:
+        running_features = set()
+
     run_successful = False
     unfound_features = requested_features - found_features
     needed_running_features = set()  # Features that are needed but are already processing
@@ -266,6 +272,7 @@ async def check_and_wait_for_running_features(writing, requested_features, found
             # running_features will be available in features_available after they finish running.
             writing.update(text_cache_data['features_available'])
             found_features = found_features.union(needed_running_features)
+            unfound_features = unfound_features - found_features
     return unfound_features, found_features, writing
 
 
@@ -280,18 +287,28 @@ async def process_and_cache_missing_features(unfound_features, found_features, r
     :param writing: The writing data.
     :return: The updated writing data.
     """
+    # Calculate the features required and prepare the temporary cache dict
     unfound_features = requested_features - found_features
     running_features = unfound_features
     temp_cache_dict = {'running_features': json.dumps(list(running_features)),
                        'start_time': timestamp(),
                        'stop_time': "running"}
-    
+
+    # Read the cache and update it with new running features, start and stop time
     text_cache_data = await get_latest_cache_data_for_text(cache, text_hash)  # Get latest cache
     text_cache_data.update(temp_cache_dict)
     text_cache_data.setdefault('features_available', dict())
     await cache.set(text_hash, text_cache_data)
-    
-    annotated_text = process_text(writing.get("text", ""), list(unfound_features))
+
+    # Check if spacy doc already exists in cache, else calculate it.
+    if 'spacy_doc' not in text_cache_data:
+        doc = nlp(writing.get('text', ''))
+        text_cache_data['spacy_doc'] = doc.to_json()
+    else:
+        doc = spacy.tokens.Doc(nlp.vocab).from_json(text_cache_data['spacy_doc'])
+
+    # Get the nlp features for the text and update the cache
+    annotated_text = process_text(writing.get("text", ""), doc, list(unfound_features))
     text_cache_data['running_features'] = json.dumps([])
     text_cache_data['stop_time'] = timestamp()
     text_cache_data['features_available'].update(annotated_text)
