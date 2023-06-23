@@ -82,7 +82,7 @@ pip install .
 cd ..
 
 echo -e "\n--- Installing wo_highlight_dashboard. ---"
-cd ../wo_highlight_dashboard
+cd ./wo_highlight_dashboard
 "$PYTHON_CMD" setup.py develop
 cd ..
 
