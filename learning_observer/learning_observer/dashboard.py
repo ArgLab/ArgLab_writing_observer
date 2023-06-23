@@ -324,9 +324,9 @@ async def websocket_dashboard_view(request):
         # Currently options is a list of strings (what we want returned)
         # In the futuer this should be some form of communication protocol
         if 'options' in args_aggregrator:
-            agg = aggregator(runtime, sd, client_data)
+            agg = aggregator(sd, client_data)
         else:
-            agg = aggregator(runtime, sd)
+            agg = aggregator(sd)
         if async_aggregator:
             agg = await agg
         data.update(agg)
