@@ -272,6 +272,7 @@ async def check_and_wait_for_running_features(writing, requested_features, found
             # running_features will be available in features_available after they finish running.
             writing.update(text_cache_data['features_available'])
             found_features = found_features.union(needed_running_features)
+            unfound_features = unfound_features - found_features
     return unfound_features, found_features, writing
 
 
