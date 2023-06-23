@@ -22,6 +22,7 @@ import awe_components.components.syntaxDiscourseFeats
 import awe_components.components.viewpointFeatures
 import awe_components.components.lexicalClusters
 import awe_components.components.contentSegmentation
+from writing_observer.caching_performance import CachePerformance
 import json
 import warnings
 
@@ -30,6 +31,7 @@ import learning_observer.kvs
 import learning_observer.util
 
 RUN_MODES = enum.Enum('RUN_MODES', 'MULTIPROCESSING SERIAL')
+cache_stats = CachePerformance()
 
 
 def init_nlp():
@@ -316,6 +318,15 @@ async def process_and_cache_missing_features(unfound_features, found_features, r
     await cache.set(text_hash, text_cache_data)
     return writing
 
+async def update_cache_stats(hits=0, misses=0):
+    """
+    Updates cache statistics like Hits and Misses.
+    """
+    if hits!= 0:
+        await cache_stats.increment_hit_count(hits)
+    if misses!=0:
+        await cache_stats.increment_miss_count(misses)
+
 
 async def process_writings_with_caching(writing_data, options=None, mode=RUN_MODES.MULTIPROCESSING, sleep_interval=1, wait_time_for_running_features=60):
     '''
@@ -360,6 +371,7 @@ async def process_writings_with_caching(writing_data, options=None, mode=RUN_MOD
         # If all options were found
         if found_features == requested_features:
             results.append(writing)
+            await update_cache_stats(hits=len(found_features))
             continue
 
         # Check if some options are a subset of running_features: features that are needed but are already running
@@ -367,10 +379,14 @@ async def process_writings_with_caching(writing_data, options=None, mode=RUN_MOD
         # If all options are found
         if found_features == requested_features:
             results.append(writing)
+            await update_cache_stats(hits=len(found_features))
             continue
 
         # Add not found options to running_features and update cache
         results.append(await process_and_cache_missing_features(unfound_features, found_features, requested_features, cache, text_hash, writing))
+
+        # Update Cache Performance
+        await update_cache_stats(hits=len(found_features), misses=len(unfound_features))
 
     return results
 
