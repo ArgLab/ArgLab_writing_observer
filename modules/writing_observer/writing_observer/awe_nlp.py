@@ -99,7 +99,7 @@ def outputIndicator(doc, indicatorName, itype, stype=None, text=None, added_filt
         for span in indicator['offsets']:
             indicator['text'].append(text[int(span[0]):int(span[0]) + int(span[1])])
 
-    return indicator
+    return indicator, doc
 
 
 def process_text(text, doc=None, options=None):
@@ -121,14 +121,14 @@ def process_text(text, doc=None, options=None):
             continue
         indicator = writing_observer.nlp_indicators.INDICATORS[item]
         (id, label, infoType, select, filterInfo, summaryType) = indicator
-        results[id] = outputIndicator(doc, select, infoType, stype=summaryType, text=text, added_filter=filterInfo)
+        results[id], doc = outputIndicator(doc, select, infoType, stype=summaryType, text=text, added_filter=filterInfo)
         results[id].update({
             "label": label,
             "type": infoType,
             "name": id,
             "summary_type": summaryType
         })
-    return results
+    return results, doc
 
 
 async def process_texts_serial(texts, doc=None, options=None):
@@ -307,7 +307,8 @@ async def process_and_cache_missing_features(unfound_features, found_features, r
         doc = spacy.tokens.Doc(nlp.vocab).from_json(text_cache_data['spacy_doc'])
 
     # Get the nlp features for the text and update the cache
-    annotated_text = process_text(writing.get("text", ""), doc, list(unfound_features))
+    annotated_text, doc = process_text(writing.get("text", ""), doc, list(unfound_features))
+    text_cache_data['spacy_doc'] = doc.to_json()
     text_cache_data['running_features'] = json.dumps([])
     text_cache_data['stop_time'] = timestamp()
     text_cache_data['features_available'].update(annotated_text)
