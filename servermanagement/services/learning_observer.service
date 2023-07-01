@@ -1,17 +1,22 @@
+
 [Unit]
 Description=Learning Observer Service
-After=network.target
+Requires=redis.service nginx.service
+After=network.target redis.service nginx.service 
+StartLimitIntervalSec=5
 
 [Service]
-ExecStart=/bin/bash -c 'source /usr/local/share/projects/WritingObserver-Pradeep/VirtualENVs/WOvenv/bin/activate && cd /usr/local/share/projects/WritingObserver-Pradeep/Repositories/ArgLab_writing_observer/learning_observer && nohup python learning_observer >/usr/local/share/projects/WritingObserver-Pradeep/Repositories/ArgLab_writing_observer/learning_observer/logs/learning_observer_service_$(date "+%%m-%%d-%%Y--%%H-%%M-%%S").log 2>&1 & echo $! > /usr/local/share/projects/WritingObserver-Pradeep/Repositories/ArgLab_writing_observer/learning_observer/logs/run.pid; prlimit --pid $! --nofile=8192'
-WorkingDirectory=/usr/local/share/projects/WritingObserver-Pradeep/Repositories/ArgLab_writing_observer/learning_observer
+ExecStart=sudo -u pmuthuk2 /bin/bash -c "/projects/WritingObserver-Pradeep/Repositories/ArgLab_writing_observer/servermanagement/RunLearningObserver.sh"
+WorkingDirectory=/projects/WritingObserver-Pradeep/
 User=pmuthuk2
 Group=NCSU
 Restart=always
-RestartSec=3
+RestartSec=5m
+Environment=DEBUG=1
 StandardOutput=syslog
 StandardError=syslog
 SyslogIdentifier=learning_observer
+#Type=notify
 
 [Install]
 WantedBy=multi-user.target

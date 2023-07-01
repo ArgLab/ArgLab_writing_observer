@@ -13,10 +13,10 @@
 
 # System Variables
 # --------------------------------------
-VIRTUALENV_PATH="/usr/local/share/projects/WritingObserver/VirtualENVs/WOvenv"
+VIRTUALENV_PATH="/projects/WritingObserver-Pradeep/VirtualENVs/LOVenv/LOVenv"
 #VIRTUALENV_PYTHON="/usr/local/share/Projects/WritingObserver/VirtualENVs/learning_observer/bin/python3.9"
-LEARNING_OBSERVER_LOC="/usr/local/share/projects/WritingObserver/Repositories/ArgLab_writing_observer/learning_observer"
-LOGFILE_DEST="/usr/local/share/projects/WritingObserver/Repositories/ArgLab_writing_observer/learning_observer/learning_observer/logs"
+LEARNING_OBSERVER_LOC="/projects/WritingObserver-Pradeep/Repositories/ArgLab_writing_observer/learning_observer"
+LOGFILE_DEST="/projects/WritingObserver-Pradeep/Repositories/ArgLab_writing_observer/learning_observer/learning_observer/logs"
 
 # Make the logfile name
 # ---------------------------------------
@@ -28,11 +28,17 @@ echo $LOG_NAME;
 # Now run the thing.
 # --------------------------------------
 echo "Running Learning Observer Service..."
-cd $LEARNING_OBSERVER_LOC
 source $VIRTUALENV_PATH/bin/activate
-nohup python learning_observer > $LOGFILE_NAME 2>&1 &
+
+cd $LEARNING_OBSERVER_LOC
+#source $VIRTUALENV_PATH/bin/activate
+
+#sudo -u pmuthuk2 <<EOF
+
+nohup python3 learning_observer > $LOGFILE_NAME 2>&1 &
 PROCESS_ID=$!
 echo $PROCESS_ID > $LOGFILE_DEST/run.pid
 
 # Set the number of allowed open files to something large 8192
 prlimit --pid $PROCESS_ID --nofile=8192
+#EOF

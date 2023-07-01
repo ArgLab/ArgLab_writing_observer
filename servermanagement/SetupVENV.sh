@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+\#!/usr/bin/env bash
 #
 # SetupVENV.sh
 # Collin F. Lynch
@@ -28,7 +28,7 @@ VIRTUAL_ENV_LOC=$2
 # or pip versions.  Otherwise leave them as-is.
 
 PYTHON_CMD="python3.9"
-PIP_CMD="pip"
+PIP_CMD="pip3"
 
 
 # Execution
