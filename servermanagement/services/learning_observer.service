@@ -1,4 +1,5 @@
 
+
 [Unit]
 Description=Learning Observer Service
 Requires=redis.service nginx.service
@@ -17,6 +18,22 @@ StandardOutput=syslog
 StandardError=syslog
 SyslogIdentifier=learning_observer
 #Type=notify
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 [Install]
 WantedBy=multi-user.target
