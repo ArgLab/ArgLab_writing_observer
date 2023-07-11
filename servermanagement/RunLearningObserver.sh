@@ -35,10 +35,11 @@ cd $LEARNING_OBSERVER_LOC
 
 #sudo -u pmuthuk2 <<EOF
 
-nohup python3 learning_observer > $LOGFILE_NAME 2>&1 &
-PROCESS_ID=$!
-echo $PROCESS_ID > $LOGFILE_DEST/run.pid
+#nohup python3 learning_observer > $LOGFILE_NAME 2>&1 &
+python3 learning_observer > $LOGFILE_NAME 2>&1 
+#PROCESS_ID=$!
+#echo $PROCESS_ID > $LOGFILE_DEST/run.pid
 
 # Set the number of allowed open files to something large 8192
-prlimit --pid $PROCESS_ID --nofile=8192
+#prlimit --pid $PROCESS_ID --nofile=8192
 #EOF
