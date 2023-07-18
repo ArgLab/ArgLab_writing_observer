@@ -72,6 +72,9 @@ logging:
     debug_log_destinations:     # List of where they go. CONSOLE or FILE
         - CONSOLE
         - FILE
+    debug_file_pattern: learning-observer-<datetime>.log # Pattern for specifying filename for service.
+    debug_log_directory: ./learning_observer/logs/ # Specification for where files are stored.  If undefined they go to the standard logs directory.
+    debug_log_rotation: NONE # Specification for rotation of the debug log files.  NONE indicates no rotaton a number indicates the number of messages before rotation takes place.
 theme:
     server_name: Learning Observer
     front_page_pitch: Learning Observer is an experimental dashboard. If you'd like to be part of the experiment, please contact us. If you're already part of the experiment, log in!
