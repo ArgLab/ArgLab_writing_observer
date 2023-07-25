@@ -86,6 +86,7 @@ function websocket_logger(server) {
     var socket;
     var state = new Set()
     var queue = [];
+    var authStatus;
 
     function new_websocket() {
         socket = new WebSocket(server);
@@ -100,6 +101,12 @@ function websocket_logger(server) {
         socket.onmessage = function(event) {
             const message = event.data;
             console.log('Received message:', message);
+            // Extract the auth message from the server
+            var authStatusMsgPattern = /STATUS:\s*(\w+)/;
+            const match = message.match(authStatusMsgPattern);
+            if (match) {
+                authStatus = match[1];
+            }
         }
         socket.onclose = function(event) {
             console.log("Lost connection");
@@ -194,8 +201,13 @@ function websocket_logger(server) {
     }
 
     return function(data) {
-        queue.push(data);
-        dequeue();
+        switch (authStatus) {
+            case "deny": // don't update/empty the queue if authStatus is "deny"
+                break;
+            default:
+                queue.push(data);
+                dequeue();
+        }
     }
 }
 
