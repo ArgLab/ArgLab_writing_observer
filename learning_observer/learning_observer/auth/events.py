@@ -25,6 +25,7 @@ import urllib.parse
 import secrets
 import sys
 import re
+import json
 
 import aiohttp_session
 import aiohttp.web
@@ -237,7 +238,7 @@ async def chromebook_auth(request, headers, first_event, source):
     gc_uid = learning_observer.auth.utils.google_id_to_user_id(untrusted_google_id)
     
     return { 
-        **auth_response, 
+        'auth_response': auth_response,
         'sec': auth,
         'user_id': gc_uid,
         'safe_user_id': gc_uid,
@@ -327,9 +328,10 @@ async def authenticate(request, headers, first_event, source):
     for auth_method in learning_observer.settings.settings['event_auth']:
         auth_metadata = await AUTH_METHODS[auth_method](request, headers, first_event, source)
         if auth_metadata:
-            if "status_code" in auth_metadata and auth_metadata.get("status_code") == 403:
+            auth_response = auth_metadata.get('auth_response')
+            if auth_response and "status_code" in auth_response and auth_response.get("status_code") == 403:
                 print("Forbidden.")
-                raise aiohttp.web.HTTPForbidden(reason=auth_metadata.get("msg"))
+                raise aiohttp.web.HTTPForbidden(reason=json.dumps(auth_response))
             
             if "safe_user_id" not in auth_metadata:
                 auth_metadata['safe_user_id'] = encode_id(
@@ -358,61 +360,74 @@ def check_event_auth_config():
                     list(AUTH_METHODS.keys())
                 ))
 
+
+ALLOW = "allow"
+DENY = "deny"
+DENY_FOR_TWO_DAYS = "deny_for_two_days"
+
+# Responses for different rule types
 RULES_RESPONSES = {
-    "allow": {
+    ALLOW: {
+        "type": ALLOW,
         "msg": "Allow events to be sent",
         "status_code": 200
     },
-    "deny": {
+    DENY: {
+        "type": DENY,
         "msg": "Deny events from being sent",
         "status_code": 403
     },
-    "deny_for_two_days": {
+    DENY_FOR_TWO_DAYS: {
+        "type": DENY_FOR_TWO_DAYS,
         "msg": "Deny events from being sent for two days",
         "status_code": 403
     }
 }
 
+# Patterns to match against for different rule types
 RULES_PATTERNS = {
-    "deny": [
+    DENY: [
         {
-            "type": "email",
+            "field": "email",
             "patterns": ["^.*@ncsu.edu"]
         },
         {
-            "type": "google_id",
+            "field": "google_id",
             "patterns": ["1234"]
         }
     ],
-    "deny_for_two_days": [
+    DENY_FOR_TWO_DAYS: [
         {
-            "type": "email",
+            "field": "email",
             "patterns": ["^.*@ncsu.edu"]
         }
     ]
 }
 
-RULE_TYPES_BY_PRIORITIES = ["deny", "deny_for_two_days"]
+# Priority order of rule types for sorting
+RULE_TYPES_BY_PRIORITIES = [DENY, DENY_FOR_TWO_DAYS]
 
-def authenticate_payload(payload, rules_patterns):
-    def sort_list_based_on_reference(input_list, reference_list):
-        return sorted(input_list, key=reference_list.index)
-    
-    failed_rule_types = []
-    for rule_type, rules in rules_patterns.items():
+def authenticate_payload(payload):
+    failed_rule_types = [] # A list to store rule types that the payload fails to comply with
+    for rule_type, rules in RULES_PATTERNS.items():
         for rule in rules:
-            field = rule["type"]
-            patterns = rule["patterns"]
-            value = payload.get(field)
+            field = rule["field"] # Get the field to be looked up in the payload
+            patterns = rule["patterns"] # Get the patterns to match against for the payload value of the field
+            value = payload.get(field) # Get the value of the field from the payload
 
             if value:
                 for pattern in patterns:
+                    # If there is a pattern match, add the rule type to the failed list
                     if re.match(pattern, value):
                         failed_rule_types.append(rule_type)
 
-    sorted_failed_rule_types = sort_list_based_on_reference(failed_rule_types, RULE_TYPES_BY_PRIORITIES)
-    response_key = sorted_failed_rule_types[0] if sorted_failed_rule_types else "allow"
+    # Sort the failed rule types based on their priority order
+    sorted_failed_rule_types = sorted(failed_rule_types, key=RULE_TYPES_BY_PRIORITIES.index)
+        
+    # Determine the response key based on the highest priority failed rule, or 'allow' if no rule failed
+    response_key = sorted_failed_rule_types[0] if sorted_failed_rule_types else ALLOW
 
+    # Return the appropriate response based on the response key
     return RULES_RESPONSES[response_key]
 
 
