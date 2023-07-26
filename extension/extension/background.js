@@ -9,7 +9,7 @@ var RAW_DEBUG = false;
 /* This variable must be manually updated to specify the server that
  * the data will be sent to.  
 */
-var WEBSOCKET_SERVER_URL = "wss://gayaan.csc.ncsu.edu/wsapi/in/"
+var WEBSOCKET_SERVER_URL = "wss://learning-observer.org/wsapi/in/"
 // var WEBSOCKET_SERVER_URL = "ws://localhost:8888/wsapi/in/"
 
 
@@ -86,6 +86,7 @@ function websocket_logger(server) {
     var socket;
     var state = new Set()
     var queue = [];
+    var authStatus;
 
     function new_websocket() {
         socket = new WebSocket(server);
@@ -100,6 +101,11 @@ function websocket_logger(server) {
         socket.onmessage = function(event) {
             const message = event.data;
             console.log('Received message:', message);
+            // Extract the auth message from the server
+            const { status } = message;
+            if (status) {
+                authStatus = status;
+            }
         }
         socket.onclose = function(event) {
             console.log("Lost connection");
@@ -194,8 +200,13 @@ function websocket_logger(server) {
     }
 
     return function(data) {
-        queue.push(data);
-        dequeue();
+        switch (authStatus) {
+            case "deny": // don't update/empty the queue if authStatus is "deny"
+                break;
+            default:
+                queue.push(data);
+                dequeue();
+        }
     }
 }
 

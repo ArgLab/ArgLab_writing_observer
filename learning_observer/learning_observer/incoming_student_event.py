@@ -367,8 +367,11 @@ async def incoming_websocket_handler(request):
             source=json_msg['source']
         )
     except aiohttp.web.HTTPForbidden as e:
-        ws.send_str('deny')
-        debug_log(e.reason)
+        auth_response = json.loads(e.reason)
+        # Send the status message to the client (chrome extension)
+        await ws.send_json({"status": auth_response.get('type')})
+        debug_log(auth_response.get('msg'))
+        return ws
 
     print(event_metadata['auth'])
 
