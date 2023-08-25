@@ -1,0 +1,10 @@
+/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/logs/*.log {
+compress
+copytruncate
+daily
+rotate 4
+olddir /usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/logs/archives
+missingok
+notifempty
+}
+
