@@ -1,0 +1,640 @@
+{
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/__init__.py": {
+      "hash": "a69f73cca23a9ac5c8b567dc185a756e97c982164fe25859e0d1dcc1475c80a615b2123af1f5f94c11e3e9402c3ac558f500199d95b6d3e301758586281dcd26",
+      "st_atime": 1691382804.8211753,
+      "st_ctime": 1690395873.0741818,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.3604233,
+      "st_size": 0
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/__main__.py": {
+      "hash": "da4af1103f824deb296ca8141434152fd009f52a75ea164c53d110c6a31fbd77cf28e73272593d49c8352d237fdf02aa1d3ddb775ae0d6f07b817937139e689a",
+      "st_atime": 1691382804.8211753,
+      "st_ctime": 1690395873.0741818,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.3604233,
+      "st_size": 147
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/adapters/README.md": {
+      "hash": "7608ea0b4e764a05061b8d902113dd6198237f1f18e104b2808f5df7676ceca24f42f817239c8ea1b2c435b361ed564b571e1036c5fee0b5cff7c9f4cf5895aa",
+      "st_atime": 1691382804.8421772,
+      "st_ctime": 1690395873.0741818,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.3594232,
+      "st_size": 1889
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/adapters/__init__.py": {
+      "hash": "a69f73cca23a9ac5c8b567dc185a756e97c982164fe25859e0d1dcc1475c80a615b2123af1f5f94c11e3e9402c3ac558f500199d95b6d3e301758586281dcd26",
+      "st_atime": 1691382804.8421772,
+      "st_ctime": 1690395873.075182,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.4444306,
+      "st_size": 0
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/adapters/adapter.py": {
+      "hash": "4264a9652f106d4947661701484500eb1ec605d3c959c9465b2338790d6db104f3b623d61c4002d8c040cf1ec620bca9cb38e295af3aa5ff2ba85476ae255443",
+      "st_atime": 1691382804.7531693,
+      "st_ctime": 1690395873.075182,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.4444306,
+      "st_size": 3089
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/adapters/helpers.py": {
+      "hash": "c5b7f2fa70d4b824a35661894c76b68b4b3b4560dedd3f8a2ce8a285b97959c3e71494a25b5f593f3fc497b4c320e4165f661179c10620f578d33daeb84df4df",
+      "st_atime": 1691382804.7531693,
+      "st_ctime": 1690395873.075182,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.4444306,
+      "st_size": 2418
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/admin.py": {
+      "hash": "b766cf36fad317a42a5fcb3f40b403ef151c6544a8c0bd093828176ddd8c19b61ff38f8e1c276356c6c33c602a3dd7ed79a679144e063bebbe5d9d673e9ff855",
+      "st_atime": 1691382804.7471688,
+      "st_ctime": 1690395873.0741818,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.3604233,
+      "st_size": 4252
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/all_students_roster.py": {
+      "hash": "1c8fb40f343330f713c46d1f4a97e37dd91bd9aefc0f7a165e12d2d2809bd83e17f2eb1968374172dd24bb802cbfbbb692c70721207500b0f50067d884bf92b1",
+      "st_atime": 1691382804.7471688,
+      "st_ctime": 1690395873.0741818,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.3604233,
+      "st_size": 1235
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/auth/__init__.py": {
+      "hash": "7b32ed7e60c9d017778ace79fd22174dbb435c40da853791dc3960b0d5d892f5809930d994d99de070c2995aaaaafe82da792aa00dac8c614836e16032019691",
+      "st_atime": 1691382804.8421772,
+      "st_ctime": 1690395873.075182,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.4454308,
+      "st_size": 4575
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/auth/auth.md": {
+      "hash": "25ad45975046b4f07e6d47cf5033736605fc614fde5cbc2d70accf0206e01e68c01cafae8d65ff6e16b31d644d03282aec464c0abd057c0054707813dd588ced",
+      "st_atime": 1691382804.8421772,
+      "st_ctime": 1690395873.0741818,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.3124192,
+      "st_size": 4454
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/auth/events.py": {
+      "hash": "612e214bec2fb307fc047a5cb75b88eb39b63aafa4b32605749d4ec605d7399431a731c47144bb807b513d95e6d4db518d6607722bcee8c961b9b4f1bf1ff984",
+      "st_atime": 1691382804.7531693,
+      "st_ctime": 1690395873.075182,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.4454308,
+      "st_size": 12026
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/auth/handlers.py": {
+      "hash": "02ec478cb70a35a8597ace8cd63601212245813367203caefad44011b1e888940f36f7e79b525ee4503ef46efe0bae43ec137c1bb86e4b18dc8a6b2221fb6cc6",
+      "st_atime": 1691382804.7531693,
+      "st_ctime": 1690395873.075182,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.4454308,
+      "st_size": 8099
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/auth/http_basic.py": {
+      "hash": "f03a61c2597fffb1d6cca586dcb589cb38f238a0b17388e439e9bf2400bc7b4e4aa99a676e170774c3fd7b82e7589c03c0c9213934d7f23ffb3c0ac867638a86",
+      "st_atime": 1691382804.7531693,
+      "st_ctime": 1690395873.075182,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.4454308,
+      "st_size": 6499
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/auth/password.py": {
+      "hash": "742677c1ea198c4c7d8e1eab7af5e80f806ed860b89e56b64ddae2dca515df0deae001f0f5c95078a7ed02226ac1c314d9edc5293572076f1cad004f05a75671",
+      "st_atime": 1691382804.7531693,
+      "st_ctime": 1690395873.075182,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.4454308,
+      "st_size": 3335
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/auth/social_sso.py": {
+      "hash": "bb4d363efd4a9329483526ce0a293f06ba5e6998327f5011f8df9456b367e6357eb0af7b06fbd9d5b6f370b7d8962b5e9d90443161588f0126df2d55e6c7f61c",
+      "st_atime": 1691382804.7531693,
+      "st_ctime": 1690395873.075182,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.4454308,
+      "st_size": 8150
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/auth/utils.py": {
+      "hash": "46c76c731121cc72cd6ae4850da6d3ba3542decb8e34deb61bd823d35e5037532fe0ba944b2f766a75919d9de1fb405bf321370aecdd68085dfbf19e2d1e05bd",
+      "st_atime": 1691382804.7531693,
+      "st_ctime": 1690395873.075182,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.4454308,
+      "st_size": 5244
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/cache.py": {
+      "hash": "37c87d4f0f59a58c54455af90d5f24f551e61f221b81b23078170f2a73cf033c632bd458051b9e095e1a017561ed57e347f9d9c8cb00ea9786bafe0307736d1d",
+      "st_atime": 1691382804.7471688,
+      "st_ctime": 1690395873.0741818,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.3604233,
+      "st_size": 729
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/client_config.py": {
+      "hash": "37667639efc5745b29955a2411c3dbec61a5424d7c481694921302301a2fb0d533d25a7f1158a2553306c6df07885553a300e54ddc212b579c02d76ada425bb8",
+      "st_atime": 1691382804.7471688,
+      "st_ctime": 1690395873.0741818,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.3614233,
+      "st_size": 1375
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/dash_integration.py": {
+      "hash": "a290681252339bfd5cc36c0fed8e534f70537425af341d0cadbcfc86504251f95318238e20409916f93e8a6c7796260f331a64c800be76fe35085ed0dc3e3481",
+      "st_atime": 1691382804.7471688,
+      "st_ctime": 1690395873.0741818,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.3614233,
+      "st_size": 6150
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/dash_wrapper.py": {
+      "hash": "452ef629e89bf020e1b799d9ba1dc0a78fe222330e37a116af710ef34603183d8a4371bb782ad0e48f762c377afd8ac876c1a35dd462cecffb06d4c918cc78da",
+      "st_atime": 1691382804.7511692,
+      "st_ctime": 1690395873.0741818,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.3614233,
+      "st_size": 1173
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/dashboard.py": {
+      "hash": "3bf68bc9c9cde20c14589a231d690edd78c5f93cc3653d5f868f61ec2c9bc5305f9f375d137557697f986cd83d78307820c6a2c79739f8197a43ff47969cf7fc",
+      "st_atime": 1691382804.7511692,
+      "st_ctime": 1690395873.0741818,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.3614233,
+      "st_size": 14797
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/exceptions.py": {
+      "hash": "ce5383699e3961953eb77bd6f7ebefc00919832da012371b53e05809a761e13447d578cef63c760e4f667c3ebcf589ffc1fd4b342c9dcaea373d297ed684061a",
+      "st_atime": 1691382804.7511692,
+      "st_ctime": 1690395873.0741818,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.3614233,
+      "st_size": 623
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/filesystem_state.py": {
+      "hash": "f96c7ccdc55afadfc6566e784d27022f3f9c25684f106b58f46351c53af8592b2cd5bd9fc96d432092b6c9aeedaed8a211ac1270efd1faa7c2162b18772f8052",
+      "st_atime": 1691382804.7511692,
+      "st_ctime": 1690395873.0741818,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.3614233,
+      "st_size": 3174
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/google.py": {
+      "hash": "b168d14992eb4a596d397ccd3fe4a99db59242533ad67160d8a5afdb49c4f3ae5d7aef00fdbc6e5344083b4dd162e1eddd5c484a1a7dd43a7d5a7e0c67848e06",
+      "st_atime": 1691382804.7511692,
+      "st_ctime": 1690395873.0741818,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.3624234,
+      "st_size": 15985
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/graphics_helpers.py": {
+      "hash": "bf09a88609a908b6380d2f3df65a439987fa2c4519587d45ff1fb55d3f88a4d3522c9348ff7a47b3958fa5f80021ba486ef2c6b5f6f5a4174e98e46927b9f89f",
+      "st_atime": 1691382804.7511692,
+      "st_ctime": 1690395873.0741818,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.3624234,
+      "st_size": 3073
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/incoming_student_event.py": {
+      "hash": "7833c791c3f39e1efc4516d6aa56545de72fc6fbcb0b7c4004a016d7b9bd3ec04254509bfe0bd08e932df3ef790ec949f31c8f18357b54d0be9fe9700940ee60",
+      "st_atime": 1691382804.7511692,
+      "st_ctime": 1690395873.0741818,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.3624234,
+      "st_size": 14855
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/jupyter.py": {
+      "hash": "f778217ae37b1f51c7e40a4b33ba75d3cf451fe7ba526c305977146fee4e81825b782d43fbad929664f36c62429c8a954f12d7e31a1b3d83d0ba6acb22a01abc",
+      "st_atime": 1691382804.7511692,
+      "st_ctime": 1690395873.0741818,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.3634236,
+      "st_size": 5825
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/kvs.py": {
+      "hash": "4160844c26456a9eff95aa6558b485202863f08d18e5e59e04cd7d37befb9d32836bdefc083c21821a8920f27854aa70d60ecdcc51f4ddf83aa8fe935977ec00",
+      "st_atime": 1691382804.7511692,
+      "st_ctime": 1690395873.0741818,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.3634236,
+      "st_size": 13041
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/log_event.py": {
+      "hash": "61e4821fd6aa667821e9cec119a5038de2ccf0afa8ca5693c4a67b54117c2fcb60ac9ff0617e28a662a1165f4a019532fc3ba2e8a1a3b32f58742c32628de038",
+      "st_atime": 1691382804.7521694,
+      "st_ctime": 1690395873.0741818,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.3634236,
+      "st_size": 10386
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/main.py": {
+      "hash": "2aa02d961deaedfff1392f23e089b91b8a8211a96bd09675151568a3bf66b06439352c8e6a70595f4b085ff0c4c0f3852ddc3e3271586cfd73efb6858e6439af",
+      "st_atime": 1691382804.7521694,
+      "st_ctime": 1690395873.0741818,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.3634236,
+      "st_size": 4416
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/merkle_store.py": {
+      "hash": "87ed586ae2b51da70befb2ad7e7f123347100e7ea3bef1f560e2463c662f5f57207f2ce0172d80c28abf2521ee874d3e14288bafbfd50443e073101a729e6c71",
+      "st_atime": 1691382804.7521694,
+      "st_ctime": 1690395873.0741818,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.3634236,
+      "st_size": 20399
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/module.py": {
+      "hash": "dc27ed5731802e045894f2698f69e13e06cfc8f7fa34078e50e620996ef3fc4d3865059b42de02fd914b2a8acefdb1e2cbe8e6610aaba716090771da039b389d",
+      "st_atime": 1691382804.7521694,
+      "st_ctime": 1690395873.0741818,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.3634236,
+      "st_size": 6629
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/module_loader.py": {
+      "hash": "1e46dabcf67bec8fbbaabcb3b66e509c69cf8db83dbdf733c85800283b35b07769ac6a46d560bbc719243cf1924108613a46ec7c32e43b1434874670caef5f1b",
+      "st_atime": 1691382804.7521694,
+      "st_ctime": 1690395873.0741818,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.3634236,
+      "st_size": 17320
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/offline.py": {
+      "hash": "7805a5fa36b53b5ac7198b44aea6ad862e569557edd30742fd8efeae70ac8ccb6070f3ad9e0fe235ccf20bbe04fde4c8d0a01d8034a95ac07f40a0abe1a6bf08",
+      "st_atime": 1691382804.7521694,
+      "st_ctime": 1690395873.0741818,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.3644235,
+      "st_size": 9418
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/paths.py": {
+      "hash": "23ef73832e2acae32677eb7f7d758e45a57bde9d8405486928d87a20a29a580415ba0d5b2acf943540815a0aa32654678ce52e31f65dbbf5b53de502678e3395",
+      "st_atime": 1691382804.7521694,
+      "st_ctime": 1690395873.0741818,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.3644235,
+      "st_size": 4802
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/prestartup.py": {
+      "hash": "445dbc11da5c95fce86475f5652f70b5fded98078b9683ad6d57740a59f949ca98d869555b232168178056f56f46c913066c4c0dcc813a889cce067116ab28d2",
+      "st_atime": 1691382804.7521694,
+      "st_ctime": 1690395873.0741818,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.3644235,
+      "st_size": 10515
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/pubsub/__init__.py": {
+      "hash": "1c03170efd19f00716a30fba2ee06b90f73057fc63b472dbc331fd431360b29348df1f492a2c96d365e78f848b5e646ef9ae074fd45f010d0c7791b87449a6f6",
+      "st_atime": 1691382804.8231754,
+      "st_ctime": 1690395873.0741818,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.3594232,
+      "st_size": 3271
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/pubsub/pubstub.py": {
+      "hash": "7d4281436415c399fc231f63fff0de362119bc3022927ed0787338c30b2172b65349e242ad2aac8b5100cef00add6d32f6ddc3b15ccacf1a6bae046065b73b80",
+      "st_atime": 1691382804.7521694,
+      "st_ctime": 1690395873.0741818,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.3594232,
+      "st_size": 1606
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/pubsub/receivexmpp.py": {
+      "hash": "3d9431256449622fa669bc2360df08a31848d26892d1f068fe50e6f9121c67f7d6277751f726b3de1141b916a219dddd51295f1c6a9e61c9b460861b994a517e",
+      "st_atime": 1691382804.7521694,
+      "st_ctime": 1690395873.0741818,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.3594232,
+      "st_size": 3723
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/pubsub/redis_pubsub.py": {
+      "hash": "100ade4b83cfb0afbe3ac71f14d0c77e3c203ae6cf14f31c9ade01ca8f731be3829b1fcf0d5c86a3b8c2dcde9a9d87154e4a73f129bae7639d6c63a3a49ef4c8",
+      "st_atime": 1691382804.7521694,
+      "st_ctime": 1690395873.0741818,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.3604233,
+      "st_size": 4483
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/pubsub/sendxmpp.py": {
+      "hash": "426320d4003c458a754336f66814599b1bc28ed23e44234ab1fe999db535e8e4185fe9413936d10b70badff81e3b08ae00ccd7c5a9601b2466d70ccb5ab0d192",
+      "st_atime": 1691382804.7521694,
+      "st_ctime": 1690395873.0741818,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.3604233,
+      "st_size": 1593
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/redis_connection.py": {
+      "hash": "de5240e347edc7f1e2ed3042993c1d36af3c241339d2a7b263bedf9bba10abd06fdf11a50066cf361ec791201757571ab6b2050642649bbf82de30d0b02f23ee",
+      "st_atime": 1691382804.7521694,
+      "st_ctime": 1690395873.0741818,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.3644235,
+      "st_size": 1546
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/rosters.py": {
+      "hash": "689c8f13fde429a1b1da9f5e2d8a9b01e15213808b339eaf40244b3d1d4e11fce374a7f6588981bbb4d52860d286e94f33d833bc82a03996441b4ecac941536f",
+      "st_atime": 1691382804.7521694,
+      "st_ctime": 1690395873.0741818,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.3644235,
+      "st_size": 16738
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/routes.py": {
+      "hash": "eafbf827f37b25f4725686def902ef823d141a5ae1cd375e0c923d45dd58dec0fc3b0af50a316568de2c5e7f490d0e2565acb8b7500298b0a507f65a9e91c0a6",
+      "st_atime": 1691382804.7521694,
+      "st_ctime": 1690395873.0741818,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.3644235,
+      "st_size": 17331
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/run.py": {
+      "hash": "8e4c72c598fe98f6ff70d28c28bfe37005382d896206eebcd7480c2604e351e75ee94c5e45c02ef2505c5a66310976a5155d70507050bb02df058f8ed90e706d",
+      "st_atime": 1691382804.7521694,
+      "st_ctime": 1690395873.0741818,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.3644235,
+      "st_size": 724
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/runtime.py": {
+      "hash": "cf2d481483551d142461aaf3ff0ab76fdb96eab6b329a77d3febcedb71e7b92d44bbf71735d91cb84acfdb8e5491713bb3596c7ce5b4155390df6b695098e36c",
+      "st_atime": 1691382804.7521694,
+      "st_ctime": 1690395873.0741818,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.3644235,
+      "st_size": 139
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/settings.py": {
+      "hash": "9cc76712cc5f4644b93cb8791350d45231785535f568c3ea2818cb97ebc744cf73510a2c224d42b2e37c0736b8fb5ec2bbc7b11b4b0fef58d56762d52340d935",
+      "st_atime": 1691382804.7521694,
+      "st_ctime": 1690395873.0741818,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.3644235,
+      "st_size": 6018
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/static/3rd_party/d3.v5.min.js": {
+      "hash": "466fe57816d719048885357cccc91a082d8e5d3796f227f88a988bf36a5c2ceb7a4d25842f5f3c327a0151d682e648cd9623bfdcc7a18a70ac05cfd0ec434463",
+      "st_atime": 1691382804.807174,
+      "st_ctime": 1691001285.9679444,
+      "st_mode": 33188,
+      "st_mtime": 1690835979.0,
+      "st_size": 248314
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/static/3rd_party/fontawesome.js": {
+      "hash": "83e7b36f1545d5abe63bea9cd3505596998aea272dd05dee624b9a2c72f9662618d4bff6e51fafa25d41cb59bd97f3ebd72fd94ebd09a52c17c4c23fdca3962b",
+      "st_atime": 1691382804.796173,
+      "st_ctime": 1691001283.575737,
+      "st_mode": 33188,
+      "st_mtime": 1625067734.0,
+      "st_size": 986033
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/static/3rd_party/mustache.min.js": {
+      "hash": "e7c446dc9ac2da9396cf401774efd9bd063d25920343eaed7bee9ad878840e846d48204d62755aede6f51ae6f169dcc9455f45c1b86ba1b42980ccf8f241af25",
+      "st_atime": 1691382804.806174,
+      "st_ctime": 1691001285.5379071,
+      "st_mode": 33188,
+      "st_mtime": 1687725323.0,
+      "st_size": 10806
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/static/3rd_party/r.js": {
+      "hash": "52300a8371df306f45e981fd224b10cc586365d5637a19a24e710a2fa566f88450b8a3920e7af47ba7197ffefa707a179bc82a407f05c08508248e6b5084f457",
+      "st_atime": 1691382804.7861722,
+      "st_ctime": 1691001282.2096186,
+      "st_mode": 33188,
+      "st_mtime": 1558207541.0,
+      "st_size": 1189117
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/static/3rd_party/require.js": {
+      "hash": "d1e7687c1b2990966131bc25a761f03d6de83115512c9ce85d72e4b9819fb8733463fa0d93ca31e2e42ebee6e425d811e3420a788a0fc95f745aa349e3b01901",
+      "st_atime": 1691382804.784172,
+      "st_ctime": 1691001281.3305423,
+      "st_mode": 33188,
+      "st_mtime": 1558207541.0,
+      "st_size": 86483
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/static/3rd_party/showdown.js": {
+      "hash": "4fe14f17c2a1d0275d44e06d7e68d2b177779196c6d0c562d082eb5435eec4e710a625be524767aef3d9a1f6a5b88f912ddd71821f4a9df12ff7dd66d6fbb3c9",
+      "st_atime": 1691382804.8021736,
+      "st_ctime": 1691001284.3158011,
+      "st_mode": 33188,
+      "st_mtime": 1691001284.3158011,
+      "st_size": 159368
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/static/3rd_party/text.js": {
+      "hash": "fb8974f1633f261f77220329c7070ff214241ebd33a1434f2738572608efc8eb6699961734285e9500bbbd60990794883981fb113319503208822e6706bca0b8",
+      "st_atime": 1691382804.7851722,
+      "st_ctime": 1691001281.5825644,
+      "st_mode": 33188,
+      "st_mtime": 1691001281.5825644,
+      "st_size": 16400
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/static/common/dashboard.js": {
+      "hash": "061719fe8f78b908715d4ca8436c0fcd2fc28db8cb65c12f584d8325bea9fa2094a92f04b5178587305e96bb62c0c0564c3915c30bc9b31991a901bb51143aad",
+      "st_atime": 1691382804.8241756,
+      "st_ctime": 1690395873.0741818,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.3844254,
+      "st_size": 2970
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/static/common/logger.js": {
+      "hash": "243edb1fbc648e58bf46064138f00c68173869dd38eb5d995ce3f5984b2864c65fcfb155f7ab8356e9383ca7281ef80f66d2069ae20b25a4c555cf62e2a5fcbd",
+      "st_atime": 1691382804.8241756,
+      "st_ctime": 1690395873.0741818,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.3844254,
+      "st_size": 8597
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/static/debug.html": {
+      "hash": "8cae745091c247dc4b2d96db49a2a584804b627aabce2ab741b5fa48baedd41d7e17e5711d14d40d090e16702587609437d6537f11183ee2f1142f42024017db",
+      "st_atime": 1691382804.8231754,
+      "st_ctime": 1690395873.0741818,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.3654237,
+      "st_size": 2394
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/static/debug.js": {
+      "hash": "97f0298a0de1ef249c7a2d5168e91796a501eb02373a64ad94a9ccbdd0be27767da3b123e10dadaa6b6532144fa9ffbdfa05326dffa661d671e997ea705f6346",
+      "st_atime": 1691382804.8231754,
+      "st_ctime": 1690395873.0741818,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.3654237,
+      "st_size": 336
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/static/liblo.js": {
+      "hash": "48ecfeee661ef44ade6a192716aa058c9a836be771951b47b6d943fa62d38e2d51393c083595bc2ab6d59c490bda45779e6e874ec22b798734e8cc7bcc084909",
+      "st_atime": 1691382804.8241756,
+      "st_ctime": 1690395873.0741818,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.382425,
+      "st_size": 3545
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/static/modules/course.html": {
+      "hash": "d731c43f17a075e8a5679a1e509b35968cd249f8914dc32c3f4da6e32b21a9b6567b9967d6a9cc7ade857d81774635c6e5c6fbffa5d3394cbece21631dada296",
+      "st_atime": 1691382804.8241756,
+      "st_ctime": 1690395873.0741818,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.382425,
+      "st_size": 1227
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/static/modules/courses.html": {
+      "hash": "08a4cc4fd272e7c8a6b0ebacd8ff59816d19ecc1c8e13eb1b45a4a2009dcbab6e967d637b95ec22d7d34cab187dfd1a2f72b8f25cf514500e933ca7e3b654bb2",
+      "st_atime": 1691382804.8241756,
+      "st_ctime": 1690395873.0741818,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.3834252,
+      "st_size": 449
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/static/modules/informational.html": {
+      "hash": "e860f14caafbcd43bfaa60573854ffac241ac1ef0be905789bbf1196e64d80f4e139cc4aed3fa1c5c6f0d350d48eaa7770cc3666b8101e81f24240b0758e8fec",
+      "st_atime": 1691382804.8241756,
+      "st_ctime": 1690395873.0741818,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.3834252,
+      "st_size": 79
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/static/modules/login.html": {
+      "hash": "66bfdae42d8a61c14c8f551793730775ddae9f5f0ea43adebfc959f37d17560035f8b67464b861416c8994a959c2237385196580539260814582a0f1753b2dc2",
+      "st_atime": 1691382804.8241756,
+      "st_ctime": 1690395873.0741818,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.3834252,
+      "st_size": 1868
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/static/modules/navbar_loggedin.html": {
+      "hash": "65bda39dd3a9a4c5d63b63570e5c8c0b0390095723e8ff9b5fa8510f6e3b258fe84caf05c7c6dbe8aaf60b68fe08aa7782c34f7829da4749544e6c0ba49d8507",
+      "st_atime": 1691382804.8241756,
+      "st_ctime": 1690395873.0741818,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.3834252,
+      "st_size": 394
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/static/modules/tool.html": {
+      "hash": "1b4778a01806630052dcb59a31d51d94885e242f6f0eeedb5faf59596eebaf858846fd59edd44437f73b76fb0f5fe312d4aa8c0a9cb01ed18348c5048d93ea28",
+      "st_atime": 1691382804.8241756,
+      "st_ctime": 1690395873.0741818,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.3834252,
+      "st_size": 239
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/static/modules/unauth.md": {
+      "hash": "61905de28571e71f128989e4b18827f5c5c5d05d620e3187031b0fe659b29700291ebc38dcfdbf7d239e0f4fc9534f707b7a60e1d7cde799f2a2f20631909a4d",
+      "st_atime": 1691382804.8241756,
+      "st_ctime": 1690395873.0741818,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.3834252,
+      "st_size": 534
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/static/webapp.html": {
+      "hash": "5ef0f5a5747a7cb21cc26b25cebbc92ac2f586b2aa9da727a73516e7982fc5430a6f288710c3db03ee3e1046d7363fec6bbb547989e99a63da335ce7895b93b8",
+      "st_atime": 1691382804.8241756,
+      "st_ctime": 1690395873.0741818,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.3834252,
+      "st_size": 2113
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/static/webapp.js": {
+      "hash": "c2d26636c9285d49616b4786d159da2262cf3af705239d3ae11da497560d736c372672fd8f33b3eec7c4711ff44d6a141ad3047fcf9a139c5eb61eb0300e1b2c",
+      "st_atime": 1691382804.8241756,
+      "st_ctime": 1690395873.0741818,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.3834252,
+      "st_size": 6776
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/static_data/README.md": {
+      "hash": "6c9af8ff5bf83cca41fd3474b06d1cad0e3512f8462a0d04143817bfe893de39f288d638fa6de5a89b088a0da8ed10f85a2052cd61fdaec2a1cfa2f80e5471f0",
+      "st_atime": 1691382804.8421772,
+      "st_ctime": 1690395873.075182,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.4444306,
+      "st_size": 1236
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/static_data/make_dummy_test_user_tsv.py": {
+      "hash": "b873a74a1ee297d48725e17711f157a0ae03da9085095c975b6f3b3b53e2ef3304f05bbf22b751189bbf3cf3372350bde25244e712f25098ef6481ca31bb5032",
+      "st_atime": 1691382804.8421772,
+      "st_ctime": 1690395873.075182,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.4444306,
+      "st_size": 756
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/static_data/make_google_classroom_test_courses.py": {
+      "hash": "2cff5f25ba2753888dcb5fbda1cd32c1e32a86049289536d63f4209e6d0f446c0c652014d0e4265e83f6d3c6a0d185b5500fb1ae267756c2e05332ef62ec8bc9",
+      "st_atime": 1691382804.8421772,
+      "st_ctime": 1690395873.075182,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.4454308,
+      "st_size": 2626
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/stream_analytics/__init__.py": {
+      "hash": "52c4468144eac06cf815915139b7f736b86ac143d8a8e9c0c3dd38484cdef301c93b595ad18c466a1d1ca15bce237e7e99dd0d138906516938f235df95118725",
+      "st_atime": 1691382804.843177,
+      "st_ctime": 1690395873.075182,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.4464307,
+      "st_size": 2505
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/stream_analytics/fields.py": {
+      "hash": "05b4f7c4934a7ca24f655bb74470bc24f9735d45d832861f6cba4ff35fac015181a36ca105697881a1daba216bdb0a45d122703ceab1edfbed3bab67e2f51620",
+      "st_atime": 1691382804.7531693,
+      "st_ctime": 1690395873.075182,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.4464307,
+      "st_size": 3470
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/stream_analytics/helpers.py": {
+      "hash": "9e7290925653daf86d2fc78e03d6891ab04ab60b96975fadab7b5e31975f7969b71820881c75a632a11a13bc2841337328bb2c880e2e0320c3db9d01fa857e28",
+      "st_atime": 1691382804.7531693,
+      "st_ctime": 1690395873.075182,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.4464307,
+      "st_size": 13526
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/synthetic_student_data.py": {
+      "hash": "00d74f44498ec14f49f1a840b7d7d82c193422d70788f9d642c7b690bcee005711c672049210b0c3dad3a2f0bc0abb1b1d6dde310bb65b7b23fcc31e1410bd95",
+      "st_atime": 1691382804.7521694,
+      "st_ctime": 1690395873.0741818,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.4434304,
+      "st_size": 1749
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/util.py": {
+      "hash": "a128526b450b1e5953cc0a6da203e29a70726feabab4699cbcf9ca67057c06e0ed7a06f64d0a88304520d5b806f1b8d6fbbfe2d49089d4c657b02f73f87d3057",
+      "st_atime": 1691382804.7521694,
+      "st_ctime": 1690395873.0741818,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.4434304,
+      "st_size": 4216
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/utility_handlers.py": {
+      "hash": "ad711d474d0e060d2d787bb08686447ace6cddc2e0ff5f36e24e5fead0a610f622672d51c61717338625013baabff4d8e2a4c45fdcdf8af11cdb08afea44c103",
+      "st_atime": 1691382804.7521694,
+      "st_ctime": 1690395873.0741818,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.4434304,
+      "st_size": 1891
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/watchdog_observer.py": {
+      "hash": "9942d7886be7c6462b920affdd958cceda3fc2445be0814fe069d7a4dd002b05c77bea59e4a3e08dce372394e03ba753c9f6c6eaf49634b6ddc4ae53b074a4c5",
+      "st_atime": 1691382804.7521694,
+      "st_ctime": 1690395873.0741818,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.4434304,
+      "st_size": 5000
+   },
+   "/usr/local/share/projects/WritingObserver_Pradeep/Repository/ArgLab_writing_observer/learning_observer/learning_observer/webapp_helpers.py": {
+      "hash": "c8ee16fcf1981c94338682885c069fca1ee7b1376c3f5b346a255ad10aa3960502ca19417e7ed1e12563acf4c871f5536188024b6091e861713cb1e1a5c3d4cf",
+      "st_atime": 1691382804.7521694,
+      "st_ctime": 1690395873.0741818,
+      "st_mode": 33188,
+      "st_mtime": 1690071739.4434304,
+      "st_size": 2808
+   },
+   "::git-head::": "b6684735502bec671c4a2635f40dd18f33911271",
+   "::hostname::": "lin-res127.csc.ncsu.edu",
+   "::pid::": 345669,
+   "::platform::": "#1 SMP Fri Jun 2 08:27:19 EDT 2023",
+   "::python::": "3.9.16",
+   "::timestamp::": "2023-08-07T04:46:15.268661"
+}
