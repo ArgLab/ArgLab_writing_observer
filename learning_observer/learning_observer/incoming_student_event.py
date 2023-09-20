@@ -319,6 +319,7 @@ async def incoming_websocket_handler(request):
 
     INIT_PIPELINE = settings.settings.get("init_pipeline", True)
     json_msg = None
+    ws.send_str('Acknowledgment received')
     if INIT_PIPELINE:
         async for msg in ws:
             debug_log("Auth", msg.data)
@@ -328,6 +329,7 @@ async def incoming_websocket_handler(request):
                 print("Bad message:", msg)
                 raise
             header_events.append(json_msg)
+            
             if json_msg["event"] == "metadata_finished":
                 break
     else:
@@ -345,12 +347,19 @@ async def incoming_websocket_handler(request):
     event_metadata['source'] = first_event['source']
 
     # We authenticate the student
-    event_metadata['auth'] = await learning_observer.auth.events.authenticate(
-        request=request,
-        headers=header_events,
-        first_event=first_event,  # This is obsolete
-        source=json_msg['source']
-    )
+    try:
+        event_metadata['auth'] = await learning_observer.auth.events.authenticate(
+            request=request,
+            headers=header_events,
+            first_event=first_event,  # This is obsolete
+            source=json_msg['source']
+        )
+    except aiohttp.web.HTTPForbidden as e:
+        auth_response = json.loads(e.reason)
+        # Send the status message to the client (chrome extension)
+        await ws.send_json({"status": auth_response.get('type')})
+        debug_log(auth_response.get('msg'))
+        return ws
 
     print(event_metadata['auth'])
 
