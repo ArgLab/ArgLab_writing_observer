@@ -319,7 +319,6 @@ async def incoming_websocket_handler(request):
 
     INIT_PIPELINE = settings.settings.get("init_pipeline", True)
     json_msg = None
-    ws.send_str('Acknowledgment received')
     if INIT_PIPELINE:
         async for msg in ws:
             debug_log("Auth", msg.data)
@@ -359,7 +358,8 @@ async def incoming_websocket_handler(request):
         # Send the status message to the client (chrome extension)
         await ws.send_json({"status": auth_response.get('type')})
         debug_log(auth_response.get('msg'))
-        return ws
+        # Close the web socket connection after an authentication failure
+        return
 
     print(event_metadata['auth'])
 

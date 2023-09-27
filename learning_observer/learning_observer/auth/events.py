@@ -41,9 +41,6 @@ from learning_observer.log_event import debug_log
 from learning_observer.auth.blacklisting_settings import RULES_PATTERNS, RULE_TYPES_BY_PRIORITIES, RULES_RESPONSES
 
 AUTH_METHODS = {}
-ALLOW = "allow"
-DENY = "deny"
-DENY_FOR_TWO_DAYS = "deny_for_two_days"
 
 
 def register_event_auth(name):
@@ -333,7 +330,7 @@ async def authenticate(request, headers, first_event, source):
         if auth_metadata:
             auth_response = auth_metadata.get('auth_response')
             if auth_response and "status_code" in auth_response and auth_response.get("status_code") == 403:
-                print("Forbidden.")
+                debug_log("Auth Forbidden: the returned response code given the rules is 403")
                 raise aiohttp.web.HTTPForbidden(reason=json.dumps(auth_response))
                                                 
             if "safe_user_id" not in auth_metadata:
