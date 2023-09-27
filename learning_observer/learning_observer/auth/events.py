@@ -38,6 +38,8 @@ import learning_observer.auth.http_basic
 
 from learning_observer.log_event import debug_log
 
+from learning_observer.auth.blacklisting_settings import RULES_PATTERNS, RULE_TYPES_BY_PRIORITIES, RULES_RESPONSES
+
 AUTH_METHODS = {}
 ALLOW = "allow"
 DENY = "deny"
@@ -206,6 +208,7 @@ async def local_storage_auth(request, headers, first_event, source):
         'providence': 'ls'  # local storage
     }
 
+
 @register_event_auth("chromebook")
 async def chromebook_auth(request, headers, first_event, source):
     '''
@@ -235,7 +238,6 @@ async def chromebook_auth(request, headers, first_event, source):
         return False
 
     payload_for_validation = authdata.get('chrome_identity', {})
-    
     auth_response = authenticate_payload(payload_for_validation)
     gc_uid = learning_observer.auth.utils.google_id_to_user_id(untrusted_google_id)
     return {
@@ -333,7 +335,7 @@ async def authenticate(request, headers, first_event, source):
             if auth_response and "status_code" in auth_response and auth_response.get("status_code") == 403:
                 print("Forbidden.")
                 raise aiohttp.web.HTTPForbidden(reason=json.dumps(auth_response))
-            
+                                                
             if "safe_user_id" not in auth_metadata:
                 auth_metadata['safe_user_id'] = encode_id(
                     source=auth_metadata["providence"],
@@ -343,6 +345,7 @@ async def authenticate(request, headers, first_event, source):
 
     print("All authentication methods failed. Unauthorized.")
     raise aiohttp.web.HTTPUnauthorized()
+
 
 @learning_observer.prestartup.register_startup_check
 def check_event_auth_config():
@@ -360,61 +363,38 @@ def check_event_auth_config():
                     list(AUTH_METHODS.keys())
                 ))
 
-# Responses for different rule types
-RULES_RESPONSES = {
-    ALLOW: {
-        "type": ALLOW,
-        "msg": "Allow events to be sent",
-        "status_code": 200
-    },
-    DENY: {
-        "type": DENY,
-        "msg": "Deny events from being sent",
-        "status_code": 403
-    },
-    DENY_FOR_TWO_DAYS: {
-        "type": DENY_FOR_TWO_DAYS,
-        "msg": "Deny events from being sent for two days",
-        "status_code": 403
-    }
-}
 
-# Patterns to match against for different rule types
-RULES_PATTERNS = {
-    DENY: [
-        {
-            "field": "email",
-            "patterns": ["^.*@ncsu.edu"]
-        },
-        {
-            "field": "google_id",
-            "patterns": ["1234"]
-        }
-    ],
-    DENY_FOR_TWO_DAYS: [
-        {
-            "field": "email",
-            "patterns": ["^.*@ncsu.edu"]
-        }
-    ]
-}
-
-# Priority order of rule types for sorting
-RULE_TYPES_BY_PRIORITIES = [DENY, DENY_FOR_TWO_DAYS]
 def authenticate_payload(payload):
-    failed_rule_types = [] # A list to store rule types that the payload fails to comply with
+    '''
+    Evaluate a payload against a set of rules and determine the authentication response.
+
+    This function iterates through a list of rules for various fields in the payload.
+    For each field, it checks if the value matches any of the specified patterns.
+    If a match is found, the associated rule type is added to a list of failed rule types.
+    The failed rule types are then sorted by priority, and the highest priority failed rule
+    determines the authentication response.
+
+    If no rules fail, the function returns the 'allow' response.
+
+    Args:
+        payload (dict): The payload containing data to be authenticated.
+
+    Returns:
+        str: The authentication response based on the payload and rule evaluation.
+    '''
+    failed_rule_types = []  # A list to store rule types that the payload fails to comply with
     for rule_type, rules in RULES_PATTERNS.items():
         for rule in rules:
-            field = rule["field"] # Get the field to be looked up in the payload
-            patterns = rule["patterns"] # Get the patterns to match against for the payload value of the field
-            value = payload.get(field) # Get the value of the field from the payload
-            
+            field = rule["field"]  # Get the field to be looked up in the payload
+            patterns = rule["patterns"]  # Get the patterns to match against for the payload value of the field
+            value = payload.get(field)  # Get the value of the field from the payload
+                                    
             if value:
                 for pattern in patterns:
                     # If there is a pattern match, add the rule type to the failed list
                     if re.match(pattern, value):
                         failed_rule_types.append(rule_type)
-
+                                                                            
     # Sort the failed rule types based on their priority order
     sorted_failed_rule_types = sorted(failed_rule_types, key=RULE_TYPES_BY_PRIORITIES.index)
     
@@ -423,6 +403,7 @@ def authenticate_payload(payload):
     
     # Return the appropriate response based on the response key
     return RULES_RESPONSES[response_key]
+
 
 if __name__ == "__main__":
     import doctest
