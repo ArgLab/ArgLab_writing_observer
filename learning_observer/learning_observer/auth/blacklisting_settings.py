@@ -1,4 +1,22 @@
-AUTH_METHODS = {}
+"""
+This file contains constants for blacklisting/authentication rule types, their responses, priorities and patterns.
+
+RULES_RESPONSES
+A dictionary containing responses for different rule types, including:
+- type (str)
+- message (str)
+- status_code (int)
+
+RULES_PATTERNS
+A dictionary containing patterns to match against for different rule types, specifying:
+- field (str)
+- patterns (arrays of regex patterns)
+to apply for rule evaluation.
+
+RULE_TYPES_BY_PRIORITIES
+A list defining the priority order of rule types for sorting.
+"""
+
 ALLOW = "allow"
 DENY = "deny"
 DENY_FOR_TWO_DAYS = "deny_for_two_days"
