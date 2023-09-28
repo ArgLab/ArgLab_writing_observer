@@ -1,0 +1,19 @@
+# This file serves as a configuration file for blacklisting/authentication rules and their associated patterns.
+# Each rule type (e.g. DENY, etc.) contains a list of rules defined as follows:
+#   - field (str): The field to match against in incoming payloads, e.g., 'email', 'google_id', etc.
+#   - patterns (list of str): An array of regular expression patterns used for matching against the field value.
+# 
+# Curly-braces are used for variables which ought to be filled
+
+DENY:
+  - field: {field}
+    patterns:
+      - {pattern}
+      - {pattern}
+  - field: {field}
+    patterns:
+      - {pattern}
+DENY_FOR_TWO_DAYS:
+  - field: {field}
+    patterns:
+      - {pattern1}
