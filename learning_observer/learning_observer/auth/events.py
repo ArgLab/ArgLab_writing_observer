@@ -41,6 +41,7 @@ from learning_observer.log_event import debug_log
 from learning_observer.auth.blacklisting_settings import RULES_PATTERNS, RULE_TYPES_BY_PRIORITIES, RULES_RESPONSES
 
 AUTH_METHODS = {}
+ALLOW = "allow"
 
 
 def register_event_auth(name):
