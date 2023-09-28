@@ -328,7 +328,6 @@ async def incoming_websocket_handler(request):
                 print("Bad message:", msg)
                 raise
             header_events.append(json_msg)
-            
             if json_msg["event"] == "metadata_finished":
                 break
     else:
@@ -361,6 +360,8 @@ async def incoming_websocket_handler(request):
             "timestamp": datetime.datetime.utcnow().isoformat()
         })
         debug_log(auth_response.get('msg'))
+        # We don't close the websocket connection here because the client needs to be able
+        # to reauthenticate or handle other temporary permission denied auth status
         return ws
 
     print(event_metadata['auth'])

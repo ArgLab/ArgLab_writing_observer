@@ -333,7 +333,6 @@ async def authenticate(request, headers, first_event, source):
             if auth_response and "status_code" in auth_response and auth_response.get("status_code") == 403:
                 debug_log("Auth Forbidden: the returned response code given the rules is 403")
                 raise aiohttp.web.HTTPForbidden(reason=json.dumps(auth_response))
-                                                
             if "safe_user_id" not in auth_metadata:
                 auth_metadata['safe_user_id'] = encode_id(
                     source=auth_metadata["providence"],
@@ -386,19 +385,16 @@ def authenticate_payload(payload):
             field = rule["field"]  # Get the field to be looked up in the payload
             patterns = rule["patterns"]  # Get the patterns to match against for the payload value of the field
             value = payload.get(field)  # Get the value of the field from the payload
-                                    
             if value:
                 for pattern in patterns:
                     # If there is a pattern match, add the rule type to the failed list
                     if re.match(pattern, value):
                         failed_rule_types.append(rule_type)
-                                                                            
+
     # Sort the failed rule types based on their priority order
     sorted_failed_rule_types = sorted(failed_rule_types, key=RULE_TYPES_BY_PRIORITIES.index)
-    
     # Determine the response key based on the highest priority failed rule, or 'allow' if no rule failed
     response_key = sorted_failed_rule_types[0] if sorted_failed_rule_types else ALLOW
-    
     # Return the appropriate response based on the response key
     return RULES_RESPONSES[response_key]
 
