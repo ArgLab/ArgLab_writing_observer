@@ -12,6 +12,11 @@ var RAW_DEBUG = false;
 var WEBSOCKET_SERVER_URL = "wss://learning-observer.org/wsapi/in/"
 
 import { googledocs_id_from_url } from './writing_common';
+var ALLOW = "allow"
+var DENY = "deny"
+var DENY_FOR_TWO_DAYS = "deny_for_two_days"
+
+
 /*
   TODO: FSM
 
@@ -85,7 +90,6 @@ function websocket_logger(server) {
     var socket;
     var state = new Set()
     var queue = [];
-    var authStatus;
 
     function new_websocket() {
         socket = new WebSocket(server);
@@ -97,6 +101,23 @@ function websocket_logger(server) {
             event = JSON.stringify(event);
             queue.push(event);
         };
+        socket.onmessage = function(event) {
+            const jsonData = JSON.parse(event.data);
+    
+            if (jsonData && jsonData.status) {
+                // Store the 'status' value in the local storage.
+                chrome.storage.local.set({ authStatus: jsonData.status }).then(() => {
+                    console.log("Set the authStatus to localstorage");
+                });
+
+                if (jsonData.status === DENY_FOR_TWO_DAYS) {
+                    // Store the 'timestamp' value in the local storage.
+                    chrome.storage.local.set({ authResponseTimeStamp: jsonData.timestamp }).then(() => {
+                        console.log("Set the authResponseTimeStamp to localstorage");
+                    });
+                }
+            }
+        }
         socket.onclose = function(event) {
             console.log("Lost connection");
             var event = { "issue": "Lost connection", "code": event.code };
@@ -190,13 +211,32 @@ function websocket_logger(server) {
     }
 
     return function(data) {
-        switch (authStatus) {
-            case "deny": // don't update/empty the queue if authStatus is "deny"
-                break;
-            default:
-                queue.push(data);
-                dequeue();
-        }
+        chrome.storage.local.get(["authStatus", "authResponseTimeStamp"]).then((result) => {
+            const authStatus = result.authStatus
+            switch (authStatus) {
+                case DENY: // don't update/empty the queue
+                    break;
+                case DENY_FOR_TWO_DAYS: // check back after two days to continue updating/emptying the queue
+                    const currentDate = new Date();
+                    const authResponseDate = new Date(result.authResponseTimeStamp);
+
+                    // Calculate the date 2 days after the authResponseDate
+                    const twoDaysAfterAuthResponseDate = new Date(authResponseDate)
+                        .setDate(authResponseDate.getDate() + 2);
+
+                    // Compare the date 2 days after the authResponseDate with the current date
+                    if (currentDate >= twoDaysAfterAuthResponseDate) {
+                        queue.push(data);
+                        dequeue();
+                    } else {
+                        console.log("I am being denied for 2 days")
+                        break;
+                    }
+                default:
+                    queue.push(data);
+                    dequeue();
+            }
+        });
     }
 }
 
