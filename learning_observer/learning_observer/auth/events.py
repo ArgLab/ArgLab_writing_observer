@@ -24,7 +24,6 @@ import asyncio
 import urllib.parse
 import secrets
 import sys
-import re
 import json
 
 import aiohttp_session
@@ -38,10 +37,9 @@ import learning_observer.auth.http_basic
 
 from learning_observer.log_event import debug_log
 
-from learning_observer.auth.blacklisting_settings import RULES_PATTERNS, RULE_TYPES_BY_PRIORITIES, RULES_RESPONSES
+from learning_observer.auth.blacklisting_settings import authenticate_payload
 
 AUTH_METHODS = {}
-ALLOW = "allow"
 
 
 def register_event_auth(name):
@@ -359,44 +357,6 @@ def check_event_auth_config():
                     auth_method,
                     list(AUTH_METHODS.keys())
                 ))
-
-
-def authenticate_payload(payload):
-    '''
-    Evaluate a payload against a set of rules and determine the authentication response.
-
-    This function iterates through a list of rules for various fields in the payload.
-    For each field, it checks if the value matches any of the specified patterns.
-    If a match is found, the associated rule type is added to a list of failed rule types.
-    The failed rule types are then sorted by priority, and the highest priority failed rule
-    determines the authentication response.
-
-    If no rules fail, the function returns the 'allow' response.
-
-    Args:
-        payload (dict): The payload containing data to be authenticated.
-
-    Returns:
-        str: The authentication response based on the payload and rule evaluation.
-    '''
-    failed_rule_types = []  # A list to store rule types that the payload fails to comply with
-    for rule_type, rules in RULES_PATTERNS.items():
-        for rule in rules:
-            field = rule["field"]  # Get the field to be looked up in the payload
-            patterns = rule["patterns"]  # Get the patterns to match against for the payload value of the field
-            value = payload.get(field)  # Get the value of the field from the payload
-            if value:
-                for pattern in patterns:
-                    # If there is a pattern match, add the rule type to the failed list
-                    if re.match(pattern, value):
-                        failed_rule_types.append(rule_type)
-
-    # Sort the failed rule types based on their priority order
-    sorted_failed_rule_types = sorted(failed_rule_types, key=RULE_TYPES_BY_PRIORITIES.index)
-    # Determine the response key based on the highest priority failed rule, or 'allow' if no rule failed
-    response_key = sorted_failed_rule_types[0] if sorted_failed_rule_types else ALLOW
-    # Return the appropriate response based on the response key
-    return RULES_RESPONSES[response_key]
 
 
 if __name__ == "__main__":

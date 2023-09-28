@@ -23,6 +23,7 @@ learning_observer/learning_observer/static_data/dash_assets/
 learning_observer/learning_observer/static_data/courses.json
 learning_observer/learning_observer/static_data/students.json
 learning_observer/passwd.lo
+learning_observer/learning_observer/auth/blacklisting_patterns.yaml
 --*
 .venv/
 .vscode/
