@@ -355,11 +355,13 @@ async def incoming_websocket_handler(request):
         )
     except aiohttp.web.HTTPForbidden as e:
         auth_response = json.loads(e.reason)
-        # Send the status message to the client (chrome extension)
-        await ws.send_json({"status": auth_response.get('type')})
+        # Send the status error type and timestamp to the client (chrome extension)
+        await ws.send_json({
+            "status": auth_response.get('type'),
+            "timestamp": datetime.datetime.utcnow().isoformat()
+        })
         debug_log(auth_response.get('msg'))
-        # Close the web socket connection after an authentication failure
-        return
+        return ws
 
     print(event_metadata['auth'])
 
