@@ -104,3 +104,196 @@ Where we are
 We have not yet done more careful engineering of our event
 format. Aside from a JSON-event-per-line, the above level of
 compatibility is mostly aspirational.
+
+## Google Docs Events
+* [google_docs_save](#google_docs_save)
+  * doc_id - ID of the document
+  * url - URL of the document
+  * bundles - A list containing one object (commands)
+    * commands - Shows a list of commands
+        * [is](#insert-command) - Insert characters
+        * [ds](#delete-command) - Delete characters
+        * [as](#alter-command) - Alter characters
+        * [ae](#image-insert-command) - Image add
+        * [te](#image-index-command) - Image index
+        * [de](#image-delete-command) - Image delete
+        * [ue](#image-alter-command) - Image modify
+  * rev
+  * timestamp
+  * event
+  * event_type
+  * source
+  * version
+  * ts
+  * human_ts
+  * wa_source
+        
+* [keystroke](#keystroke)
+  
+### Data Format Examples
+General json format of events
+
+#### google_docs_save
+The **commands** key of the json is the key that generally gets modified depending on the commands. In this case the **insert** event is shown.
+```
+{
+  "doc_id": "1aV-wHLpITbSLEiTTOfX68W1GGnZKmiAWvlFeHR9JDcA",
+  "url": "https://docs.google.com/document/d/1aV-wHLpITbSLEiTTOfX68W1GGnZKmiAWvlFeHR9JDcA/save?id=1aV-wHLpITbSLEiTTOfX68W1GGnZKmiAWvlFeHR9JDcA&sid=55ba02cf1e5d7984&vc=1&c=1&w=1&flr=0&smv=47&smb=%5B47%2C%20%5D&token=AC4w5Vi4lJSAlGE0hsYVEGl1h6ZykpEdkQ%3A1696548340555&includes_info_params=true&cros_files=false",
+  "bundles": [
+    {
+      "commands": [
+        {
+          "ty": "is",
+          "ibi": 65,
+          "s": "oidj"
+        }
+      ],
+      "sid": "55ba02cf1e5d7984",
+      "reqId": 15
+    }
+  ],
+  "rev": [
+    "620"
+  ],
+  "timestamp": 1696696860521,
+  "event": "google_docs_save",
+  "event_type": "google_docs_save",
+  "source": "org.mitros.writing_analytics",
+  "version": "alpha",
+  "ts": 1696696860523,
+  "human_ts": "Sat Oct 07 2023 12:41:00 GMT-0400 (Eastern Daylight Time)",
+  "wa_source": null
+}
+```
+##### insert command
+```
+{
+  "ty": "is",
+  "ibi": 196,
+  "s": "test"
+}
+```
+##### delete command
+```
+{
+  "ty": "ds",
+  "si": 196,
+  "ei": 196
+}
+```
+##### alter command
+```
+{
+  "ty": "as",
+  "st": "paragraph",
+  "si": 17,
+  "ei": 17,
+  "sm": {
+      "ps_ls": 1,
+      "ps_lslm": 1,
+      "ps_ls_i": false,
+      "ps_lslm_i": false
+  }
+}
+```
+##### image insert command
+```
+{
+  "ty": "ae",
+  "et": "inline",
+  "id": "kix.k7hljq20dbwr",
+  "epm": {
+    "ee_eo": {
+      "eo_ml": 9,
+      "eo_mr": 9,
+      "eo_mt": 9,
+      "eo_mb": 9,
+      "i_cid": "PLACEHOLDER_55ba02cf1e5d7984_0",
+      "eo_type": 0,
+      "i_wth": 468,
+      "i_ht": 289,
+      "eo_at": "Points scored",
+      "eo_ad": "",
+      "eo_lco": {
+        "lc_ct": 1,
+        "lc_sci": "1YHZ6nUWuIl3illzgk8BPpLQ5cchnZ2gX8DqpWKmOAsY",
+        "lc_srk": "",
+        "lc_oi": "1087145314",
+        "lc_cs": "6GpqxB5Gn0QcyuNkPZd5cQ=="
+      }
+    }
+  }
+}
+```
+##### image index command
+```
+{
+  "ty": "te",
+  "id": "kix.k7hljq20dbwr",
+  "spi": 196
+}
+```
+
+##### image delete command
+```
+{
+  "ty": "de",
+  "id": "kix.k7hljq20dbwr",
+}
+```
+##### image alter command
+```
+{
+  "ty": "ue",
+  "id": "kix.k7hljq20dbwr",
+  "epm": {
+    "ee_eo": {
+    "i_wth": 323.625,
+    "i_ht": 199.67247596153848
+    }
+  }
+}
+```
+
+  
+#### keystroke
+```
+{
+  "event_type": "keystroke",
+  "keystroke": {
+    "altKey": false,
+    "charCode": 0,
+    "code": "Enter",
+    "ctrlKey": false,
+    "isComposing": false,
+    "isTrusted": true,
+    "key": "Enter",
+    "keyCode": 13,
+    "location": 0,
+    "metaKey": false,
+    "repeat": true,
+    "shiftKey": false,
+    "target.className": "",
+    "target.id": "",
+    "target.nodeType": 1,
+    "target.localName": "div",
+    "timeStamp": 148555773.79999995,
+    "type": "keydown",
+    "which": 13
+  },
+  "frameindex": "0",
+  "object": {
+    "type": "http://schema.learning-observer.org/writing-observer/",
+    "title": "Untitled document",
+    "id": "1aV-wHLpITbSLEiTTOfX68W1GGnZKmiAWvlFeHR9JDcA",
+    "url": "https://docs.google.com/document/d/1aV-wHLpITbSLEiTTOfX68W1GGnZKmiAWvlFeHR9JDcA/edit?pli=1"
+    },
+  "event": "keystroke",
+  "readyState": "complete",
+  "wa_source": null,
+  "source": "org.mitros.writing_analytics",
+  "version": "alpha",
+  "ts": 1696696878111,
+  "human_ts": "Sat Oct 07 2023 12:41:18 GMT-0400 (Eastern Daylight Time)"
+  }
+```
