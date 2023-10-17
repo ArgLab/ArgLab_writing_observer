@@ -118,7 +118,7 @@ compatibility is mostly aspirational.
         * [te](#image-index-command) - Image index
         * [de](#image-delete-command) - Image delete
         * [ue](#image-alter-command) - Image modify
-  * rev
+  * rev - The total number of edits made in the document
   * timestamp
   * event
   * event_type
@@ -129,6 +129,36 @@ compatibility is mostly aspirational.
   * wa_source
         
 * [keystroke](#keystroke)
+* [mouseclick](#mouseclick)
+  * mouseclick : all corresponding locations and details of the mouseclick
+    * button
+    * buttons
+    * clientX
+    * clientY
+    * layerX
+    * layerY
+    * offsetX
+    * offsetY
+    * screenX
+    * screenY
+    * movementX
+    * movementY
+    * altKey, ctrlKey, metaKey, shiftKey
+    * which
+    * isTrusted
+    * timeStamp
+    * type
+    * target.id
+    * target.className
+    * target.innerText
+    * target.localName
+    * target.parentNode.id
+    * target.parentNode.className
+    * target.parentNode.nodeType
+    * target.parentNode.localName
+  * frameindex
+  * object: specifications about the document (present in all event types)
+  * event : relists the event type
   
 ### Data Format Examples
 General json format of events
@@ -293,7 +323,57 @@ The **commands** key of the json is the key that generally gets modified dependi
   "wa_source": null,
   "source": "org.mitros.writing_analytics",
   "version": "alpha",
-  "ts": 1696696878111,
-  "human_ts": "Sat Oct 07 2023 12:41:18 GMT-0400 (Eastern Daylight Time)"
-  }
+```
+## Mouse-Clicks
+```
+{
+  "event_type":"mouseclick"
+  "mouseclick":
+    {
+    "button":0,
+    "buttons":0,
+    "clientX":95,
+    "clientY":178,
+    "layerX":160,
+    "layerY":128,
+    "offsetX":160,
+    "offsetY":128,
+    "screenX":779,
+    "screenY":264,
+    "movementX":0,
+    "movementY":0,
+    "altKey":false,
+    "ctrlKey":false,
+    "metaKey":false,
+    "shiftKey":false,
+    "which":1,
+    "isTrusted":true,
+    "timeStamp":4098834.1,
+    "type":"mouseup",
+    "target.id":"",
+    "target.className":"kix-canvas-tile-content",
+    "target.innerText":"",
+    "target.nodeType":1,
+    "target.localName":"canvas",
+    "target.parentNode.id":"",
+    "target.parentNode.className":"kix-page-paginated canvas-first-page",
+    "target.parentNode.nodeType":1,
+    "target.parentNode.localName":"div"
+    },
+  "frameindex":"10",
+  "object":
+    {
+    "type":"http://schema.learning-observer.org/writing-observer/",
+    "title":"hi","id":"1IwKSHtw5S4O_5ekG20XXpnKfTxRfXum6JGs1-uGYp3I",
+    "url":"https://docs.google.com/documen/d/1IwKSHtw5S4O_5ekG20XXpnKfTxRfXum6JGs1-uGYp3I/edit"
+    },
+  "event":"mouseclick",
+  "readyState":"complete",
+  "wa_source":null,
+  "source":"org.mitros.writing_analytics",
+  "version":"alpha",
+  "ts":1697561755869,
+  "human_ts":"Tue Oct 17 2023 12:55:55 GMT-0400 (Eastern Daylight Time)
+"}
+
 ```
