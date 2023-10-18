@@ -110,7 +110,7 @@ compatibility is mostly aspirational.
   * doc_id - ID of the document
   * url - URL of the document
   * bundles - A list containing one object (commands)
-    * commands - Shows a list of commands
+    * commands - Shows a list of commands (any/all the below commands can be shown)
         * [is](#insert-command) - Insert characters
         * [ds](#delete-command) - Delete characters
         * [as](#alter-command) - Alter characters
@@ -118,6 +118,7 @@ compatibility is mostly aspirational.
         * [te](#image-index-command) - Image index
         * [de](#image-delete-command) - Image delete
         * [ue](#image-alter-command) - Image modify
+        * [mlti](#multiple-commands) - Multiple commands
   * rev - The total number of edits made in the document
   * timestamp
   * event
@@ -129,7 +130,7 @@ compatibility is mostly aspirational.
   * wa_source
         
 * [keystroke](#keystroke)
-* [mouseclick](#mouseclick)
+* [mouseclick](#mouse-clicks)
   * mouseclick : all corresponding locations and details of the mouseclick
     * button
     * buttons
@@ -296,6 +297,39 @@ The **commands** key of the json is the key that generally gets modified dependi
   }
 }
 ```
+##### multiple commands
+```
+{
+  "ty": "mlti",
+  "mts": [
+    {
+      "ty": "is",
+      "ibi": 1,
+      "s": "H"
+    },
+    {
+      "ty": "as",
+      "st": "text",
+      "si": 1,
+      "ei": 1,
+      "sm": {
+        "ts_bd_i": true,
+        "ts_fs_i": false,
+        "ts_fs": 12,
+        "ts_ff_i": true,
+        "ts_it_i": true,
+        "ts_sc_i": true,
+        "ts_st_i": true,
+        "ts_tw": 400,
+        "ts_un_i": true,
+        "ts_va_i": true,
+        "ts_bgc2_i": true,
+        "ts_fgc2_i": true
+      }
+    }
+  ]
+}
+```
 
   
 #### keystroke
@@ -336,7 +370,7 @@ The **commands** key of the json is the key that generally gets modified dependi
   "source": "org.mitros.writing_analytics",
   "version": "alpha",
 ```
-## Mouse-Clicks
+#### Mouse-Clicks
 ```
 {
   "event_type":"mouseclick"
