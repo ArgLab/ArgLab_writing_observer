@@ -159,6 +159,18 @@ compatibility is mostly aspirational.
   * frameindex
   * object: specifications about the document (present in all event types)
   * event : relists the event type
+* [attention](#attention)
+  * event_type
+  * attention
+  * frameindex
+  * object
+  * event
+  * readyState
+  * wa_source
+  * source
+  * version
+  * ts
+  * human_ts
   
 ### Data Format Examples
 General json format of events
@@ -376,4 +388,42 @@ The **commands** key of the json is the key that generally gets modified dependi
   "human_ts":"Tue Oct 17 2023 12:55:55 GMT-0400 (Eastern Daylight Time)
 "}
 
+```
+#### attention
+```
+{
+  "event_type": "attention",
+  "attention": {
+    "bubbles": true,
+    "cancelable": false,
+    "isTrusted": true,
+    "timeStamp": 148851417.8,
+    "relatedTarget.className": "kix-header-footer-bubble-menu-button docs-material goog-flat-menu-button goog-inline-block goog-flat-menu-button-hover goog-flat-menu-button-active",
+    "relatedTarget.id": "kix-header-footer-bubble-menu-0",
+    "target.className": "docs-texteventtarget-iframe docs-offscreen-z-index docs-texteventtarget-iframe-negative-top",
+    "target.id": "",
+    "target.nodeType": 1,
+    "target.localName": "iframe",
+    "target.parentNode.className": "docs-gm docsCommonGMDCDialog docs-material docs-grille-gm3",
+    "target.parentNode.id": "",
+    "target.parentNode.innerText": "Untitled document\nSaving\u2026\n\u00a0\n\u00a0\nShare\nFileEditViewInsertFormatToolsExtensionsHelp\n\u00a0Normal text\n\u00a0Arial\n\u00a0\n\u00a0\n\u00a0\n\u00a0\nEditing\n\u00a0\n9\n8\n7\n6\n5\n4\n3\n2\n1\n1\n2\n3\n4\n5\n6\n7\n8\nHeader\nDifferent first page\nOptions\n11\n10\n9\n8\n7\n6\n5\n4\n3\n2\n1\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\nTurn on screen reader support\nTo enable screen reader support, press Ctrl+Alt+Z To learn about keyboard shortcuts, press Ctrl+slash",
+    "target.parentNode.nodeType": 1,
+    "target.parentNode.localName": "body",
+    "type": "focusout"
+  },
+  "frameindex": "1",
+  "object": {
+    "type": "http://schema.learning-observer.org/writing-observer/",
+    "title": "Untitled document",
+    "id": "1aV-wHLpITbSLEiTTOfX68W1GGnZKmiAWvlFeHR9JDcA",
+    "url": "https://docs.google.com/document/d/1aV-wHLpITbSLEiTTOfX68W1GGnZKmiAWvlFeHR9JDcA/edit?pli=1"
+  },
+  "event": "attention",
+  "readyState": "complete",
+  "wa_source": null,
+  "source": "org.mitros.writing_analytics",
+  "version": "alpha",
+  "ts": 1696697171229,
+  "human_ts": "Sat Oct 07 2023 12:46:11 GMT-0400 (Eastern Daylight Time)"
+}
 ```
