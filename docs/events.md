@@ -231,6 +231,11 @@ ei - End index (where the deletion ended)
 }
 ```
 ##### alter command
+ty - Command type
+st
+si
+ei
+sm
 ```
 {
   "ty": "as",
@@ -246,6 +251,10 @@ ei - End index (where the deletion ended)
 }
 ```
 ##### image insert command
+ty - Command type
+et
+id - Unique id of the image
+epm
 ```
 {
   "ty": "ae",
@@ -275,6 +284,9 @@ ei - End index (where the deletion ended)
 }
 ```
 ##### image index command
+ty - Command type
+id - Unique id of the image
+spi - Index where the image got added
 ```
 {
   "ty": "te",
@@ -284,6 +296,8 @@ ei - End index (where the deletion ended)
 ```
 
 ##### image delete command
+ty - Command type
+id - Unique id of the image
 ```
 {
   "ty": "de",
@@ -291,6 +305,9 @@ ei - End index (where the deletion ended)
 }
 ```
 ##### image alter command
+ty - Command type
+id - Unique id of the image
+epm
 ```
 {
   "ty": "ue",
@@ -304,6 +321,8 @@ ei - End index (where the deletion ended)
 }
 ```
 ##### multiple commands
+ty - Command type
+mts - The list of commands (Can be any of the above 7 commands)
 ```
 {
   "ty": "mlti",
