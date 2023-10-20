@@ -120,13 +120,13 @@ compatibility is mostly aspirational.
         * [ue](#image-alter-command) - Image modify
         * [mlti](#multiple-commands) - Multiple commands
   * rev - The total number of edits made in the document
-  * timestamp
-  * event
-  * event_type
+  * timestamp - The UNIX timestamp
+  * event - Event type
+  * event_type - Event type
   * source
   * version
-  * ts
-  * human_ts
+  * ts - The UNIX timestamp
+  * human_ts - Timestamp in human readable form
   * wa_source
         
 * [keystroke](#keystroke)
@@ -209,6 +209,9 @@ The **commands** key of the json is the key that generally gets modified dependi
 }
 ```
 ##### insert command
+ty - Command type
+ibi - Index where the characters got inserted
+s - The characters that got inserted
 ```
 {
   "ty": "is",
@@ -217,6 +220,9 @@ The **commands** key of the json is the key that generally gets modified dependi
 }
 ```
 ##### delete command
+ty - Command type
+si - Start index (where the deletion started)
+ei - End index (where the deletion ended)
 ```
 {
   "ty": "ds",
