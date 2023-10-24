@@ -232,7 +232,11 @@ function websocket_logger(server) {
                         console.log("I am being denied for 2 days")
                         break;
                     }
+                case ALLOW:
+                    queue.push(data);
+                    dequeue();
                 default:
+                    // if authStatus does not exist, still push the events to the queue
                     queue.push(data);
                     dequeue();
             }
