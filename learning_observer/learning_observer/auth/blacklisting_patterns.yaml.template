@@ -5,7 +5,7 @@
 # 
 # Curly-braces are used for variables which ought to be filled
 
-DENY:
+deny:
   - field: {field}
     patterns:
       - {pattern}
@@ -13,7 +13,7 @@ DENY:
   - field: {field}
     patterns:
       - {pattern}
-DENY_FOR_TWO_DAYS:
+deny_for_two_days:
   - field: {field}
     patterns:
       - {pattern1}

@@ -18,9 +18,11 @@ A function that evaluates a payload against a set of rules and determines the au
 """
 
 
+import os
 import re
 import yaml
 from learning_observer.log_event import debug_log
+import learning_observer.paths as paths
 
 ALLOW = "allow"
 DENY = "deny"
@@ -49,13 +51,26 @@ RULES_RESPONSES = {
 }
 
 
-def load_patterns(file_path='blacklisting_patterns.yaml'):
+def load_patterns(file_name='blacklisting_patterns.yaml'):
+    """
+    Load blacklisting patterns from a YAML config file.
+
+    Args:
+        file_name (str, optional): The name of the YAML file containing the blacklisting patterns.
+            Defaults to 'blacklisting_patterns.yaml'.
+
+    Returns:
+        dict: A dictionary containing the loaded blacklisting patterns, or an empty dictionary
+            if the file is not found or there is an error loading the patterns.
+    """
+    pathname = os.path.join(os.path.dirname(paths.base_path()), 'learning_observer/auth', file_name)
     try:
-        with open(file_path, 'r') as file:
+        with open(pathname, 'r') as file:
             rules_patterns = yaml.safe_load(file)
+        debug_log("Blacklisting patterns loaded")
         return rules_patterns
     except FileNotFoundError:
-        debug_log(f"No blacklisting patterns file added: '{file_path}' not found.")
+        debug_log(f"No blacklisting patterns file added: '{pathname}' not found.")
         return {}
 
 
