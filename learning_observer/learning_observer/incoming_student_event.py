@@ -345,12 +345,24 @@ async def incoming_websocket_handler(request):
     event_metadata['source'] = first_event['source']
 
     # We authenticate the student
-    event_metadata['auth'] = await learning_observer.auth.events.authenticate(
-        request=request,
-        headers=header_events,
-        first_event=first_event,  # This is obsolete
-        source=json_msg['source']
-    )
+    try:
+        event_metadata['auth'] = await learning_observer.auth.events.authenticate(
+            request=request,
+            headers=header_events,
+            first_event=first_event,  # This is obsolete
+            source=json_msg['source']
+        )
+    except aiohttp.web.HTTPForbidden as e:
+        auth_response = json.loads(e.reason)
+        # Send the status error type and current timestamp to the client (chrome extension)
+        await ws.send_json({
+            "status": auth_response.get('type'),
+            "timestamp": datetime.datetime.utcnow().isoformat()
+        })
+        debug_log(auth_response.get('msg'))
+        # We don't close the websocket connection here because the client needs to be able
+        # to reauthenticate or handle other temporary permission denied auth status
+        return ws
 
     print(event_metadata['auth'])
 

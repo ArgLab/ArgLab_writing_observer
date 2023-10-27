@@ -24,6 +24,7 @@ import asyncio
 import urllib.parse
 import secrets
 import sys
+import json
 
 import aiohttp_session
 import aiohttp.web
@@ -35,6 +36,8 @@ import learning_observer.settings
 import learning_observer.auth.http_basic
 
 from learning_observer.log_event import debug_log
+
+from learning_observer.auth.blacklisting_settings import authenticate_payload
 
 AUTH_METHODS = {}
 
@@ -230,8 +233,11 @@ async def chromebook_auth(request, headers, first_event, source):
     if untrusted_google_id is None:
         return False
 
+    payload_for_validation = authdata.get('chrome_identity', {})
+    auth_response = authenticate_payload(payload_for_validation)
     gc_uid = learning_observer.auth.utils.google_id_to_user_id(untrusted_google_id)
     return {
+        'auth_response': auth_response,
         'sec': auth,
         'user_id': gc_uid,
         'safe_user_id': gc_uid,
@@ -321,6 +327,10 @@ async def authenticate(request, headers, first_event, source):
     for auth_method in learning_observer.settings.settings['event_auth']:
         auth_metadata = await AUTH_METHODS[auth_method](request, headers, first_event, source)
         if auth_metadata:
+            auth_response = auth_metadata.get('auth_response')
+            if auth_response and "status_code" in auth_response and auth_response.get("status_code") == 403:
+                debug_log("Auth Forbidden: the returned response code given the rules is 403")
+                raise aiohttp.web.HTTPForbidden(reason=json.dumps(auth_response))
             if "safe_user_id" not in auth_metadata:
                 auth_metadata['safe_user_id'] = encode_id(
                     source=auth_metadata["providence"],

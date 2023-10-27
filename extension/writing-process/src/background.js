@@ -9,9 +9,14 @@ var RAW_DEBUG = false;
 /* This variable must be manually updated to specify the server that
  * the data will be sent to.  
 */
-var WEBSOCKET_SERVER_URL = "wss://learning-observer.org/wsapi/in/" 
+var WEBSOCKET_SERVER_URL = "wss://learning-observer.org/wsapi/in/"
 
 import { googledocs_id_from_url } from './writing_common';
+var ALLOW = "allow"
+var DENY = "deny"
+var DENY_FOR_TWO_DAYS = "deny_for_two_days"
+
+
 /*
   TODO: FSM
 
@@ -96,6 +101,23 @@ function websocket_logger(server) {
             event = JSON.stringify(event);
             queue.push(event);
         };
+        socket.onmessage = function(event) {
+            const jsonData = JSON.parse(event.data);
+    
+            if (jsonData && jsonData.status) {
+                // Store the 'status' value in the local storage.
+                chrome.storage.local.set({ authStatus: jsonData.status }).then(() => {
+                    console.log("Set the authStatus to localstorage");
+                });
+
+                if (jsonData.status === DENY_FOR_TWO_DAYS) {
+                    // Store the 'timestamp' value in the local storage.
+                    chrome.storage.local.set({ authResponseTimeStamp: jsonData.timestamp }).then(() => {
+                        console.log("Set the authResponseTimeStamp to localstorage");
+                    });
+                }
+            }
+        }
         socket.onclose = function(event) {
             console.log("Lost connection");
             var event = { "issue": "Lost connection", "code": event.code };
@@ -189,9 +211,54 @@ function websocket_logger(server) {
     }
 
     return function(data) {
-        queue.push(data);
-        dequeue();
+        chrome.storage.local.get(["authStatus", "authResponseTimeStamp"]).then((result) => {
+            const authStatus = result.authStatus
+            switch (authStatus) {
+                case DENY: // don't update/empty the queue
+                    break;
+                case DENY_FOR_TWO_DAYS: // check back after two days to continue updating/emptying the queue
+                    const currentDate = new Date();
+                    const authResponseDate = convertLocalDateToUTC(new Date(result.authResponseTimeStamp));
+
+                    // Calculate the date 2 days after the authResponseDate
+                    const twoDaysAfterAuthResponseDate = new Date(authResponseDate)
+                        .setDate(authResponseDate.getDate() + 2);
+
+                    // Compare the date 2 days after the authResponseDate with the current date
+                    if (currentDate >= twoDaysAfterAuthResponseDate) {
+                        queue.push(data);
+                        dequeue();
+                    } else {
+                        console.log("I am being denied for 2 days")
+                        break;
+                    }
+                case ALLOW:
+                    queue.push(data);
+                    dequeue();
+                default:
+                    // if authStatus does not exist, still push the events to the queue
+                    queue.push(data);
+                    dequeue();
+            }
+        });
     }
+}
+
+function convertLocalDateToUTC(inputDateStr) {
+    /*
+      The returned server timestamp is in UTC and local time often time is not
+        This function converts the local time to UTC format to ensure accurate
+        time difference
+     */
+    const date = new Date(inputDateStr);
+  
+    // Extract the time zone offset from the input date string
+    const timeZoneOffset = date.getTimezoneOffset();
+  
+    // Calculate the UTC date by sub the time zone offset
+    const utcDate = new Date(date.getTime() - timeZoneOffset * 60000); // Convert minutes to milliseconds
+  
+    return utcDate;
 }
 
 function ajax_logger(ajax_server) {
