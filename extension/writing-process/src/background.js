@@ -218,7 +218,7 @@ function websocket_logger(server) {
                     break;
                 case DENY_FOR_TWO_DAYS: // check back after two days to continue updating/emptying the queue
                     const currentDate = new Date();
-                    const authResponseDate = new Date(result.authResponseTimeStamp);
+                    const authResponseDate = convertLocalDateToUTC(new Date(result.authResponseTimeStamp));
 
                     // Calculate the date 2 days after the authResponseDate
                     const twoDaysAfterAuthResponseDate = new Date(authResponseDate)
@@ -242,6 +242,23 @@ function websocket_logger(server) {
             }
         });
     }
+}
+
+function convertLocalDateToUTC(inputDateStr) {
+    /*
+      The returned server timestamp is in UTC and local time often time is not
+        This function converts the local time to UTC format to ensure accurate
+        time difference
+     */
+    const date = new Date(inputDateStr);
+  
+    // Extract the time zone offset from the input date string
+    const timeZoneOffset = date.getTimezoneOffset();
+  
+    // Calculate the UTC date by sub the time zone offset
+    const utcDate = new Date(date.getTime() - timeZoneOffset * 60000); // Convert minutes to milliseconds
+  
+    return utcDate;
 }
 
 function ajax_logger(ajax_server) {
