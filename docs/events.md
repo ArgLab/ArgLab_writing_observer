@@ -232,10 +232,13 @@ ei - End index (where the deletion ended)
 ```
 ##### alter command
 ty - Command type
-st
-si
-ei
-sm
+st - Shows which section was altered (possible values - paragraph, text, doco_anchor)
+si - Start index (where the alteration started)
+ei - End index (where the alteration ended)
+sm - The specific components that got altered. (Depends on 'st')
+
+###### paragraph
+This happens when a user aligns a paragraph (left, center, right, justify)
 ```
 {
   "ty": "as",
@@ -250,6 +253,58 @@ sm
   }
 }
 ```
+
+###### text
+This happens when a user modifies a text (change font, italics, bold, underline, etc..)
+```
+{
+  "ty": "as",
+  "st": "text",
+  "si": 17,
+  "ei": 17,
+  "sm": {
+      "ts_fs_i": False,
+      "ts_fs": 12,
+  }
+}
+```
+
+###### doco_anchor
+When a new comment is added
+
+{
+  "ty": "as",
+  "st": "doco_anchor",
+  "si": 67,
+  "ei": 68,
+  "sm": {
+    "das_a": {
+      "cv": {
+        "op": "insert",
+        "opIndex": 0,
+        "opValue": "kix.wt2awnbw17lt"
+      }
+    }
+  }
+}
+
+When a comment is deleted
+
+{
+  "ty": "as",
+  "st": "doco_anchor",
+  "si": 102,
+  "ei": 106,
+  "sm": {
+    "das_a": {
+      "cv": {
+        "op": "delete",
+        "opIndex": 0
+      }
+    }
+  }
+}
+
 ##### image insert command
 ty - Command type
 et
