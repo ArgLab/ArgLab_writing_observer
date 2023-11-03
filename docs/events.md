@@ -237,73 +237,75 @@ si - Start index (where the alteration started)
 ei - End index (where the alteration ended)
 sm - The specific components that got altered. (Depends on 'st')
 
-###### paragraph
-This happens when a user aligns a paragraph (left, center, right, justify)
-```
-{
-  "ty": "as",
-  "st": "paragraph",
-  "si": 17,
-  "ei": 17,
-  "sm": {
-      "ps_ls": 1,
-      "ps_lslm": 1,
-      "ps_ls_i": false,
-      "ps_lslm_i": false
+* paragraph - This happens when a user aligns a paragraph (left, center, right, justify)
+  ```
+  {
+    "ty": "as",
+    "st": "paragraph",
+    "si": 17,
+    "ei": 17,
+    "sm": {
+        "ps_ls": 1,
+        "ps_lslm": 1,
+        "ps_ls_i": false,
+        "ps_lslm_i": false
+    }
   }
-}
-```
+  ```
 
-###### text
-This happens when a user modifies a text (change font, italics, bold, underline, etc..)
-```
-{
-  "ty": "as",
-  "st": "text",
-  "si": 17,
-  "ei": 17,
-  "sm": {
-      "ts_fs_i": False,
-      "ts_fs": 12,
+* text - This happens when a user modifies a text (change font, italics, bold, underline, etc..)
+  ```
+  {
+    "ty": "as",
+    "st": "text",
+    "si": 17,
+    "ei": 17,
+    "sm": {
+        "ts_fs_i": False,
+        "ts_fs": 12,
+    }
   }
-}
-```
+  ```
 
-###### doco_anchor
-When a new comment is added
+* doco_anchor - When comments are inserted/modified/deleted
+  When a new comment is added
 
-{
-  "ty": "as",
-  "st": "doco_anchor",
-  "si": 67,
-  "ei": 68,
-  "sm": {
-    "das_a": {
-      "cv": {
-        "op": "insert",
-        "opIndex": 0,
-        "opValue": "kix.wt2awnbw17lt"
+  ```
+  {
+    "ty": "as",
+    "st": "doco_anchor",
+    "si": 67,
+    "ei": 68,
+    "sm": {
+      "das_a": {
+        "cv": {
+          "op": "insert",
+          "opIndex": 0,
+          "opValue": "kix.wt2awnbw17lt"
+        }
       }
     }
   }
-}
+  ```
 
-When a comment is deleted
+  When a comment is deleted
 
-{
-  "ty": "as",
-  "st": "doco_anchor",
-  "si": 102,
-  "ei": 106,
-  "sm": {
-    "das_a": {
-      "cv": {
-        "op": "delete",
-        "opIndex": 0
+  ```
+  {
+    "ty": "as",
+    "st": "doco_anchor",
+    "si": 102,
+    "ei": 106,
+    "sm": {
+      "das_a": {
+        "cv": {
+          "op": "delete",
+          "opIndex": 0
+        }
       }
     }
   }
-}
+  ```
 
 ##### image insert command
 ty - Command type
@@ -541,3 +543,26 @@ mts - The list of commands (Can be any of the above 7 commands)
   "human_ts": "Sat Oct 07 2023 12:46:11 GMT-0400 (Eastern Daylight Time)"
 }
 ```
+
+## Tracking User offline edits in Google Docs
+
+When a user goes offline and attempts to edit the Google Docs document, the changes made are saved locally on the device. Simultaneously, Google Docs tries to trigger a ``google_docs_save`` event during edits. Its important to note that the event being fired is a duplicate of the last ``google_docs_save`` just before the user went offline.
+When the user comes back online, Google Docs triggers a new ``google_docs_save`` event containing all the changes made during the offline mode. 
+
+So, to track when a user went offline, one can iterate through the logs and check where the  ``rev`` counter of the ``google_docs_save`` is repeated.
+
+Sample implementation in python - 
+```
+events = dict() #json output of all logs
+revisions = []
+for event in events:
+    if event['event'] == 'google_docs_save':
+        revisions.append(event['rev'][0])
+
+counts = Counter(revisions) # gets a counter of each revision
+
+for rev,count in counts.items():
+    if count > 1: # we only want revisions that are duplicates
+        print(rev)
+```
+This prints out the revision numbers of the last save event before a user went offline. The ``rev + 1`` is going to be the revision that contains all the changes a user made during offline mode
