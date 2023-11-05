@@ -553,6 +553,8 @@ So, to track when a user went offline, one can iterate through the logs and chec
 
 Sample implementation in python - 
 ```
+from collections import Counter
+
 events = dict() #json output of all logs
 revisions = []
 for event in events:
