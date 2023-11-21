@@ -78,6 +78,8 @@ echo -e "\n--- Installing lo_dash_react_components. ---"
 cd ./lo_dash_react_components
 "$PYTHON_CMD" setup.py develop
 pip install .
+npm install
+npm run build
 cd ..
 
 echo -e "\n--- Installing wo_highlight_dashboard. ---"
@@ -85,7 +87,22 @@ cd ./wo_highlight_dashboard
 "$PYTHON_CMD" setup.py develop
 cd ..
 
+echo -e "\n--- Installing language_tool. ---"
+cd ./language_tool
+"$PYTHON_CMD" setup.py develop
+cd ..
 
+echo -e "\n--- Installing wo_bulk_essay_analysis. ---"
+cd ./wo_bulk_essay_analysis
+"$PYTHON_CMD" setup.py develop
+cd ..
 
+echo -e "\n--- Installing wo_common_student_errors. ---"
+cd ./wo_common_student_errors
+"$PYTHON_CMD" setup.py develop
+cd ..
 
-
+echo -e "\n--- Installing wo_document_list. ---"
+cd ./wo_document_list
+"$PYTHON_CMD" setup.py develop
+cd ..
