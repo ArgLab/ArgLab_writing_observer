@@ -78,17 +78,10 @@ echo -e "\n--- Installing lo_dash_react_components. ---"
 cd ./lo_dash_react_components
 "$PYTHON_CMD" setup.py develop
 pip install .
-npm install
-npm run build
 cd ..
 
 echo -e "\n--- Installing wo_highlight_dashboard. ---"
 cd ./wo_highlight_dashboard
-"$PYTHON_CMD" setup.py develop
-cd ..
-
-echo -e "\n--- Installing language_tool. ---"
-cd ./language_tool
 "$PYTHON_CMD" setup.py develop
 cd ..
 
