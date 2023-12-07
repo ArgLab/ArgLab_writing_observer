@@ -114,6 +114,11 @@ compatibility is mostly aspirational.
         * [is](#insert-command) - Insert characters
         * [ds](#delete-command) - Delete characters
         * [as](#alter-command) - Alter characters
+        * [iss](#suggest-add) - Suggest add
+        * [msfd](#suggest-delete) - Suggest delete
+        * [sas](#suggest-format) - Suggest format
+        * [ras](#reject-suggest-format) - Reject suggest format
+        * [usfd](#reject-suggest-delete) - Reject suggest delete
         * [ae](#image-insert-command) - Image add
         * [te](#image-index-command) - Image index
         * [de](#image-delete-command) - Image delete
@@ -267,8 +272,8 @@ sm - The specific components that got altered. (Depends on 'st')
   }
   ```
 
-* doco_anchor - When comments are inserted/modified/deleted
-  When a new comment is added
+* doco_anchor (suggestions/comments)
+  When a comment is inserted
 
   ```
   {
@@ -306,7 +311,84 @@ sm - The specific components that got altered. (Depends on 'st')
     }
   }
   ```
-
+##### suggest add
+Triggered when user suggests an addition
+* When user adds characters
+  ty - Command type
+  sugid - The unique suggestion id
+  ibi - Index where suggestion is added
+  s - The suggestion that is added (String)
+  ```
+  {
+    "ty": "iss",
+    "sugid": "suggest.s9ygmmpf1hwn",
+    "ibi": 5,
+    "s": "T"
+  }
+  ```
+* When user deletes characters
+  ty - Command type
+  si - Start index (where the deletion started)
+  ei - End index (where the deletion ended)
+  ```
+  {
+    "ty": "dss",
+    "si": 23,
+    "ei": 23
+  }
+  ```
+##### suggest delete
+When users suggest a deletion
+ty - Command type
+sugid - Suggestion id
+si - Start index (where the deletion started)
+ei - End index (where the deletion ended)
+```
+{
+  "ty": "msfd",
+  "sugid": "suggest.99icybo07j9s",
+  "si": 41,
+  "ei": 41
+}
+```
+##### suggest format
+Similar to [alter](#alter-command)
+sugid - Suggestion id
+```
+{
+  "ty": "sas",
+  "st": "text",
+  "si": 40,
+  "ei": 42,
+  "sm": {
+    "ts_ff_i": true,
+    "ts_bd_i": false,
+    "ts_bd": true,
+    "ts_tw": 400
+  },
+  "sugid": "suggest.otzprniiy6uz"
+}
+```
+##### reject suggest format
+When the user rejects a suggestion of type format
+```
+{
+  "ty": "ras",
+  "sugid": "suggest.ep2z2ofnvxs3",
+  "si": 3,
+  "ei": 4
+}
+```
+##### reject suggest delete
+When the user rejects a suggestion of type delete
+```
+{
+  "ty": "usfd",
+  "sugid": "suggest.ep2z2ofnvxs3",
+  "si": 3,
+  "ei": 4
+}
+```
 ##### image insert command
 ty - Command type
 et
@@ -568,3 +650,174 @@ for rev,count in counts.items():
         print(rev)
 ```
 This prints out the revision numbers of the last save event before a user went offline. The ``rev + 1`` is going to be the revision that contains all the changes a user made during offline mode
+
+
+## How comments are saved
+
+When comments are modified, a sync event gets triggered which outputs data of type list.
+
+## Google Autocorrect
+
+The autocorrect feature of google docs either auto capitalizes the first letter of the word at the start of a sentence or autocorrects the spelling of a work.
+When they auto capitalize a letter, there is no way of knowing if google docs intervened in the modification of the text, from the save events. 
+
+However when they autocorrects the spelling of a word, a list of actions will be sent in the google_docs_save event
+
+Example when i typed hllo, and google docs autocorrected it to hello
+```[
+  {
+    "commands": [
+      {
+        "ty": "is",
+        "ibi": 51,
+        "s": " "
+      },
+      {
+        "ty": "mlti",
+        "mts": [
+          {
+            "ty": "ds",
+            "si": 45,
+            "ei": 50
+          },
+          {
+            "ty": "is",
+            "ibi": 45,
+            "s": "testing"
+          },
+          {
+            "ty": "as",
+            "st": "comment",
+            "si": 45,
+            "ei": 51,
+            "sm": {
+              "cs_cids": {
+                "cv": {
+                  "op": "set",
+                  "opValue": [
+                    
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "ty": "as",
+            "st": "doco_anchor",
+            "si": 45,
+            "ei": 51,
+            "sm": {
+              "das_a": {
+                "cv": {
+                  "op": "set",
+                  "opValue": [
+                    
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "ty": "as",
+            "st": "ignore_spellcheck",
+            "si": 45,
+            "ei": 51,
+            "sm": {
+              "isc_osh": null,
+              "isc_smer": true
+            }
+          },
+          {
+            "ty": "as",
+            "st": "import_warnings",
+            "si": 45,
+            "ei": 51,
+            "sm": {
+              "iws_iwids": {
+                "cv": {
+                  "op": "set",
+                  "opValue": [
+                    
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "ty": "as",
+            "st": "link",
+            "si": 45,
+            "ei": 51,
+            "sm": {
+              "lnks_link": null
+            }
+          },
+          {
+            "ty": "as",
+            "st": "markup",
+            "si": 45,
+            "ei": 51,
+            "sm": {
+              "ms_id": {
+                "cv": {
+                  "op": "set",
+                  "opValue": [
+                    
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "ty": "as",
+            "st": "named_range",
+            "si": 45,
+            "ei": 51,
+            "sm": {
+              "nrs_ei": {
+                "cv": {
+                  "op": "set",
+                  "opValue": [
+                    
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "ty": "as",
+            "st": "suppress_feature",
+            "si": 45,
+            "ei": 51,
+            "sm": {
+              "sfs_sst": false
+            }
+          },
+          {
+            "ty": "as",
+            "st": "text",
+            "si": 45,
+            "ei": 51,
+            "sm": {
+              "ts_bd_i": true,
+              "ts_fs_i": true,
+              "ts_ff_i": true,
+              "ts_it_i": true,
+              "ts_sc_i": true,
+              "ts_st_i": true,
+              "ts_tw": 400,
+              "ts_un_i": true,
+              "ts_va_i": true,
+              "ts_bgc2_i": true,
+              "ts_fgc2_i": true
+            }
+          }
+        ]
+      }
+    ],
+    "sid": "63d4de46fcf13d9c",
+    "reqId": 227
+  }
+]```
+
+  
