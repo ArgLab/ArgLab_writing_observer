@@ -214,9 +214,9 @@ The **commands** key of the json is the key that generally gets modified dependi
 }
 ```
 ##### insert command
-ty - Command type
-ibi - Index where the characters got inserted
-s - The characters that got inserted
+ty - Command type  
+ibi - Index where the characters got inserted  
+s - The characters that got inserted  
 ```
 {
   "ty": "is",
@@ -225,9 +225,9 @@ s - The characters that got inserted
 }
 ```
 ##### delete command
-ty - Command type
-si - Start index (where the deletion started)
-ei - End index (where the deletion ended)
+ty - Command type  
+si - Start index (where the deletion started)  
+ei - End index (where the deletion ended)  
 ```
 {
   "ty": "ds",
@@ -236,11 +236,11 @@ ei - End index (where the deletion ended)
 }
 ```
 ##### alter command
-ty - Command type
-st - Shows which section was altered (possible values - paragraph, text, doco_anchor)
-si - Start index (where the alteration started)
-ei - End index (where the alteration ended)
-sm - The specific components that got altered. (Depends on 'st')
+ty - Command type  
+st - Shows which section was altered (possible values - paragraph, text, doco_anchor)  
+si - Start index (where the alteration started)  
+ei - End index (where the alteration ended)  
+sm - The specific components that got altered. (Depends on 'st')  
 
 * paragraph - This happens when a user aligns a paragraph (left, center, right, justify)
   ```
@@ -272,7 +272,7 @@ sm - The specific components that got altered. (Depends on 'st')
   }
   ```
 
-* doco_anchor (suggestions/comments)
+* doco_anchor (suggestions/comments)  
   When a comment is inserted
 
   ```
@@ -313,11 +313,11 @@ sm - The specific components that got altered. (Depends on 'st')
   ```
 ##### suggest add
 Triggered when user suggests an addition
-* When user adds characters
-  ty - Command type
-  sugid - The unique suggestion id
-  ibi - Index where suggestion is added
-  s - The suggestion that is added (String)
+* When user adds characters  
+  ty - Command type  
+  sugid - The unique suggestion id  
+  ibi - Index where suggestion is added  
+  s - The suggestion that is added (String)  
   ```
   {
     "ty": "iss",
@@ -326,10 +326,10 @@ Triggered when user suggests an addition
     "s": "T"
   }
   ```
-* When user deletes characters
-  ty - Command type
-  si - Start index (where the deletion started)
-  ei - End index (where the deletion ended)
+* When user deletes characters  
+  ty - Command type  
+  si - Start index (where the deletion started)  
+  ei - End index (where the deletion ended)  
   ```
   {
     "ty": "dss",
@@ -338,11 +338,11 @@ Triggered when user suggests an addition
   }
   ```
 ##### suggest delete
-When users suggest a deletion
-ty - Command type
-sugid - Suggestion id
-si - Start index (where the deletion started)
-ei - End index (where the deletion ended)
+When users suggest a deletion  
+ty - Command type  
+sugid - Suggestion id  
+si - Start index (where the deletion started)  
+ei - End index (where the deletion ended)  
 ```
 {
   "ty": "msfd",
@@ -352,8 +352,8 @@ ei - End index (where the deletion ended)
 }
 ```
 ##### suggest format
-Similar to [alter](#alter-command)
-sugid - Suggestion id
+Similar to [alter](#alter-command)  
+sugid - Suggestion id  
 ```
 {
   "ty": "sas",
@@ -390,10 +390,10 @@ When the user rejects a suggestion of type delete
 }
 ```
 ##### image insert command
-ty - Command type
-et
-id - Unique id of the image
-epm
+ty - Command type  
+et  
+id - Unique id of the image  
+epm  
 ```
 {
   "ty": "ae",
@@ -423,9 +423,9 @@ epm
 }
 ```
 ##### image index command
-ty - Command type
-id - Unique id of the image
-spi - Index where the image got added
+ty - Command type  
+id - Unique id of the image  
+spi - Index where the image got added  
 ```
 {
   "ty": "te",
@@ -435,8 +435,8 @@ spi - Index where the image got added
 ```
 
 ##### image delete command
-ty - Command type
-id - Unique id of the image
+ty - Command type  
+id - Unique id of the image  
 ```
 {
   "ty": "de",
@@ -444,9 +444,9 @@ id - Unique id of the image
 }
 ```
 ##### image alter command
-ty - Command type
-id - Unique id of the image
-epm
+ty - Command type  
+id - Unique id of the image  
+epm  
 ```
 {
   "ty": "ue",
@@ -460,8 +460,8 @@ epm
 }
 ```
 ##### multiple commands
-ty - Command type
-mts - The list of commands (Can be any of the above 7 commands)
+ty - Command type  
+mts - The list of commands (Can be any of the above 7 commands)  
 ```
 {
   "ty": "mlti",
