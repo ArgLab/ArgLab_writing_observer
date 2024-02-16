@@ -213,7 +213,7 @@ The **commands** key of the json is the key that generally gets modified dependi
   "wa_source": null
 }
 ```
-##### insert command
+#### Insert Command
 ty - Command type  
 ibi - Index where the characters got inserted  
 s - The characters that got inserted  
@@ -224,7 +224,7 @@ s - The characters that got inserted
   "s": "test"
 }
 ```
-##### delete command
+#### Delete Command
 ty - Command type  
 si - Start index (where the deletion started)  
 ei - End index (where the deletion ended)  
@@ -235,7 +235,7 @@ ei - End index (where the deletion ended)
   "ei": 196
 }
 ```
-##### alter command
+#### Alter Command
 ty - Command type  
 st - Shows which section was altered (possible values - paragraph, text, doco_anchor)  
 si - Start index (where the alteration started)  
@@ -311,7 +311,7 @@ sm - The specific components that got altered. (Depends on 'st')
     }
   }
   ```
-##### suggest add
+#### Suggest Add
 Triggered when user suggests an addition
 * __When user adds characters__  
   ty - Command type  
@@ -337,7 +337,7 @@ Triggered when user suggests an addition
     "ei": 23
   }
   ```
-##### suggest delete
+#### Suggest Delete
 __When users suggest a deletion__  
 ty - Command type  
 sugid - Suggestion id  
@@ -351,7 +351,7 @@ ei - End index (where the deletion ended)
   "ei": 41
 }
 ```
-##### suggest format
+#### Suggest Format
 Similar to [alter](#alter-command)  
 sugid - Suggestion id  
 ```
@@ -369,8 +369,8 @@ sugid - Suggestion id
   "sugid": "suggest.otzprniiy6uz"
 }
 ```
-##### reject suggest format
-__When the user rejects a suggestion of type format__
+#### Reject Suggest-Format
+When the user rejects a suggestion of type format
 ```
 {
   "ty": "ras",
@@ -379,8 +379,8 @@ __When the user rejects a suggestion of type format__
   "ei": 4
 }
 ```
-##### reject suggest delete
-__When the user rejects a suggestion of type delete__
+#### Reject Suggest-Delete
+When the user rejects a suggestion of type delete
 ```
 {
   "ty": "usfd",
@@ -389,7 +389,7 @@ __When the user rejects a suggestion of type delete__
   "ei": 4
 }
 ```
-##### image insert command
+#### Image Insert
 ty - Command type  
 et  
 id - Unique id of the image  
@@ -422,7 +422,7 @@ epm
   }
 }
 ```
-##### image index command
+#### Image Index
 ty - Command type  
 id - Unique id of the image  
 spi - Index where the image got added  
@@ -434,7 +434,7 @@ spi - Index where the image got added
 }
 ```
 
-##### image delete command
+#### Image Delete
 ty - Command type  
 id - Unique id of the image  
 ```
@@ -443,7 +443,7 @@ id - Unique id of the image
   "id": "kix.k7hljq20dbwr",
 }
 ```
-##### image alter command
+#### Image Alter
 ty - Command type  
 id - Unique id of the image  
 epm  
@@ -459,7 +459,7 @@ epm
   }
 }
 ```
-##### multiple commands
+#### Multi Commands
 ty - Command type  
 mts - The list of commands (Can be any of the above 7 commands)  
 ```
