@@ -273,7 +273,7 @@ sm - The specific components that got altered. (Depends on 'st')
   ```
 
 * doco_anchor (suggestions/comments)  
-  When a comment is inserted
+  __When a comment is inserted__
 
   ```
   {
@@ -293,7 +293,7 @@ sm - The specific components that got altered. (Depends on 'st')
   }
   ```
 
-  When a comment is deleted
+  __When a comment is deleted__
 
   ```
   {
@@ -313,7 +313,7 @@ sm - The specific components that got altered. (Depends on 'st')
   ```
 ##### suggest add
 Triggered when user suggests an addition
-* When user adds characters  
+* __When user adds characters__  
   ty - Command type  
   sugid - The unique suggestion id  
   ibi - Index where suggestion is added  
@@ -326,7 +326,7 @@ Triggered when user suggests an addition
     "s": "T"
   }
   ```
-* When user deletes characters  
+* __When user deletes characters__  
   ty - Command type  
   si - Start index (where the deletion started)  
   ei - End index (where the deletion ended)  
@@ -338,7 +338,7 @@ Triggered when user suggests an addition
   }
   ```
 ##### suggest delete
-When users suggest a deletion  
+__When users suggest a deletion__  
 ty - Command type  
 sugid - Suggestion id  
 si - Start index (where the deletion started)  
@@ -370,7 +370,7 @@ sugid - Suggestion id
 }
 ```
 ##### reject suggest format
-When the user rejects a suggestion of type format
+__When the user rejects a suggestion of type format__
 ```
 {
   "ty": "ras",
@@ -380,7 +380,7 @@ When the user rejects a suggestion of type format
 }
 ```
 ##### reject suggest delete
-When the user rejects a suggestion of type delete
+__When the user rejects a suggestion of type delete__
 ```
 {
   "ty": "usfd",
