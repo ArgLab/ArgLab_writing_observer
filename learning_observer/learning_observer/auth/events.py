@@ -188,7 +188,7 @@ async def local_storage_auth(request, headers, first_event, source):
     {'sec': 'unauthenticated', 'user_id': 'ls-jim', 'providence': 'ls'}
     '''
     authdata = find_event('local_storage', headers + [first_event])
-
+    authdata = authdata['local_storage']
     if authdata is None or 'user_tag' not in authdata:
         return False
 

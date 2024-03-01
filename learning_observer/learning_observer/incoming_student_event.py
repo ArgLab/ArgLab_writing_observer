@@ -25,8 +25,10 @@ import aiohttp
 import learning_observer.log_event as log_event
 import learning_observer.paths as paths
 
-import learning_observer.auth.utils as authutils               # Encoded / decode user IDs
-import learning_observer.stream_analytics as stream_analytics  # Individual analytics modules
+# Encoded / decode user IDs
+import learning_observer.auth.utils as authutils
+# Individual analytics modules
+import learning_observer.stream_analytics as stream_analytics
 
 import learning_observer.settings as settings
 
@@ -82,7 +84,8 @@ async def student_event_pipeline(metadata):
         # period where both functions and co-routines worked.
         if not inspect.iscoroutinefunction(f):
             debug_log("Not a coroutine", analytics_module)
-            raise AttributeError("The reducer {} should be a co-routine".format(analytics_module))
+            raise AttributeError(
+                "The reducer {} should be a co-routine".format(analytics_module))
 
         analytics_module['reducer_partial'] = await analytics_module['reducer'](metadata)
         return analytics_module
@@ -100,7 +103,8 @@ async def student_event_pipeline(metadata):
         if 'client' not in parsed_message:
             raise ValueError("Expected a dict with a 'client' field")
         if 'event' not in parsed_message['client']:
-            raise ValueError("Expected a dict with a 'client' field with an 'event' field")
+            raise ValueError(
+                "Expected a dict with a 'client' field with an 'event' field")
 
         debug_log("Processing message {event} from {source}".format(
             event=parsed_message["client"]["event"], source=client_source
@@ -125,7 +129,8 @@ async def student_event_pipeline(metadata):
                         if field.event not in client_event:
                             debug_log(field.event, "not found")
                             skip = True
-                        event_fields[field.event] = client_event.get(field.event)
+                        event_fields[field.event] = client_event.get(
+                            field.event)
                 if not skip:
                     debug_log("args", event_fields)
                     processed_analytics.append(await am['reducer_partial'](parsed_message, event_fields))
@@ -158,13 +163,13 @@ async def handle_incoming_client_event(metadata):
     global COUNTER
     pipeline = await student_event_pipeline(metadata=metadata)
 
-    filename = "{timestamp}-{counter:0>10}-{username}-{pid}.study".format(
-        username=metadata.get("auth", {}).get("safe_user_id", "GUEST"),
-        timestamp=datetime.datetime.utcnow().isoformat(),
-        counter=COUNTER,
-        pid=os.getpid()
-    )
-    COUNTER += 1
+    # filename = "{timestamp}-{counter:0>10}-{username}-{pid}.study".format(
+    #     username=metadata.get("auth", {}).get("safe_user_id", "GUEST"),
+    #     timestamp=datetime.datetime.utcnow().isoformat(),
+    #     counter=COUNTER,
+    #     pid=os.getpid()
+    # )
+    # COUNTER += 1
 
     # The adapter allows us to handle old event formats
     adapter = learning_observer.adapters.adapter.EventAdapter()
@@ -185,9 +190,9 @@ async def handle_incoming_client_event(metadata):
         log_event.log_event(event)
         # Log the same thing to our study log file. This isn't a good final format, since we
         # mix data with auth, but we want this for now.
-        log_event.log_event(
-            json.dumps(event, sort_keys=True),
-            filename, preencoded=True, timestamp=True)
+        # log_event.log_event(
+        #     json.dumps(event, sort_keys=True),
+        #     filename, preencoded=True, timestamp=True)
         await pipeline(event)
 
     return handler
@@ -238,7 +243,8 @@ def event_decoder_and_logger(
         storage_class = merkle_store.STORES[merkle_config['store']]
         params = merkle_config.get("params", {})
         if not isinstance(params, dict):
-            raise ValueError("Merkle tree params must be a dict (even an empty one)")
+            raise ValueError(
+                "Merkle tree params must be a dict (even an empty one)")
         storage = storage_class(**params)
         merkle_store.Merkle(storage)
         session = {
@@ -382,18 +388,32 @@ async def incoming_websocket_handler(request):
 
     event_handler = await handle_incoming_client_event(metadata=event_metadata)
 
+    global COUNTER
+    filename = "{timestamp}-{counter:0>10}-{username}-{pid}.study".format(
+        username=event_metadata.get("auth", {}).get("safe_user_id", "GUEST"),
+        timestamp=datetime.datetime.utcnow().isoformat(),
+        counter=COUNTER,
+        pid=os.getpid()
+    )
+    COUNTER += 1
+
     # Handle events which we already received, if we needed to peak
     # ahead to authenticate user
     if not INIT_PIPELINE:
         for event in header_events:
             decoder_and_logger(event)
             await event_handler(request, event)
+            print("INCOMING EVENT BEING LOGGED")
+            log_event.log_event(
+                json.dumps(event, sort_keys=True),
+                filename, preencoded=True, timestamp=True)
 
     # And continue to receive events
     async for msg in ws:
         # If web socket closed, we're done.
         if msg.type == aiohttp.WSMsgType.ERROR:
             debug_log(f"ws connection closed with exception {ws.exception()}")
+            log_event.remove_file_handler(filename)
             return
 
         # If we receive an unknown event type, we keep going, but we
@@ -407,4 +427,5 @@ async def incoming_websocket_handler(request):
         await event_handler(request, client_event)
 
     debug_log('Websocket connection closed')
+    log_event.remove_file_handler(filename)
     return ws
