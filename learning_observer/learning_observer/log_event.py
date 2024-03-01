@@ -198,13 +198,11 @@ def log_event(event, filename=None, preencoded=False, timestamp=False):
     '''
     This isn't done, but it's how we log events for now.
     '''
-    print("LOGGING EVENTS TO", filename)
     if filename is None:
         log_file_fp = mainlog
     elif filename in files:
         log_file_fp = files[filename]
     else:
-        print("CREATING ENTRY IN FILES")
         log_file_fp = open(paths.logs("" + filename + ".log"), "ab", 0)
         files[filename] = log_file_fp
 
@@ -308,13 +306,10 @@ def log_ajax(url, resp_json, request):
 
 
 def remove_file_handler(filename):
-    # error handling?
-    print(files)
-    filename = filename.replace(".study", "")
     try:
         files[filename].close()
         del files[filename]
     except Exception as e:
-        raise Exception("ERROR CLOSING FILES: {e}")
+        raise Exception(f"ERROR CLOSING FILE {filename}: {e}")
     else:
         print(f"SUCCESSFULLY CLOSED FILE: {filename}")

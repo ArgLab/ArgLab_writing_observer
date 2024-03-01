@@ -163,13 +163,13 @@ async def handle_incoming_client_event(metadata):
     global COUNTER
     pipeline = await student_event_pipeline(metadata=metadata)
 
-    # filename = "{timestamp}-{counter:0>10}-{username}-{pid}.study".format(
-    #     username=metadata.get("auth", {}).get("safe_user_id", "GUEST"),
-    #     timestamp=datetime.datetime.utcnow().isoformat(),
-    #     counter=COUNTER,
-    #     pid=os.getpid()
-    # )
-    # COUNTER += 1
+    filename = "{timestamp}-{counter:0>10}-{username}-{pid}.study".format(
+        username=metadata.get("auth", {}).get("safe_user_id", "GUEST"),
+        timestamp=datetime.datetime.utcnow().isoformat(),
+        counter=COUNTER,
+        pid=os.getpid()
+    )
+    COUNTER += 1
 
     # The adapter allows us to handle old event formats
     adapter = learning_observer.adapters.adapter.EventAdapter()
@@ -190,12 +190,12 @@ async def handle_incoming_client_event(metadata):
         log_event.log_event(event)
         # Log the same thing to our study log file. This isn't a good final format, since we
         # mix data with auth, but we want this for now.
-        # log_event.log_event(
-        #     json.dumps(event, sort_keys=True),
-        #     filename, preencoded=True, timestamp=True)
+        log_event.log_event(
+            json.dumps(event, sort_keys=True),
+            filename, preencoded=True, timestamp=True)
         await pipeline(event)
 
-    return handler
+    return handler, filename
 
 
 COUNT = 0
@@ -286,7 +286,7 @@ def event_decoder_and_logger(
             json_event = json.loads(msg.data)
         log_event.log_event(json_event, filename=filename)
         return json_event
-    return decode_and_log_event
+    return decode_and_log_event, filename
 
 
 async def incoming_websocket_handler(request):
@@ -362,7 +362,7 @@ async def incoming_websocket_handler(request):
 
     # We're now ready to make the pipeline.
     hostname = socket.gethostname()
-    decoder_and_logger = event_decoder_and_logger(
+    decoder_and_logger, decoder_log_file = event_decoder_and_logger(
         request,
         headers=header_events,
         metadata={
@@ -386,16 +386,7 @@ async def incoming_websocket_handler(request):
         }
     )
 
-    event_handler = await handle_incoming_client_event(metadata=event_metadata)
-
-    global COUNTER
-    filename = "{timestamp}-{counter:0>10}-{username}-{pid}.study".format(
-        username=event_metadata.get("auth", {}).get("safe_user_id", "GUEST"),
-        timestamp=datetime.datetime.utcnow().isoformat(),
-        counter=COUNTER,
-        pid=os.getpid()
-    )
-    COUNTER += 1
+    event_handler, study_log_file = await handle_incoming_client_event(metadata=event_metadata)
 
     # Handle events which we already received, if we needed to peak
     # ahead to authenticate user
@@ -403,17 +394,14 @@ async def incoming_websocket_handler(request):
         for event in header_events:
             decoder_and_logger(event)
             await event_handler(request, event)
-            print("INCOMING EVENT BEING LOGGED")
-            log_event.log_event(
-                json.dumps(event, sort_keys=True),
-                filename, preencoded=True, timestamp=True)
 
     # And continue to receive events
     async for msg in ws:
         # If web socket closed, we're done.
         if msg.type == aiohttp.WSMsgType.ERROR:
+            log_event.remove_file_handler(study_log_file)
+            log_event.remove_file_handler(decoder_log_file)
             debug_log(f"ws connection closed with exception {ws.exception()}")
-            log_event.remove_file_handler(filename)
             return
 
         # If we receive an unknown event type, we keep going, but we
@@ -426,6 +414,7 @@ async def incoming_websocket_handler(request):
         client_event = decoder_and_logger(msg)
         await event_handler(request, client_event)
 
+    log_event.remove_file_handler(study_log_file)
+    log_event.remove_file_handler(decoder_log_file)
     debug_log('Websocket connection closed')
-    log_event.remove_file_handler(filename)
     return ws
