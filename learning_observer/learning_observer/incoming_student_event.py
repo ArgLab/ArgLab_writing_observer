@@ -25,10 +25,8 @@ import aiohttp
 import learning_observer.log_event as log_event
 import learning_observer.paths as paths
 
-# Encoded / decode user IDs
-import learning_observer.auth.utils as authutils
-# Individual analytics modules
-import learning_observer.stream_analytics as stream_analytics
+import learning_observer.auth.utils as authutils               # Encoded / decode user IDs
+import learning_observer.stream_analytics as stream_analytics  # Individual analytics modules
 
 import learning_observer.settings as settings
 
@@ -84,8 +82,7 @@ async def student_event_pipeline(metadata):
         # period where both functions and co-routines worked.
         if not inspect.iscoroutinefunction(f):
             debug_log("Not a coroutine", analytics_module)
-            raise AttributeError(
-                "The reducer {} should be a co-routine".format(analytics_module))
+            raise AttributeError("The reducer {} should be a co-routine".format(analytics_module))
 
         analytics_module['reducer_partial'] = await analytics_module['reducer'](metadata)
         return analytics_module
@@ -103,8 +100,7 @@ async def student_event_pipeline(metadata):
         if 'client' not in parsed_message:
             raise ValueError("Expected a dict with a 'client' field")
         if 'event' not in parsed_message['client']:
-            raise ValueError(
-                "Expected a dict with a 'client' field with an 'event' field")
+            raise ValueError("Expected a dict with a 'client' field with an 'event' field")
 
         debug_log("Processing message {event} from {source}".format(
             event=parsed_message["client"]["event"], source=client_source
@@ -129,8 +125,7 @@ async def student_event_pipeline(metadata):
                         if field.event not in client_event:
                             debug_log(field.event, "not found")
                             skip = True
-                        event_fields[field.event] = client_event.get(
-                            field.event)
+                        event_fields[field.event] = client_event.get(field.event)
                 if not skip:
                     debug_log("args", event_fields)
                     processed_analytics.append(await am['reducer_partial'](parsed_message, event_fields))
@@ -243,8 +238,7 @@ def event_decoder_and_logger(
         storage_class = merkle_store.STORES[merkle_config['store']]
         params = merkle_config.get("params", {})
         if not isinstance(params, dict):
-            raise ValueError(
-                "Merkle tree params must be a dict (even an empty one)")
+            raise ValueError("Merkle tree params must be a dict (even an empty one)")
         storage = storage_class(**params)
         merkle_store.Merkle(storage)
         session = {

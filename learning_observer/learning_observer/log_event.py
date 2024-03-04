@@ -141,11 +141,9 @@ def initialize_logging_framework():
     # In either case, we want to override from the settings file.
     if "logging" in settings.settings:
         if "debug_log_level" in settings.settings["logging"]:
-            DEBUG_LOG_LEVEL = LogLevel(
-                settings.settings["logging"]["debug_log_level"])
+            DEBUG_LOG_LEVEL = LogLevel(settings.settings["logging"]["debug_log_level"])
         if "debug_log_destinations" in settings.settings["logging"]:
-            DEBUG_LOG_DESTINATIONS = list(
-                map(LogDestination, settings.settings["logging"]["debug_log_destinations"]))
+            DEBUG_LOG_DESTINATIONS = list(map(LogDestination, settings.settings["logging"]["debug_log_destinations"]))
 
     debug_log("DEBUG_LOG_LEVEL:", DEBUG_LOG_LEVEL)
     debug_log("DEBUG_DESTINATIONS:", DEBUG_LOG_DESTINATIONS)
@@ -154,10 +152,8 @@ def initialize_logging_framework():
     # This way, event logs can refer uniquely to running version
     # Do we want the full 512 bit hash? Cut it back? Use a more efficient encoding than
     # hexdigest?
-    startup_state = json.dumps(
-        learning_observer.filesystem_state.filesystem_state(), indent=3, sort_keys=True)
-    STARTUP_STATE_HASH = learning_observer.util.secure_hash(
-        startup_state.encode('utf-8'))
+    startup_state = json.dumps(learning_observer.filesystem_state.filesystem_state(), indent=3, sort_keys=True)
+    STARTUP_STATE_HASH = learning_observer.util.secure_hash(startup_state.encode('utf-8'))
     STARTUP_FILENAME = "{directory}/{time}-{hash}.json".format(
         directory=paths.logs("startup"),
         time=datetime.datetime.utcnow().isoformat(),
@@ -211,8 +207,7 @@ def log_event(event, filename=None, preencoded=False, timestamp=False):
     log_file_fp.write(event.encode('utf-8'))
     if timestamp:
         log_file_fp.write("\t".encode('utf-8'))
-        log_file_fp.write(
-            datetime.datetime.utcnow().isoformat().encode('utf-8'))
+        log_file_fp.write(datetime.datetime.utcnow().isoformat().encode('utf-8'))
     log_file_fp.write("\n".encode('utf-8'))
     log_file_fp.flush()
 
@@ -294,8 +289,7 @@ def log_ajax(url, resp_json, request):
         'timestamp': datetime.datetime.utcnow().isoformat()
     }
     encoded_payload = encode_json_block(payload)
-    payload_hash = learning_observer.util.secure_hash(
-        encoded_payload.encode('utf-8'))
+    payload_hash = learning_observer.util.secure_hash(encoded_payload.encode('utf-8'))
     filename = AJAX_FILENAME_TEMPLATE.format(
         directory=paths.logs("ajax"),
         time=datetime.datetime.utcnow().isoformat(),
