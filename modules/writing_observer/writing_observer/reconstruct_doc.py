@@ -152,12 +152,12 @@ class google_text(object):
         '''
         Returns the text ignoring the image placeholders
         '''
-        new_text = ""
+        new_text = []
         for idx,s in enumerate(self._text,start=1):
             if idx in self._edit_metadata['images'].values():
                 continue
-            new_text += s
-        return new_text
+            new_text.append(s)
+        return ''.join(new_text)
     
     def update_image_index(self,si,offset):
         '''
