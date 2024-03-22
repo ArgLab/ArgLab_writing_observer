@@ -393,8 +393,8 @@ async def incoming_websocket_handler(request):
     async for msg in ws:
         # If web socket closed, we're done.
         if msg.type == aiohttp.WSMsgType.ERROR:
-            log_event.remove_file_handler(study_log_file)
-            log_event.remove_file_handler(decoder_log_file)
+            log_event.close_logfile(study_log_file)
+            log_event.close_logfile(decoder_log_file)
             debug_log(f"ws connection closed with exception {ws.exception()}")
             return
 
@@ -408,7 +408,7 @@ async def incoming_websocket_handler(request):
         client_event = decoder_and_logger(msg)
         await event_handler(request, client_event)
 
-    log_event.remove_file_handler(study_log_file)
-    log_event.remove_file_handler(decoder_log_file)
+    log_event.close_logfile(study_log_file)
+    log_event.close_logfile(decoder_log_file)
     debug_log('Websocket connection closed')
     return ws
