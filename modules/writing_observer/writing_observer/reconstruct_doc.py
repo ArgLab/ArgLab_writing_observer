@@ -9,6 +9,7 @@ See: `http://features.jsomers.net/how-i-reverse-engineered-google-docs/`
 
 import json
 
+PLACEHOLDER = '\x00'
 
 class google_text(object):
     '''
@@ -151,8 +152,10 @@ class google_text(object):
     
     def get_parsed_text(self):
         '''
-        Returns the text ignoring the image placeholders
+        Returns the text ignoring the image placeholders as well as
+        normal placeholders
         '''
+        self._text = self._text.replace(PLACEHOLDER,"")
         new_text = []
         for idx,s in enumerate(self._text,start=1):
             if idx in self._edit_metadata['images'].values():
@@ -178,18 +181,6 @@ def command_list(doc, commands):
     '''
     for item in commands:
         if item['ty'] in dispatch:
-            if item.get('ibi') and doc._startindex == 0:
-                doc._startindex = item.get('ibi') - 1
-            
-            if doc._startindex == 0:
-                continue
-
-            if item.get('ibi'):
-                item['ibi'] -=doc._startindex
-            if item.get('si'):
-                item['si'] -= doc._startindex
-                item['ei'] -= doc._startindex
-
             doc = dispatch[item['ty']](doc, **item)
         else:
             print("Unrecogized Google Docs command: " + repr(item['ty']))
@@ -215,6 +206,10 @@ def insert(doc, ty, ibi, s):
     * `ibi` is where the insert happens
     * `s` is the string to insert
     '''
+    base_index = len(doc._text) + 1
+    if ibi > base_index:
+        insert(doc,ty,base_index,PLACEHOLDER*(ibi-base_index))
+
     doc.update("{start}{insert}{end}".format(
         start=doc._text[0:ibi - 1],
         insert=s,
@@ -235,6 +230,12 @@ def delete(doc, ty, si, ei):
     * `si` is the index of the start of deletion
     * `ei` is the end
     '''
+    lastchar_index = len(doc._text)
+    if si > lastchar_index:
+        insert(doc,ty,lastchar_index + 1,PLACEHOLDER*(si-lastchar_index))
+    if ei > lastchar_index:
+        insert(doc,ty,lastchar_index + 1,PLACEHOLDER*(ei-lastchar_index))
+
     doc.update("{start}{end}".format(
         start=doc._text[0:si - 1],
         end=doc._text[ei:]
