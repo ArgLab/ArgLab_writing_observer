@@ -24,7 +24,6 @@ class google_text(object):
         new_object = object.__new__(cls)
         new_object._text = ""
         new_object._position = 0
-        new_object._startindex = 0 
         new_object._edit_metadata = {}
         new_object.fix_validity()
         return new_object
@@ -273,7 +272,11 @@ def image_delete(doc,ty,id,et):
     * `ty` is always `de`
     * `id` is the unique image id
     '''
-    doc.edit_metadata['images'].pop(id)
+    try:
+        doc.edit_metadata['images'].pop(id)
+    except KeyError:
+        # This happens when logfile is incomplete
+        pass
     return doc
 
 
