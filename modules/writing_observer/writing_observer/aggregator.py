@@ -9,6 +9,7 @@ import time
 
 import learning_observer.cache
 import learning_observer.communication_protocol.integration
+import learning_observer.constants as constants
 import learning_observer.kvs
 import learning_observer.settings
 import learning_observer.stream_analytics.helpers
@@ -164,7 +165,7 @@ async def get_latest_student_documents(student_data):
         learning_observer.stream_analytics.helpers.make_key(
             writing_observer.writing_analysis.reconstruct,
             {
-                KeyField.STUDENT: s['user_id'],
+                KeyField.STUDENT: s[constants.USER_ID],
                 EventField('doc_id'): get_last_document_id(s)
             },
             KeyStateType.INTERNAL
@@ -227,7 +228,8 @@ async def remove_extra_data(writing_data):
 #     return writing_data
 
 
-if learning_observer.settings.module_setting('writing_observer', 'use_nlp', False):
+use_nlp = learning_observer.settings.module_setting('writing_observer', 'use_nlp', False)
+if use_nlp:
     try:
         import writing_observer.awe_nlp
         processor = writing_observer.awe_nlp.process_writings_with_caching
@@ -247,7 +249,9 @@ async def update_reconstruct_reducer_with_google_api(runtime, doc_ids):
     """
     This method updates the reconstruct reducer every so often with the ground
     truth directly from the Google API. This allows us to automatically fix
-    errors introduced by the reconstruction.
+    errors introduced by the reconstruction. If the current user does not have
+    access to the ground truth (e.g. permission), then we do not update the
+    reconstruct reducer.
 
     This method is intended for use within the communication protocol.
     Since we already select reconstruct data from the KVS, this method just
@@ -270,6 +274,10 @@ async def update_reconstruct_reducer_with_google_api(runtime, doc_ids):
         kvs = learning_observer.kvs.KVS()
 
         text = await learning_observer.google.doctext(runtime, documentId=doc_id)
+        # Only update Redis is we have text available. If `text` is missing, then
+        # we likely encountered an error, usually related to document permissions.
+        if 'text' not in text:
+            return None
         key = learning_observer.stream_analytics.helpers.make_key(
             writing_observer.writing_analysis.reconstruct,
             {
@@ -324,7 +332,7 @@ async def update_reconstruct_data_with_google_api(runtime, student_data):
         key = learning_observer.stream_analytics.helpers.make_key(
             writing_observer.writing_analysis.reconstruct,
             {
-                KeyField.STUDENT: student['user_id'],
+                KeyField.STUDENT: student[constants.USER_ID],
                 EventField('doc_id'): docId
             },
             KeyStateType.INTERNAL
