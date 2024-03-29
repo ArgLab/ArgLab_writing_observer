@@ -23,6 +23,7 @@ import learning_observer.routes as routes
 import learning_observer.prestartup
 import learning_observer.webapp_helpers
 import learning_observer.watchdog_observer
+import learning_observer.ipython_integration
 
 from learning_observer.log_event import debug_log
 
@@ -102,13 +103,11 @@ def shutdown(app):
     return app
 
 
-def start():
+def start(app):
     '''
     Start the application.
     '''
-    global app
     # Reload all imports
-    app = create_app()
     aiohttp.web.run_app(app, port=port)
     return app
 
@@ -134,7 +133,26 @@ if args.watchdog is not None:
     )
     learning_observer.watchdog_observer.watchdog(fs_event_handler)
 
-app = start()
+app = create_app()
+
+# This creates the file that tells jupyter how to run our custom
+# kernel. This command needs to be ran once (outside of Jupyter)
+# before users can get access to the LO Kernel.
+learning_observer.ipython_integration.load_kernel_spec()
+
+if args.ipython_kernel:
+    learning_observer.ipython_integration.start(
+        kernel_only=args.ipython_kernel, lo_app=app,
+        connection_file=args.ipython_kernel_connection_file,
+        run_lo_app=args.run_lo_application)
+elif args.ipython_console:
+    learning_observer.ipython_integration.start(
+        kernel_only=False, lo_app=app,
+        run_lo_app=args.run_lo_application)
+elif args.run_lo_application:
+    start(app)
+else:
+    raise RuntimeError('No services to start up.')
 
 # Port printing:
 #
