@@ -119,11 +119,11 @@ compatibility is mostly aspirational.
         * [sas](#suggest-format) - Suggest format
         * [ras](#reject-suggest-format) - Reject suggest format
         * [usfd](#reject-suggest-delete) - Reject suggest delete
-        * [ae](#image-insert-command) - Image add
-        * [te](#image-index-command) - Image index
-        * [de](#image-delete-command) - Image delete
-        * [ue](#image-alter-command) - Image modify
-        * [mlti](#multiple-commands) - Multiple commands
+        * [ae](#image-insert) - Image add
+        * [te](#image-index) - Image index
+        * [de](#image-delete) - Image delete
+        * [ue](#image-alter) - Image modify
+        * [mlti](#multi-commands) - Multiple commands
   * rev - The total number of edits made in the document
   * timestamp - The UNIX timestamp
   * event - Event type
