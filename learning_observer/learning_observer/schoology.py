@@ -86,10 +86,24 @@ class Schoology:
             url = self.base_url + endpoint
             if params:
                 url += '?' + '&'.join(f"{k}={v}" for k, v in params.items())
+                
+        headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        }
+        
+        signed_url, signed_headers, signed_data = self._sign_request(url, headers, data, method)
+        
+        # Convert headers to str
+        signed_headers = {str(k): str(v) for k, v in signed_headers.items()}
 
         async with aiohttp.ClientSession() as client:
             response_func = getattr(client, method.lower())
-            async with response_func(url, auth=self.auth, params=params, json=data) as response:
+            #url, headers, body = self.auth.sign(url, headers=headers, data=data, http_method=method.upper())
+            
+            #async with response_func(url, headers=headers, params=params, json=data) as response:
+            async with response_func(signed_url, headers=signed_headers, data=signed_data) as response:
+            #async with response_func(url, auth=self.auth, params=params, json=data) as response:
                 if response.status != 200:
                     response.raise_for_status()
                 
@@ -108,7 +122,7 @@ class Schoology:
             signature_type='auth_header'
         )
 
-	prepared = oauth(prepared)
+        prepared = oauth(prepared)
 
         return prepared.url, prepared.headers, prepared.body
 
