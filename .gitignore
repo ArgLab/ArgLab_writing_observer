@@ -29,3 +29,4 @@ learning_observer/passwd.lo
 build/
 dist/
 node_modules
+learning_observer/learning_observer/learning_tools/config.ini

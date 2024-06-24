@@ -57,6 +57,7 @@ from learning_observer.auth.utils import teacher
 # Utility functions
 from learning_observer.auth.utils import fernet_key
 from learning_observer.auth.utils import google_id_to_user_id
+from learning_observer.auth.utils import canvas_id_to_user_id
 
 # Utility handlers
 from learning_observer.auth.handlers import logout_handler
