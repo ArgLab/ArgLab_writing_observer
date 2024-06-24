@@ -97,6 +97,10 @@ class Schoology:
     def list_all_users(self):
         return self.api_call('GET', 'users')
     
+    #lists all the sections in the system
+    def list_all_sections(self):
+        return self.api_call('GET', 'sections')
+    
     #In progress
     def get_section(self,userid):
         return self.api_call('GET', 'users/{0}/sections')
@@ -138,6 +142,9 @@ def test():
     
     all_users = schoology.list_all_users()
     print(f"All Users: {all_users}")
+    
+    all_sections = schoology.list_all_sections()
+    print(f"All Sections: {all_sections}")
 
 
 if __name__ == '__main__':

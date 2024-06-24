@@ -1,10 +1,12 @@
 import os
 import json
-import string
 import recordclass
+import string
+from requests_oauthlib import OAuth1
 import configparser
 import aiohttp
 import aiohttp.web
+from requests import Request
 
 import learning_observer.settings as settings
 import learning_observer.log_event
@@ -20,7 +22,7 @@ class Endpoint(recordclass.make_dataclass("Endpoint", ["name", "remote_url", "do
 
     def _local_url(self):
         parameters = "}/{".join(self.arguments())
-        base_url = f"/canvas/{self.name}"
+        base_url = f"/schoology/{self.name}"
         if len(parameters) == 0:
             return base_url
         else:
@@ -31,7 +33,7 @@ class Endpoint(recordclass.make_dataclass("Endpoint", ["name", "remote_url", "do
             self.cleaners = dict()
         self.cleaners[name] = cleaner
         if 'local_url' not in cleaner:
-            cleaner['local_url'] = self._local_url + "/" + name
+            cleaner['local_url'] = self._local_url() + "/" + name
 
     def _cleaners(self):
         if self.cleaners is None:
@@ -40,114 +42,90 @@ class Endpoint(recordclass.make_dataclass("Endpoint", ["name", "remote_url", "do
             return self.cleaners
 
 ENDPOINTS = list(map(lambda x: Endpoint(*x), [
-    ("course_list", "/courses"),
-    ("course_roster", "/courses/{courseId}/students"),
-    ("course_work", "/courses/{courseId}/assignments"),
-    ("coursework_submissions", "/courses/{courseId}/assignments/{assignmentId}/submissions"),
+    ("course_list", "/sections"),
+    ("course_roster", "/sections/{sectionId}/enrollments"),
+    ("course_work", "/sections/{sectionId}/assignments"),
+    ("coursework_submissions", "/sections/{courseId}/assignments/{assignmentId}/submissions/{gradeItemId}"),
 ]))
 
 def extract_parameters_from_format_string(format_string):
     '''
     Extracts parameters from a format string. E.g.
 
-    >>> ("hello {hi} my {bye}")]
+    >>> extract_parameters_from_format_string("hello {hi} my {bye}")
     ['hi', 'bye']
     '''
-    # The parse returns a lot of context, which we discard. In particular, the
-    # last item is often about the suffix after the last parameter and may be
-    # `None`
     return [f[1] for f in string.Formatter().parse(format_string) if f[1] is not None]
 
-class Canvas:
+class Schoology:
     def __init__(self, config_path='./config.ini'):
+        # Get the absolute path to the configuration file
         script_dir = os.path.dirname(os.path.abspath(__file__))
         config_path = os.path.join(script_dir, config_path)
-        
+
         self.config = configparser.ConfigParser()
         self.config.read(config_path)
         
         # Check if 'SCHOOLOGY_CONFIG' section is present
-        if 'CANVAS_CONFIG' not in self.config:
-            raise KeyError("The configuration file does not contain 'CANVAS_CONFIG' section")
+        if 'SCHOOLOGY_CONFIG' not in self.config:
+            raise KeyError("The configuration file does not contain 'SCHOOLOGY_CONFIG' section")
         
         try:
-            self.defaultServer = self.config['CANVAS_CONFIG']['DEFAULT_SERVER']
-            self.access_token = self.config['CANVAS_CONFIG']['ACCESS_TOKEN']
-            self.refresh_token = self.config['CANVAS_CONFIG']['REFRESH_TOKEN']
-            self.client_id = self.config['CANVAS_CONFIG']['CLIENT_ID']
-            self.client_secret = self.config['CANVAS_CONFIG']['CLIENT_SECRET']
+            self.api_key = self.config['SCHOOLOGY_CONFIG']['API_KEY']
+            self.secret = self.config['SCHOOLOGY_CONFIG']['SECRET']
         except KeyError as e:
             raise KeyError(f"Missing required configuration key: {e}")
-        
-        self.default_version = 'v1'
-        self.defaultPerPage = 10000
-        self.base_url = f'https://{self.defaultServer}/api/{self.default_version}'
 
-    def update_access_tokens(self, access_token):
-        self.config['CANVAS_CONFIG']['ACCESS_TOKEN'] = access_token
-        self.access_token = access_token
-        with open('./config.ini', 'w') as configfile:
-            self.config.write(configfile)
+        self.auth = OAuth1(self.api_key, self.secret, "", "")
+        self.base_url = f'https://api.schoology.com/v1/'
 
-    async def api_call(self, method, endpoint, params=None, data=None, absolute_url=False, retry=True, **kwargs):
+    async def api_call(self, method, endpoint, params=None, data=None, absolute_url=False, retry=True):
         if absolute_url:
             url = endpoint
         else:
             url = self.base_url + endpoint
             if params:
                 url += '?' + '&'.join(f"{k}={v}" for k, v in params.items())
-                
-        url = url.format(**kwargs)
-
-        headers = {
-            'Authorization': f'Bearer {self.access_token}',
-            'Content-Type': 'application/json'
-        }
 
         async with aiohttp.ClientSession() as client:
             response_func = getattr(client, method.lower())
-            async with response_func(url, headers=headers, params=params, json=data) as response:
-                if response.status == 401 and retry:
-                    new_tokens = self.refresh_tokens()
-                    if 'access_token' in new_tokens:
-                        self.update_access_tokens(new_tokens['access_token'])
-                        return await self.api_call(method, endpoint, params, data, absolute_url, retry=False, **kwargs)
-                
+            async with response_func(url, auth=self.auth, params=params, json=data) as response:
                 if response.status != 200:
                     response.raise_for_status()
                 
                 return await response.json()
+            
+    def _sign_request(self, url, headers, data, method):
+        req = Request(method, url, headers=headers, json=data)
+        prepared = req.prepare()
 
-    async def refresh_tokens(self):
-        url = f'https://{self.defaultServer}/login/oauth2/token'
-        params = {
-            "grant_type": "refresh_token",
-            "client_id": self.client_id,
-            "client_secret": self.client_secret,
-            "refresh_token": self.refresh_token
-        }
-        return await self.api_call('POST', url, params=params, absolute_url=True)
+        # Sign the request
+        oauth = OAuth1(
+            self.api_key,
+            client_secret=self.secret,
+            resource_owner_key=None,
+            resource_owner_secret=None,
+            signature_type='auth_header'
+        )
 
-async def raw_canvas_ajax(runtime, target_url, retry=False, **kwargs):
+	prepared = oauth(prepared)
+
+        return prepared.url, prepared.headers, prepared.body
+
+async def raw_schoology_ajax(runtime, target_url, retry=False, **kwargs):
     '''
-    Make an AJAX call to Canvas, managing auth + auth.
+    Make an AJAX call to Schoology, managing auth + auth.
 
     * runtime is a Runtime class containing request information.
     * target_url is typically grabbed from ENDPOINTS
     * ... and we pass the named parameters
     '''
-    canvas = Canvas()
+    schoology = Schoology()
     
     params = {k: v for k, v in kwargs.items() if v is not None}
     try:
-        response = await canvas.api_call('GET', target_url, params=params, **kwargs)
-        response["kwargs"] = kwargs
+        response = await schoology.api_call('GET', target_url, params=params)
     except aiohttp.ClientResponseError as e:
-        if e.status == 401 and retry:
-            new_tokens = await canvas.refresh_tokens()
-            if 'access_token' in new_tokens:
-                canvas.update_access_tokens(new_tokens['access_token'])
-                return await raw_canvas_ajax(runtime, target_url, retry=False, **kwargs)
         raise
 
     return response
@@ -155,41 +133,29 @@ async def raw_canvas_ajax(runtime, target_url, retry=False, **kwargs):
 def raw_access_partial(remote_url, name=None):
     '''
     This is a helper which allows us to create a function which calls specific
-    Canvas APIs.
+    Schoology APIs.
     '''
     async def caller(request, **kwargs):
         '''
-        Make an AJAX request to Canvas
+        Make an AJAX request to Schoology
         '''
-        return await raw_canvas_ajax(request, remote_url, **kwargs)
+        return await raw_schoology_ajax(request, remote_url, **kwargs)
     setattr(caller, "__qualname__", name)
-
+    
     return caller
-
 
 def initialize_and_register_routes(app):
     '''
-    This is a big 'ol function which might be broken into smaller ones at some
-    point. We:
-
-    - Created debug routes to pass through AJAX requests to Google
-    - Created production APIs to have access to cleaned versions of said data
-    - Create local function calls to call from other pieces of code
-      within process
-
-    We probably don't need all of this in production, but a lot of this is
-    very important for debugging. Having APIs is more useful than it looks, since
-    making use of Google APIs requires a lot of infrastructure (registering
-    apps, auth/auth, etc.) which we already have in place on dev / debug servers.
-   '''
+    Initialize and register routes for the application.
+    '''
     app.add_routes([
-        aiohttp.web.get("/canvas", api_docs_handler)
+        aiohttp.web.get("/schoology", api_docs_handler)
     ])
 
     def make_ajax_raw_handler(remote_url):
         async def ajax_passthrough(request):
             runtime = learning_observer.runtime.Runtime(request)
-            response = await raw_canvas_ajax(runtime, remote_url, retry=True, **request.match_info)
+            response = await raw_schoology_ajax(runtime, remote_url, retry=True, **request.match_info)
             return aiohttp.web.json_response(response)
         return ajax_passthrough
 
@@ -209,8 +175,8 @@ def initialize_and_register_routes(app):
 
     def make_cleaner_function(raw_function, cleaner_function, name=None):
         async def cleaner_local(request, **kwargs):
-            canvas_response = await raw_function(request, **kwargs)
-            clean = cleaner_function(canvas_response)
+            schoology_response = await raw_function(request, **kwargs)
+            clean = cleaner_function(schoology_response)
             return clean
         if name is not None:
             setattr(cleaner_local, "__qualname__", name)
@@ -225,18 +191,10 @@ def initialize_and_register_routes(app):
             app.add_routes([
                 aiohttp.web.get(
                     cleaners[c]['local_url'],
-                    make_cleaner_handler(
-                        raw_function,
-                        cleaners[c]['function'],
-                        name=cleaners[c]['name']
-                    )
-               )
+                    make_cleaner_handler(raw_function, cleaners[c]['function'], name=cleaners[c]['name'])
+                )
             ])
-            globals()[cleaners[c]['name']] = make_cleaner_function(
-                raw_function,
-                cleaners[c]['function'],
-                name=cleaners[c]['name']
-            )
+            globals()[cleaners[c]['name']] = make_cleaner_function(raw_function, cleaners[c]['function'], name=cleaners[c]['name'])
         app.add_routes([
             aiohttp.web.get(e._local_url(), make_ajax_raw_handler(e.remote_url))
         ])
@@ -271,36 +229,22 @@ def register_cleaner(data_source, cleaner_name):
     return decorator
 
 @register_cleaner("course_roster", "roster")
-def clean_course_roster(canvas_json):
-    students = canvas_json
-    students_updated = []
-    #students.sort(key=lambda x: x.get('name', {}).get('fullName', 'ZZ'))
+def clean_course_roster(schoology_json):
+    students = schoology_json.get('enrollments', [])
+    students.sort(key=lambda x: x.get('name', 'ZZ'))
     for student_json in students:
-        canvas_id = student_json['id']
-        student = {
-            "course_id": "65166371789",
-            "user_id": canvas_id,
-            "profile": {
-                "id": canvas_id,
-                "name": {
-                    "given_name": student_json['name'],
-                    "family_name": student_json['name'],
-                    "full_name": student_json['name']
-                }
-            }
-        }
-        #local_id = learning_observer.auth.canvas_id_to_user_id(canvas_id)
-        #student_json['user_id'] = local_id
-        if 'external_ids' not in student:
-            student['external_ids'] = []
-        student['external_ids'].append({"source": "canvas", "id": canvas_id})
-        students_updated.append(student)
-    return students_updated
+        schoology_id = student_json['id']
+        local_id = learning_observer.auth.schoology_id_to_user_id(schoology_id)
+        student_json['user_id'] = local_id
+        if 'external_ids' not in student_json:
+            student_json['external_ids'] = []
+        student_json['external_ids'].append({"source": "schoology", "id": schoology_id})
+    return students
 
 @register_cleaner("course_list", "courses")
-def clean_course_list(canvas_json):
-    courses = canvas_json
-    courses.sort(key=lambda x: x.get('name', 'ZZ'))
+def clean_course_list(schoology_json):
+    courses = schoology_json.get('courses', [])
+    courses.sort(key=lambda x: x.get('title', 'ZZ'))
     return courses
         
 if __name__ == '__main__':

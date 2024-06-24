@@ -70,6 +70,8 @@ import pathvalidate
 
 import learning_observer.auth as auth
 import learning_observer.google
+import learning_observer.canvas
+import learning_observer.schoology
 import learning_observer.kvs
 import learning_observer.log_event as log_event
 from learning_observer.log_event import debug_log
@@ -346,6 +348,8 @@ def init():
         ajax = google_ajax
     elif settings.settings['roster_data']['source'] in ["all"]:
         ajax = all_ajax
+    elif settings.settings['roster_data']['source'] in ["canvas", "schoology"]:
+        ajax = google_ajax
     else:
         raise learning_observer.prestartup.StartupCheck(
             "Settings file `roster_data` element should have `source` field\n"
@@ -396,6 +400,12 @@ async def courselist(request):
     if settings.settings['roster_data']['source'] in ["google_api"]:
         runtime = learning_observer.runtime.Runtime(request)
         return await learning_observer.google.courses(runtime)
+    elif settings.settings['roster_data']['source'] in ["canvas"]:
+        runtime = learning_observer.runtime.Runtime(request)
+        return await learning_observer.canvas.courses(runtime)
+    elif settings.settings['roster_data']['source'] in ["schoology"]:
+        runtime = learning_observer.runtime.Runtime(request)
+        return await learning_observer.schoology.courses(runtime)
 
     # Legacy code
     course_list = await ajax(
@@ -423,6 +433,12 @@ async def courseroster(request, course_id):
     if settings.settings['roster_data']['source'] in ["google_api"]:
         runtime = learning_observer.runtime.Runtime(request)
         return await learning_observer.google.roster(runtime, courseId=course_id)
+    elif settings.settings['roster_data']['source'] in ["canvas"]:
+        runtime = learning_observer.runtime.Runtime(request)
+        return await learning_observer.canvas.roster(runtime, courseId=course_id)
+    elif settings.settings['roster_data']['source'] in ["schoology"]:
+        runtime = learning_observer.runtime.Runtime(request)
+        return await learning_observer.schoology.roster(runtime, courseId=course_id)
 
     roster = await ajax(
         request,
