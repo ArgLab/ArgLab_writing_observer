@@ -8,35 +8,15 @@ the library.
 '''
 
 import redis.asyncio
-import itertools
 
-from learning_observer.log_event import debug_log
+REDIS_CONNECTION = None
 
-
-# REDIS_CONNECTION = None
-
-REDIS_CONNECTIONS = []
-REDIS_CONNECTION_POOL = itertools.cycle([])
-CURRENT_CONNECTIONS = 0
-MAX_CONNECTIONS = 128
 
 async def connect():
-    '''
-    Connect to redis
-    '''
-    global REDIS_CONNECTIONS
-    global REDIS_CONNECTION_POOL
-    global MAX_CONNECTIONS
-    global CURRENT_CONNECTIONS
-    # if REDIS_CONNECTION is None:
-    #     REDIS_CONNECTION = redis.asyncio.Redis()
-    if CURRENT_CONNECTIONS < MAX_CONNECTIONS:
-        conn = redis.asyncio.Redis()
-        await conn.ping()
-        REDIS_CONNECTIONS.append(conn)
-        CURRENT_CONNECTIONS += 1
-        REDIS_CONNECTION_POOL = itertools.cycle(REDIS_CONNECTIONS)
-
+    global REDIS_CONNECTION
+    if REDIS_CONNECTION is None:
+        REDIS_CONNECTION = redis.asyncio.Redis()
+    await REDIS_CONNECTION.ping()
 
 
 async def connection():
@@ -47,7 +27,8 @@ async def connection():
     since it makes for a mess of awaits.
     '''
     await connect()
-    return REDIS_CONNECTION_POOL.__next__()
+    return await REDIS_CONNECTION
+
 
 
 async def keys():

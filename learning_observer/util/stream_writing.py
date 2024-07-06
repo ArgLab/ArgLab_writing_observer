@@ -65,17 +65,26 @@ def argument_list(argument, default):
     if isinstance(list_string, str):
         list_string = [list_string] * STREAMS
     if len(list_string) != STREAMS:
-        print(f"Failure: {list_string}\nfrom {argument} should make {STREAMS} items")
+        print(
+            f"Failure: {list_string}\nfrom {argument} should make {STREAMS} items")
         sys.exit(-1)
     return list_string
 
 
+source_files = argument_list(
+    '--source',
+    None
+)
+
 if ARGS["--gpt3"] is not None:
     import writing_observer.sample_essays
     TEXT = writing_observer.sample_essays.GPT3_TEXTS[ARGS["--gpt3"]]
-    STREAMS = len(TEXT)
+    text = TEXT[0]
+    TEXT = [text for _ in range(STREAMS)]
+    # STREAMS = len(TEXT)
 elif source_files is None:
-    TEXT = ["\n".join(loremipsum.get_paragraphs(int(ARGS.get("--text-length", 5)))) for i in range(STREAMS)]
+    TEXT = ["\n".join(loremipsum.get_paragraphs(
+        int(ARGS.get("--text-length", 5)))) for i in range(STREAMS)]
 else:
     TEXT = [open(filename).read() for filename in source_files]
 
@@ -87,11 +96,6 @@ ICI = argument_list(
 DOC_IDS = argument_list(
     "--gdids",
     lambda: [f"fake-google-doc-id-{i}" for i in range(STREAMS)]
-)
-
-source_files = argument_list(
-    '--source',
-    None
 )
 
 if ARGS['--users'] is not None:
@@ -152,10 +156,16 @@ async def stream_document(text, ici, user, doc_id):
         async with session.ws_connect(ARGS["--url"]) as web_socket:
             commands = identify(user)
             for command in commands:
-                await web_socket.send_str(json.dumps(command))
+                try:
+                    await web_socket.send_str(json.dumps(command))
+                except ConnectionResetError as e:
+                    print("CONNECTION RESET:", command, e)
             for char, index in zip(text, range(len(text))):
                 command = insert(index + 1, char, doc_id)
-                await web_socket.send_str(json.dumps(command))
+                try:
+                    await web_socket.send_str(json.dumps(command))
+                except ConnectionResetError as e:
+                    print("CONNECTION RESET:", command, e)
                 await asyncio.sleep(float(ici))
 
 
@@ -171,7 +181,6 @@ async def run():
     print(streamers)
     for streamer in streamers:
         await streamer
-    print(streamers)
 
 try:
     asyncio.run(run())

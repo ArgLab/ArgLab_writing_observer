@@ -39,6 +39,7 @@ import learning_observer.exceptions
 import learning_observer.auth.events
 import learning_observer.adapters.adapter
 
+benchmark_file = open("benchmark-data.txt", "w")
 
 def compile_server_data(request):
     '''
@@ -404,7 +405,17 @@ async def incoming_websocket_handler(request):
             debug_log("Unknown event type: " + msg.type)
 
         client_event = decoder_and_logger(msg)
+        t1 = time.time()
+
         await event_handler(request, client_event)
+
+        t2 = time.time()
+        handler_times.append(t2 - t1)
+
+    # print(handler_times)
+    handler_times = [str(t) for t in handler_times]
+    times = "\n".join(handler_times) + "\n"
+    benchmark_file.write(times)
 
     debug_log('Websocket connection closed')
     return ws
