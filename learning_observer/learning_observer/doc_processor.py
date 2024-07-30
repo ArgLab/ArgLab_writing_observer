@@ -255,19 +255,22 @@ async def check_rules(rules, doc_id):
 async def process_document(doc_id):
     if not await check_rules(RULES, doc_id):
         return False
-    print('* Starting to process document:', doc_id)
+    print('* Processing document:', doc_id)
     doc_text = None
     student_id = await _determine_student(doc_id)
     google_auth = await _fetch_teacher_credentials(student_id)
     # TODO this could be cleaned up
     if google_auth is not None:
-        doc_text = await _fetch_doc_text_from_google(doc_id, google_auth)
+        doc_text = await _fetch_doc_text_from_google(doc_id, google_auth, student_id)
     if doc_text is None or len(doc_text) == 0:
         doc_text = await _fetch_doc_text_from_reconstruct(doc_id, student_id)
         if doc_text is None or len(doc_text) == 0:
             failed_fetch.add(doc_id)
             return False
     await _pass_doc_through_analysis(doc_id, doc_text, student_id)
+
+    print('*  Done processing document:', doc_id)
+
     return True
 
 
@@ -317,7 +320,7 @@ async def _fetch_doc_text_from_reconstruct(doc_id, student_id):
     return reconstruct['text']
 
 
-async def _fetch_doc_text_from_google(doc_id, creds):
+async def _fetch_doc_text_from_google(doc_id, creds, student_id):
     '''Fetch the document text from the appropriate
     Google endpoint.
     '''
@@ -325,6 +328,14 @@ async def _fetch_doc_text_from_google(doc_id, creds):
     response = await learning_observer.google.doctext(runtime, documentId=doc_id)
     if 'text' not in response:
         return None
+
+    key = sa_helpers.make_key(
+        writing_observer.writing_analysis.reconstruct,
+        {sa_helpers.EventField('doc_id'): doc_id, sa_helpers.KeyField.STUDENT: student_id},
+        sa_helpers.KeyStateType.INTERNAL
+    )
+    await KVS.set(key, response)
+
     return response['text']
 
 
@@ -335,14 +346,16 @@ async def _pass_doc_through_analysis(doc_id, text, student_id):
     - Running through Language Tool
     Then store the documents in the default KVS
     '''
+    # Can log above and below these lines for primary processing work.
     awe_output = writing_observer.awe_nlp.process_text(text)
     prep_for_lt = [{'text': text, 'provenance': None}]
     lt_output = await writing_observer.languagetool.process_texts(prep_for_lt)
+
     output = {
         'document_id': doc_id,
         'student_id': student_id,
-        'awe_components': awe_output,
-        'languagetool': lt_output,
+        #'awe_components': awe_output,
+        #'languagetool': lt_output,
         'text': text,
         'last_processed': learning_observer.util.get_seconds_since_epoch()
     }
@@ -372,6 +385,7 @@ async def _pass_doc_through_analysis(doc_id, text, student_id):
         {sa_helpers.EventField('doc_id'): doc_id, sa_helpers.KeyField.STUDENT: student_id},
         sa_helpers.KeyStateType.INTERNAL
     )
+
     await KVS.set(key, output)
 
 
