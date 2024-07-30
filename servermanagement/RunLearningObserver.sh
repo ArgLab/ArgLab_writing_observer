@@ -18,18 +18,26 @@ VIRTUALENV_PATH="/usr/local/share/projects/WritingObserver/VirtualENVs/WOvenv"
 LEARNING_OBSERVER_LOC="/usr/local/share/projects/WritingObserver/Repositories/ArgLab_writing_observer/learning_observer"
 LOGFILE_DEST="/usr/local/share/projects/WritingObserver/Repositories/ArgLab_writing_observer/learning_observer/learning_observer/logs"
 
+
 # Make the logfile name
 # ---------------------------------------
 LOG_DATE=$(date "+%m-%d-%Y--%H-%M-%S")
 LOGFILE_NAME="$LOGFILE_DEST/learning_observer_service_$LOG_DATE.log"
 echo $LOG_NAME;
 
- 
+DOC_PROCESSOR_LOG="$LOGFILE_DEST/document_processor_service_$LOG_DATE.log"
+echo $DOC_PROCESSOR_LOG;
+
 # Now run the thing.
 # --------------------------------------
 echo "Running Learning Observer Service..."
 cd $LEARNING_OBSERVER_LOC
 source $VIRTUALENV_PATH/bin/activate
+
+nohup python learning_observer/doc_processor.py > 2&1 &
+DOC_PROCESS_ID=$!
+echo $DOC_PROCESS_ID > $LOGFILE_DEST/doc_run.pid
+
 nohup python learning_observer > $LOGFILE_NAME 2>&1 &
 PROCESS_ID=$!
 echo $PROCESS_ID > $LOGFILE_DEST/run.pid
