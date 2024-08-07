@@ -73,6 +73,7 @@ import learning_observer.auth as auth
 import learning_observer.cache
 import learning_observer.constants as constants
 import learning_observer.google
+import learning_observer.canvas
 import learning_observer.kvs
 import learning_observer.log_event as log_event
 from learning_observer.log_event import debug_log
@@ -86,7 +87,7 @@ import learning_observer.communication_protocol.integration
 COURSE_URL = 'https://classroom.googleapis.com/v1/courses'
 ROSTER_URL = 'https://classroom.googleapis.com/v1/courses/{courseid}/students'
 
-pmss.parser('roster_source', parent='string', choices=['google_api', 'all', 'test', 'filesystem'], transform=None)
+pmss.parser('roster_source', parent='string', choices=['google_api', 'all', 'test', 'canvas', 'filesystem'], transform=None)
 pmss.register_field(
     name='source',
     type='roster_source',
@@ -363,6 +364,8 @@ def init():
         ajax = google_ajax
     elif roster_source in ["all"]:
         ajax = all_ajax
+    elif roster_source in ["canvas"]:
+        ajax = google_ajax
     else:
         raise learning_observer.prestartup.StartupCheck(
             "Settings file `roster_data` element should have `source` field\n"
@@ -413,6 +416,9 @@ async def courselist(request):
     if settings.pmss_settings.source(types=['roster_data']) in ["google_api"]:
         runtime = learning_observer.runtime.Runtime(request)
         return await learning_observer.google.courses(runtime)
+    elif settings.pmss_settings.source(types=['roster_data']) in ["canvas"]:
+        runtime = learning_observer.runtime.Runtime(request)
+        return await learning_observer.canvas.courses(runtime)
 
     # Legacy code
     course_list = await ajax(
@@ -457,6 +463,9 @@ async def courseroster(request, course_id):
     if settings.pmss_settings.source(types=['roster_data']) in ["google_api"]:
         runtime = learning_observer.runtime.Runtime(request)
         return await learning_observer.google.roster(runtime, courseId=course_id)
+    elif settings.pmss_settings.source(types=['roster_data']) in ["canvas"]:
+        runtime = learning_observer.runtime.Runtime(request)
+        return await learning_observer.canvas.roster(runtime, courseId=course_id)
 
     roster = await ajax(
         request,
