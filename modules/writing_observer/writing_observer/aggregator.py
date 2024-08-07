@@ -285,6 +285,7 @@ async def update_reconstruct_reducer_with_google_api(runtime, doc_ids):
         if student is None or doc_id is None or len(doc_id) == 0:
             return None
         import learning_observer.google
+        from learning_observer.stream_analytics.fields import KeyField, KeyStateType, EventField
 
         kvs = learning_observer.kvs.KVS()
 
