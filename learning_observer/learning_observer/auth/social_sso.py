@@ -174,15 +174,21 @@ async def _store_teacher_info_for_background_process(id, request):
     current_keys = await kvs.keys()
 
     async def _fetch_and_store_document(student, doc_id):
-        doc = await learning_observer.google.doctext(runtime, documentId=doc_id)
-        if 'text' not in doc:
-            skipped_docs.add(doc_id)
-            return
+        # TODO: Move doc key up here.  Check if doc key in current keys.If it is return.
+        print('*** Fetching Document: {} {}'.format(student, doc_id))
         doc_key = sa_helpers.make_key(
             _fetch_and_store_document,
             {sa_helpers.KeyField.STUDENT: student, sa_helpers.EventField('doc_id'): doc_id},
             sa_helpers.KeyStateType.INTERNAL)
+        if doc_key in current_keys:
+            return
+        doc = await learning_observer.google.doctext(runtime, documentId=doc_id)
+        if 'text' not in doc:
+            skipped_docs.add(doc_id)
+            print('**** Text not found: {} {}'.format(student, doc_id))
+            return
         await kvs.set(doc_key, doc)
+        print('**** Text stored: {} {}'.format(student, doc_id))
 
     async def _process_student_documents(student):
         print('** Processing student', student)
@@ -190,6 +196,11 @@ async def _store_teacher_info_for_background_process(id, request):
         specifier = 'EventField.doc_id:'
         student_docs = (k[k.find(specifier) + len(specifier):k.find(',', k.find(specifier))] for k in student_docs)
         student_docs = set(student_docs)
+        doc_key = sa_helpers.make_key(
+            _process_student_documents,
+            {sa_helpers.KeyField.STUDENT: student},
+            sa_helpers.KeyStateType.INTERNAL)
+        await kvs.set(doc_key, {"student_docs": list(student_docs)})
         for doc_id in student_docs:
             await _fetch_and_store_document(student, doc_id)
 
