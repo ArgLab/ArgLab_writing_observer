@@ -10,6 +10,7 @@ This gives class roster information:
 We can either retrieve class rosters from:
 
 - Google Classroom                      (config setting: 'google')
+- Canvas                                (config setting: 'canvas')
 - Text files on the disk for testing.   (config setting: 'test')
   We have two files:
   - courses.json
@@ -27,14 +28,14 @@ In the future, we might want:
 As well as the option for several sources in the same system, perhaps.
 
 This file could be cleaned up a lot. Right now, we do a lot of this by
-mock calls to Google AJAX. It also contains a large number of hacks which
+mock calls to Google or Canvas AJAX. It also contains a large number of hacks which
 we use to manage the data and to address variations in the roster sources
-whether we are taking them from google or from our own backup data.
+whether we are taking them from google or canvas or from our own backup data.
 
 As of now this partially implements a separation between the internal ID
 which shows up in our rosters as id or `user_id` and the id used for the
 external sources of data.  We store external ids on student data under
-external_ids and keep space for ids from google etc.  However as of now
+external_ids and keep space for ids from google, canvas etc.  However as of now
 we do not make use of it.  Ultimately it would be ideal to move so that
 remote data retreival and raw document storage are done under an internal
 id with this translation taking place at event storage time *or* that the
@@ -44,7 +45,7 @@ be redoing the lookup and indexing each time we pull the raw data. This has
 the potential to create some extra, though probably manageable, queries.
 
 In either case we get around it now by also adding in a cheap hack that
-makes the internal ID for google-sourced users match the google ID. This
+makes the internal ID for google/canvas-sourced users match the google ID. This
 will need to change in a stable way for future use.
 
 Note that these APIs and file locations aren't finished. In the future,
@@ -95,14 +96,15 @@ pmss.register_field(
                 '`all`: aggregate all available students into a single class\n'\
                 '`test`: use sample course and student files\n'\
                 '`filesystem`: read rosters defined on filesystem\n'\
-                '`google_api`: fetch from Google API',
+                '`google_api`: fetch from Google API\n'\
+                '`canvas`: fetch from Canvas API',
     required=True
 )
 
 
-def clean_google_ajax_data(resp_json, key, sort_key, default=None, source=None):
+def clean_combined_ajax_data(resp_json, key, sort_key, default=None, source=None):
     '''
-    This cleans up / standardizes Google AJAX data. In particular:
+    This cleans up / standardizes Google/Canvas AJAX data. In particular:
 
     - We want to handle errors and empty lists better
     - We often don't want the whole response, but just one field (`key`)
@@ -257,7 +259,7 @@ async def synthetic_ajax(
         request, url,
         parameters=None, key=None, sort_key=None, default=None):
     '''
-    Stub similar to google_ajax, but grabbing data from local files.
+    Stub similar to combined_ajax, but grabbing data from local files.
 
     This is helpful for testing, but it's even more helpful since
     Google is an amazingly unreliable B2B company, and this lets us
@@ -302,11 +304,11 @@ async def synthetic_ajax(
     return data
 
 
-async def google_ajax(
+async def combined_ajax(
         request, url,
         parameters=None, key=None, sort_key=None, default=None):
     '''
-    Request information through Google's API
+    Request information through the specified API
 
     Most requests return a dictionary with one key. If we just want
     that element, set `key` to be the element of the dictionary we want
@@ -330,7 +332,7 @@ async def google_ajax(
         async with client.get(url.format(**parameters), headers=request[constants.AUTH_HEADERS]) as resp:
             resp_json = await resp.json()
             log_event.log_ajax(url, resp_json, request)
-            return clean_google_ajax_data(
+            return clean_combined_ajax_data(
                 resp_json, key, sort_key, default=default
             )
 
@@ -361,17 +363,18 @@ def init():
     elif roster_source in ['test', 'filesystem']:
         ajax = synthetic_ajax
     elif roster_source in ["google_api"]:
-        ajax = google_ajax
+        ajax = combined_ajax
     elif roster_source in ["all"]:
         ajax = all_ajax
     elif roster_source in ["canvas"]:
-        ajax = google_ajax
+        ajax = combined_ajax
     else:
         raise learning_observer.prestartup.StartupCheck(
             "Settings file `roster_data` element should have `source` field\n"
             "set to either:\n"
             "  test        (retrieve from files courses.json and students.json)\n"
             "  google_api  (retrieve roster data from Google)\n"
+            "  canvas  (retrieve roster data from Canvas)\n"
             "  filesystem  (retrieve roster data from file system hierarchy\n"
             "  all  (retrieve roster data as all students)"
         )
