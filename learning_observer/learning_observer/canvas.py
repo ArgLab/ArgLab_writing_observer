@@ -112,14 +112,6 @@ class Canvas:
             self.client_secret = self.config['CANVAS_CONFIG']['CLIENT_SECRET']
         except KeyError as e:
             raise KeyError(f"Missing required configuration key: {e}")
-        
-        """
-        self.defaultServer = settings.pmss_settings.default_server(types=['canvas'])
-        self.access_token = settings.pmss_settings.access_token(types=['canvas'])
-        self.refresh_token = settings.pmss_settings.refresh_token(types=['canvas'])
-        self.client_id = settings.pmss_settings.client_id(types=['canvas'])
-        self.client_secret = settings.pmss_settings.client_secret(types=['canvas'])
-        """
         self.default_version = 'v1'
         self.defaultPerPage = 10000
         self.base_url = f'https://{self.defaultServer}/api/{self.default_version}'
@@ -128,16 +120,6 @@ class Canvas:
         self.config['CANVAS_CONFIG']['ACCESS_TOKEN'] = access_token
         self.access_token = access_token
         script_dir = os.path.dirname(os.path.abspath(__file__))
-        """
-        config_path = os.path.join(script_dir, '../creds.yaml')
-        with open(config_path, 'r') as configfile:
-            config = yaml.safe_load(configfile)
-        
-        config['canvas']['access_token'] = access_token
-        
-        with open(config_path, 'w') as configfile:
-            yaml.safe_dump(config, configfile, sort_keys=False)
-        """
         config_path = os.path.join(script_dir, './config.ini')
         with open(config_path, 'w') as configfile:
             self.config.write(configfile)
@@ -194,7 +176,6 @@ async def raw_canvas_ajax(runtime, target_url, retry=False, **kwargs):
     params = {k: v for k, v in kwargs.items() if v is not None}
     try:
         response = await canvas.api_call('GET', target_url, params=params, **kwargs)
-        #response["kwargs"] = kwargs
     except aiohttp.ClientResponseError as e:
         if e.status == 401 and retry:
             new_tokens = await canvas.refresh_tokens()
@@ -327,11 +308,9 @@ def register_cleaner(data_source, cleaner_name):
 def clean_course_roster(canvas_json):
     students = canvas_json
     students_updated = []
-    #students.sort(key=lambda x: x.get('name', {}).get('fullName', 'ZZ'))
     for student_json in students:
         canvas_id = student_json['id']
         integration_id = student_json['integration_id']
-        #canvas_id = "118337587800688588675"
         local_id = learning_observer.auth.google_id_to_user_id(integration_id)
         student = {
             "course_id": "1",
@@ -345,8 +324,6 @@ def clean_course_roster(canvas_json):
                 }
             }
         }
-        #local_id = learning_observer.auth.canvas_id_to_user_id(canvas_id)
-        #student_json['user_id'] = local_id
         if 'external_ids' not in student_json:
             student_json['external_ids'] = []
         student_json['external_ids'].append({"source": "canvas", "id": integration_id})
