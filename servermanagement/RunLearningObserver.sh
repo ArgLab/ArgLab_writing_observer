@@ -13,10 +13,10 @@
 
 # System Variables
 # --------------------------------------
-VIRTUALENV_PATH="/usr/local/share/projects/WritingObserver/VirtualENVs/WOvenv"
+VIRTUALENV_PATH="/usr/local/share/projects/WritingObserver/VirtualENVs3/WOVenv"
 #VIRTUALENV_PYTHON="/usr/local/share/Projects/WritingObserver/VirtualENVs/learning_observer/bin/python3.9"
-LEARNING_OBSERVER_LOC="/usr/local/share/projects/WritingObserver/Repositories/ArgLab_writing_observer/learning_observer"
-LOGFILE_DEST="/usr/local/share/projects/WritingObserver/Repositories/ArgLab_writing_observer/learning_observer/learning_observer/logs"
+LEARNING_OBSERVER_LOC="/usr/local/share/projects/WritingObserver/Repositories3/ArgLab_writing_observer/learning_observer"
+LOGFILE_DEST="/usr/local/share/projects/WritingObserver/Repositories3/ArgLab_writing_observer/learning_observer/learning_observer/logs"
 
 
 # Make the logfile name
@@ -34,9 +34,9 @@ echo "Running Learning Observer Service..."
 cd $LEARNING_OBSERVER_LOC
 source $VIRTUALENV_PATH/bin/activate
 
-nohup python learning_observer/doc_processor.py > 2&1 &
-DOC_PROCESS_ID=$!
-echo $DOC_PROCESS_ID > $LOGFILE_DEST/doc_run.pid
+#nohup python learning_observer/doc_processor.py > 2&1 &
+#DOC_PROCESS_ID=$!
+#echo $DOC_PROCESS_ID > $LOGFILE_DEST/doc_run.pid
 
 nohup python learning_observer > $LOGFILE_NAME 2>&1 &
 PROCESS_ID=$!

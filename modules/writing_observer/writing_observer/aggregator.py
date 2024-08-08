@@ -282,6 +282,8 @@ async def update_reconstruct_reducer_with_google_api(runtime, doc_ids):
         This method performs the fetching of current document text and the
         updating of the KVS.
         """
+        from learning_observer.stream_analytics.fields import KeyField, KeyStateType, EventField
+
         if student is None or doc_id is None or len(doc_id) == 0:
             return None
         import learning_observer.google

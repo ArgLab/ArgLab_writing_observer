@@ -262,6 +262,8 @@ async def synthetic_ajax(
     Google is an amazingly unreliable B2B company, and this lets us
     develop without relying on them.
     '''
+    print("SYNTH AJAX: {} {}".format(request.keys(), url))
+    debug_log("SYNTH AJAX LOG: {} {}".format(request, url))
     roster_source = settings.pmss_settings.source(types=['roster_data'])
     if roster_source == 'test':
         synthetic_data = {
@@ -270,7 +272,19 @@ async def synthetic_ajax(
         }
     elif roster_source == 'filesystem':
         debug_log(request[constants.USER])
+        if (request is None):
+            debug_log("REQUEST NONE")
+        if (request[constants.USER] is None):
+            debug_log("REQUEST USER NONE")
+        # out of sync code.
+        #if (request[constants.USER] != None):
+        #    safe_userid = pathvalidate.sanitize_filename(request[constants.USER][constants.USER_ID])
+        #elif (request[constants.USER_ID] != None):
+        #    safe_userid = pathvalidate.sanitize_filename(request[constants.USER_ID])
+        #else:
+        #    safe_userid = pathvalidate.sanitize_filename("NONE")
         safe_userid = pathvalidate.sanitize_filename(request[constants.USER][constants.USER_ID])
+        #safe_userid = request['user_id']
         courselist_file = "courselist-" + safe_userid
         if parameters is not None and 'courseid' in parameters:
             safe_courseid = pathvalidate.sanitize_filename(str(parameters['courseid']))
@@ -414,6 +428,9 @@ async def courselist(request):
         runtime = learning_observer.runtime.Runtime(request)
         return await learning_observer.google.courses(runtime)
 
+    print("COURSELIST: {}".format(request))
+    debug_log("COURSELIST: {}".format(request))
+    
     # Legacy code
     course_list = await ajax(
         request,
@@ -458,6 +475,8 @@ async def courseroster(request, course_id):
         runtime = learning_observer.runtime.Runtime(request)
         return await learning_observer.google.roster(runtime, courseId=course_id)
 
+    print("COURSEROSTER: {} {}".format(request, course_id))
+    
     roster = await ajax(
         request,
         url=ROSTER_URL,

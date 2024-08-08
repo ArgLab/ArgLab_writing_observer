@@ -432,10 +432,35 @@ def extract_text_from_google_doc_json(
     length = j['body']['content'][-1]['endIndex']
     elements = [a.get('paragraph', {}).get('elements', []) for a in j['body']['content']]
     flat = sum(elements, [])
-    text_chunks = [f['textRun']['content'] for f in flat]
+    #print("FLAT {}".format(flat))
+    #for f in flat:
+    #    print("FF: {}".format(f))
+    #    print("FText: {}".format(f.get('textRun', "")))
+
+    # Sometimes we end up with empty text chunks which in turn triggers an
+    # error here.  So we need to have this wrapper.
+    # text_chunks = [f['textRun']['content'] for f in flat]
+    # text_chunks = [f['textRun']['content'] for f in flat]
+    # if align:
+    #     lengths = [f['endIndex'] - f['startIndex'] for f in flat]
+    #     text_chunks = [_force_text_length(chunk, length) for chunk, length in zip(text_chunks, lengths)]
+    text_chunks = []
     if align:
-        lengths = [f['endIndex'] - f['startIndex'] for f in flat]
-        text_chunks = [_force_text_length(chunk, length) for chunk, length in zip(text_chunks, lengths)]
+        for f in flat:
+            print("FF A: {}".format(f))
+            text = f.get('textRun', {}).get('content', None)
+            if text != None:
+                print("TXT: |{}|".format(text))
+                length = f['endIndex'] - f['startIndex']
+                text_chunks.append(_force_text_length(text, length))
+    else:
+        for f in flat:
+            print("FF: {}".format(f))
+            text = f.get('textRun', {}).get('content', None)
+            if text != None:
+                print("TXT: |{}|".format(text))
+                text_chunks.append(text)
+
     text = ''.join(text_chunks)
 
     if EXTRACT_DEBUG_CHECKS:
