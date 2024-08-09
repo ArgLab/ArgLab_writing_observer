@@ -1,5 +1,4 @@
 import os
-import json
 import configparser
 import aiohttp
 import aiohttp.web
@@ -9,11 +8,9 @@ import learning_observer.util
 import learning_observer.auth
 import learning_observer.runtime
 
-from learning_observer.lms_integration import Endpoint, register_cleaner, api_docs_handler, raw_access_partial, make_ajax_raw_handler, make_cleaner_handler, make_cleaner_function
+from learning_observer.lms_integration import BaseLMS, Endpoint, register_cleaner
 
-LMS = "canvas"
-
-ENDPOINTS = list(map(lambda x: Endpoint(*x, "", None, LMS), [
+CANVAS_ENDPOINTS = list(map(lambda x: Endpoint(*x, "", None, "canvas"), [
     ("course_list", "/courses"),
     ("course_roster", "/courses/{courseId}/students"),
     ("course_work", "/courses/{courseId}/assignments"),
@@ -27,10 +24,6 @@ class Canvas:
         
         self.config = configparser.ConfigParser()
         self.config.read(config_path)
-        
-        # Check if 'SCHOOLOGY_CONFIG' section is present
-        if 'CANVAS_CONFIG' not in self.config:
-            raise KeyError("The configuration file does not contain 'CANVAS_CONFIG' section")
         
         try:
             self.defaultServer = self.config['CANVAS_CONFIG']['DEFAULT_SERVER']
@@ -91,95 +84,65 @@ class Canvas:
         }
         return await self.api_call('POST', url, params=params, absolute_url=True)
 
-async def raw_canvas_ajax(runtime, target_url, retry=False, **kwargs):
-    '''
-    Make an AJAX call to Canvas, managing auth + auth.
+        
+class CanvasLMS(BaseLMS):
+    def __init__(self):
+        super().__init__(lms_name="canvas", endpoints=CANVAS_ENDPOINTS, raw_ajax_function=self.raw_canvas_ajax)
+        self.canvas = Canvas()
 
-    * runtime is a Runtime class containing request information.
-    * target_url is typically grabbed from ENDPOINTS
-    * ... and we pass the named parameters
-    '''
-    canvas = Canvas()
-    
-    params = {k: v for k, v in kwargs.items() if v is not None}
-    try:
-        response = await canvas.api_call('GET', target_url, params=params, **kwargs)
-    except aiohttp.ClientResponseError as e:
-        if e.status == 401 and retry:
-            new_tokens = await canvas.refresh_tokens()
-            if 'access_token' in new_tokens:
-                canvas.update_access_tokens(new_tokens['access_token'])
-                return await raw_canvas_ajax(runtime, target_url, retry=False, **kwargs)
-        raise
-    
-    print(kwargs)
-    return response
-    
-    
-def initialize_canvas_routes(app):
-    '''
-    - Created debug routes to pass through AJAX requests to Canvas
-    - Created production APIs to have access to cleaned versions of said data
-    - Create local function calls to call from other pieces of code within process
-    '''
-    # Provide documentation on what we're doing
-    app.add_routes([
-        aiohttp.web.get("/canvas", api_docs_handler)
-    ])
+    async def raw_canvas_ajax(self, runtime, target_url, retry=False, **kwargs):
+        '''
+        Make an AJAX call to Canvas, managing auth + auth.
 
-    for e in ENDPOINTS:
-        function_name = f"raw_{e.name}"
-        raw_function = raw_access_partial(raw_canvas_ajax, remote_url=e.remote_url, name=e.name)
-        globals()[function_name] = raw_function
-        cleaners = e._cleaners()
-        for c in cleaners:
-            app.add_routes([
-                aiohttp.web.get(
-                    cleaners[c]['local_url'],
-                    make_cleaner_handler(raw_function, cleaners[c]['function'], name=cleaners[c]['name'])
-               )
-            ])
-            globals()[cleaners[c]['name']] = make_cleaner_function(
-                raw_function,
-                cleaners[c]['function'],
-                name=cleaners[c]['name']
-            )
-        app.add_routes([
-            aiohttp.web.get(e._local_url(), make_ajax_raw_handler(raw_canvas_ajax, e.remote_url))
-        ])
+        * runtime is a Runtime class containing request information.
+        * target_url is typically grabbed from ENDPOINTS
+        * ... and we pass the named parameters
+        '''
+        params = {k: v for k, v in kwargs.items() if v is not None}
+        try:
+            response = await self.canvas.api_call('GET', target_url, params=params, **kwargs)
+        except aiohttp.ClientResponseError as e:
+            if e.status == 401 and retry:
+                new_tokens = await self.canvas.refresh_tokens()
+                if 'access_token' in new_tokens:
+                    self.canvas.update_access_tokens(new_tokens['access_token'])
+                    return await self.raw_canvas_ajax(runtime, target_url, retry=False, **kwargs)
+            raise
+        return response
     
-@register_cleaner("course_roster", "roster", ENDPOINTS)
-def clean_course_roster(canvas_json):
-    students = canvas_json
-    students_updated = []
-    for student_json in students:
-        canvas_id = student_json['id']
-        integration_id = student_json['integration_id']
-        local_id = learning_observer.auth.google_id_to_user_id(integration_id)
-        student = {
-            "course_id": "1",
-            "user_id": local_id,
-            "profile": {
-                "id": canvas_id,
-                "name": {
-                    "given_name": student_json['name'],
-                    "family_name": student_json['name'],
-                    "full_name": student_json['name']
+    @register_cleaner("course_roster", "roster", CANVAS_ENDPOINTS)
+    def clean_course_roster(canvas_json):
+        students = canvas_json
+        students_updated = []
+        for student_json in students:
+            canvas_id = student_json['id']
+            integration_id = student_json['integration_id']
+            local_id = learning_observer.auth.google_id_to_user_id(integration_id)
+            student = {
+                "course_id": "1",
+                "user_id": local_id,
+                "profile": {
+                    "id": canvas_id,
+                    "name": {
+                        "given_name": student_json['name'],
+                        "family_name": student_json['name'],
+                        "full_name": student_json['name']
+                    }
                 }
             }
-        }
-        if 'external_ids' not in student_json:
-            student_json['external_ids'] = []
-        student_json['external_ids'].append({"source": "canvas", "id": integration_id})
-        students_updated.append(student)
-    return students_updated
+            if 'external_ids' not in student_json:
+                student_json['external_ids'] = []
+            student_json['external_ids'].append({"source": "canvas", "id": integration_id})
+            students_updated.append(student)
+        return students_updated
 
-@register_cleaner("course_list", "courses", ENDPOINTS)
-def clean_course_list(canvas_json):
-    courses = canvas_json
-    courses.sort(key=lambda x: x.get('name', 'ZZ'))
-    return courses
-        
-if __name__ == '__main__':
-    output = clean_course_roster({})
-    print(json.dumps(output, indent=2))
+    @register_cleaner("course_list", "courses", CANVAS_ENDPOINTS)
+    def clean_course_list(canvas_json):
+        courses = canvas_json
+        courses.sort(key=lambda x: x.get('name', 'ZZ'))
+        return courses
+    
+canvas_lms = CanvasLMS()
+
+def initialize_canvas_routes(app):
+    canvas_lms.initialize_routes(app)

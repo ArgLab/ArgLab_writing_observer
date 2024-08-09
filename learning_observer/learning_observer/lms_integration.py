@@ -2,6 +2,7 @@ import recordclass
 import string
 import aiohttp
 import aiohttp.web
+import learning_observer
 import learning_observer.runtime
 
 
@@ -154,11 +155,14 @@ class BaseLMS:
                         make_cleaner_handler(raw_function, cleaners[c]['function'], name=cleaners[c]['name'])
                     )
                 ])
-                globals()[cleaners[c]['name']] = make_cleaner_function(
+                lms_module = getattr(learning_observer, self.lms_name)
+                
+                cleaner_function = make_cleaner_function(
                     raw_function,
                     cleaners[c]['function'],
                     name=cleaners[c]['name']
                 )
+                setattr(lms_module, cleaners[c]['name'], cleaner_function)
             app.add_routes([
                 aiohttp.web.get(e._local_url(), make_ajax_raw_handler(self.raw_ajax_function, e.remote_url))
             ])
