@@ -67,8 +67,7 @@ def add_routes(app):
     register_static_routes(app)
     register_incoming_event_views(app)
     register_debug_routes(app)
-    learning_observer.google.initialize_and_register_routes(app)
-    learning_observer.canvas.initialize_and_register_routes(app)
+    register_lms_routes(app)
 
     app.add_routes([
         aiohttp.web.get(
@@ -165,6 +164,14 @@ def add_routes(app):
     # want to provide that option in the future, but as we're prototyping
     # and figuring stuff out, this feels safest to put last.
     register_wsgi_routes(app)
+
+
+def register_lms_routes(app):
+    '''
+    Register routes for the various lms
+    '''    
+    learning_observer.google.initialize_google_routes(app)
+    learning_observer.canvas.initialize_canvas_routes(app)
 
 
 def register_debug_routes(app):
