@@ -31,6 +31,8 @@ import writing_observer.awe_nlp
 import writing_observer.languagetool
 import writing_observer.writing_analysis
 
+from learning_observer.log_event import debug_log
+
 pmss.register_field(
     name='document_processing_delay_seconds',
     type=pmss.pmsstypes.TYPES.integer,
@@ -255,7 +257,7 @@ async def check_rules(rules, doc_id):
 async def process_document(doc_id):
     if not await check_rules(RULES, doc_id):
         return False
-    print('* Processing document:', doc_id)
+    debug_log('* Processing document:', doc_id)
     doc_text = None
     student_id = await _determine_student(doc_id)
     google_auth = await _fetch_teacher_credentials(student_id)
@@ -269,7 +271,7 @@ async def process_document(doc_id):
             return False
     await _pass_doc_through_analysis(doc_id, doc_text, student_id)
 
-    print('*  Done processing document:', doc_id)
+    debug_log('**  Done processing document:', doc_id)
 
     return True
 
@@ -354,8 +356,8 @@ async def _pass_doc_through_analysis(doc_id, text, student_id):
     output = {
         'document_id': doc_id,
         'student_id': student_id,
-        #'awe_components': awe_output,
-        #'languagetool': lt_output,
+        'awe_components': awe_output,
+        'languagetool': lt_output,
         'text': text,
         'last_processed': learning_observer.util.get_seconds_since_epoch()
     }
