@@ -24,9 +24,7 @@ analysis.
 import itertools
 import json
 import re
-
-import aiohttp
-import aiohttp.web
+import functools
 
 import learning_observer.constants as constants
 import learning_observer.settings as settings
@@ -35,12 +33,11 @@ import learning_observer.util
 import learning_observer.auth
 import learning_observer.runtime
 import learning_observer.prestartup
-
-from learning_observer.lms_integration import BaseLMS, Endpoint, register_cleaner
+import learning_observer.lms_integration
 
 
 cache = None
-LMS = "google"
+LMS_NAME = "google"
 
 
 GOOGLE_FIELDS = [
@@ -58,7 +55,7 @@ camel_to_snake = re.compile(r'(?<!^)(?=[A-Z])')
 GOOGLE_TO_SNAKE = {field: camel_to_snake.sub('_', field).lower() for field in GOOGLE_FIELDS}
 
 
-GOOGLE_ENDPOINTS = list(map(lambda x: Endpoint(*x, "", None, LMS), [
+GOOGLE_ENDPOINTS = list(map(lambda x: learning_observer.lms_integration.Endpoint(*x, "", None, LMS_NAME), [
     ("document", "https://docs.googleapis.com/v1/documents/{documentId}"),
     ("course_list", "https://classroom.googleapis.com/v1/courses"),
     ("course_roster", "https://classroom.googleapis.com/v1/courses/{courseId}/students"),
@@ -71,6 +68,8 @@ GOOGLE_ENDPOINTS = list(map(lambda x: Endpoint(*x, "", None, LMS), [
     ("drive_comments", "https://www.googleapis.com/drive/v3/files/{documentId}/comments?fields=%2A&includeDeleted=true"),
     ("drive_revisions", "https://www.googleapis.com/drive/v3/files/{documentId}/revisions")
 ]))
+
+register_cleaner_with_endpoints = functools.partial(learning_observer.lms_integration.register_cleaner, endpoints=GOOGLE_ENDPOINTS)
 
 # Google Docs
 def _force_text_length(text, length):
@@ -94,45 +93,12 @@ def get_error_details(error):
     message = messages.get(code, 'Unknown error.')
     return {'error': {'code': code, 'message': message}}
 
-class GoogleLMS(BaseLMS):
+class GoogleLMS(learning_observer.lms_integration.LMS):
     def __init__(self):
-        super().__init__(lms_name="google", endpoints=GOOGLE_ENDPOINTS, raw_ajax_function=self.raw_google_ajax)
-
-    async def raw_google_ajax(self, runtime, target_url, **kwargs):
-        '''
-        Make an AJAX call to Google, managing auth + auth.
-        
-        * runtime is a Runtime class containing request information.
-        * default_url is typically grabbed from ENDPOINTS
-        * ... and we pass the named parameters
-        '''
-        request = runtime.get_request()
-        url = target_url.format(**kwargs)
-        user = await learning_observer.auth.get_active_user(request)
-        if constants.AUTH_HEADERS not in request:
-            raise aiohttp.web.HTTPUnauthorized(text="Please log in") # TODO: Consistent way to flag this
-
-        cache_key = "raw_google/" + learning_observer.auth.encode_id('session', user[constants.USER_ID]) + '/' + learning_observer.util.url_pathname(url)
-        if settings.feature_flag('use_google_ajax') is not None:
-            value = await cache[cache_key]
-            if value is not None:
-                return learning_observer.util.translate_json_keys(
-                    json.loads(value),
-                    GOOGLE_TO_SNAKE
-                )
-        async with aiohttp.ClientSession(loop=request.app.loop) as client:
-            async with client.get(url, headers=request[constants.AUTH_HEADERS]) as resp:
-                response = await resp.json()
-                learning_observer.log_event.log_ajax(target_url, response, request)
-                if settings.feature_flag('use_google_ajax') is not None:
-                    await cache.set(cache_key, json.dumps(response, indent=2))
-                return learning_observer.util.translate_json_keys(
-                    response,
-                    GOOGLE_TO_SNAKE
-                )
+        super().__init__(lms_name=LMS_NAME, endpoints=GOOGLE_ENDPOINTS)
 
     # Rosters
-    @register_cleaner("course_roster", "roster", GOOGLE_ENDPOINTS)
+    @register_cleaner_with_endpoints("course_roster", "roster")
     def clean_course_roster(google_json):
         '''
         Retrieve the roster for a course, alphabetically
@@ -154,7 +120,7 @@ class GoogleLMS(BaseLMS):
             student_json['profile']['external_ids'].append({"source": "google", "id": google_id})
         return students
 
-    @register_cleaner("course_list", "courses", GOOGLE_ENDPOINTS)
+    @register_cleaner_with_endpoints("course_list", "courses")
     def clean_course_list(google_json):
         '''
         Google's course list is one object deeper than we'd like, and alphabetic
@@ -166,7 +132,7 @@ class GoogleLMS(BaseLMS):
         )
         return courses
 
-    @register_cleaner("document", "doctext", GOOGLE_ENDPOINTS)
+    @register_cleaner_with_endpoints("document", "doctext")
     def extract_text_from_google_doc_json(
             j, align=True,
             EXTRACT_DEBUG_CHECKS=False):
@@ -210,7 +176,7 @@ class GoogleLMS(BaseLMS):
 
         return {'text': text}
 
-    @register_cleaner("coursework_submissions", "assigned_docs", GOOGLE_ENDPOINTS)
+    @register_cleaner_with_endpoints("coursework_submissions", "assigned_docs")
     def clean_assignment_docs(google_json):
         '''
         Retrieve set of documents per student associated with an assignment
