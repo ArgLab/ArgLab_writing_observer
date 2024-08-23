@@ -65,7 +65,7 @@ def raw_access_partial(raw_ajax_function, target_url, name=None):
     '''
     async def caller(request, **kwargs):
         '''
-        Make an AJAX request to Google
+        Make an AJAX request to LMS
         '''
         return await raw_ajax_function(request, target_url, **kwargs)
     setattr(caller, "__qualname__", name)
@@ -135,8 +135,8 @@ def make_cleaner_handler(raw_function, cleaner_function, name=None):
 
 def make_cleaner_function(raw_function, cleaner_function, name=None):
     async def cleaner_local(request, **kwargs):
-        canvas_response = await raw_function(request, **kwargs)
-        clean = cleaner_function(canvas_response)
+        lms_response = await raw_function(request, **kwargs)
+        clean = cleaner_function(lms_response)
         return clean
     if name is not None:
         setattr(cleaner_local, "__qualname__", name)
@@ -167,8 +167,8 @@ async def raw_ajax(runtime, target_url, lms_name, base_url=None, **kwargs):
     request = runtime.get_request()
     user = await learning_observer.auth.get_active_user(request)
     
-    # Extract 'retry' flag from kwargs (defaults to True)
-    retry = kwargs.pop('retry', True)
+    # Extract 'retry' flag from kwargs (defaults to False)
+    retry = kwargs.pop('retry', False)
     
     # Retrieve session and determine the appropriate headers based on the service
     session = await aiohttp_session.get_session(request)
@@ -182,8 +182,6 @@ async def raw_ajax(runtime, target_url, lms_name, base_url=None, **kwargs):
         raise aiohttp.web.HTTPUnauthorized(text="Please log in")
     
     # Construct the full URL using the base URL if provided, otherwise use the target URL directly
-    url = f"{base_url}{target_url.format(**kwargs)}" if base_url else target_url.format(**kwargs)
-
     if base_url:
         url = base_url + target_url.format(**kwargs)
     else:
@@ -202,13 +200,15 @@ async def raw_ajax(runtime, target_url, lms_name, base_url=None, **kwargs):
                     json.loads(value),
                     learning_observer.google.GOOGLE_TO_SNAKE
                 )
-            else: json.loads(value)
+            else: 
+                return json.loads(value)
 
     # Make the actual AJAX call to the service
     async with aiohttp.ClientSession(loop=request.app.loop) as client:
         try:
             async with client.get(url, headers=headers[lms_name]) as resp:
                 response = await resp.json()
+
                 # Log the AJAX request and response
                 learning_observer.log_event.log_ajax(target_url, response, request)
                 # Cache the response if the feature flag is enabled
@@ -216,15 +216,17 @@ async def raw_ajax(runtime, target_url, lms_name, base_url=None, **kwargs):
                     await cache.set(cache_key, json.dumps(response, indent=2))
                 # Translate keys if the service is Google, otherwise return raw JSON
                 if lms_name == 'google':
-                    learning_observer.util.translate_json_keys(
+                    return learning_observer.util.translate_json_keys(
                         response,
                         learning_observer.google.GOOGLE_TO_SNAKE
                     )
-                else: return response
+                else:
+                    resp.raise_for_status()
+                    return response
         # Handle 401 errors for Canvas with an optional retry
         except aiohttp.ClientResponseError as e:
             if lms_name == 'canvas' and e.status == 401 and retry:
-                new_tokens = learning_observer.auth.social_sso._canvas()
+                new_tokens = await learning_observer.auth.social_sso._canvas(request)
                 if 'access_token' in new_tokens:
                     return await raw_ajax(runtime, target_url, lms_name, base_url, **kwargs)
             raise
@@ -235,6 +237,7 @@ async def raw_google_ajax(runtime, target_url, **kwargs):
 async def raw_canvas_ajax(runtime, target_url, **kwargs):
     default_server = settings.pmss_settings.default_server(types=['lms', 'canvas_oauth'])
     base_url = f'https://{default_server}/api/v1/'
+    kwargs.setdefault('retry', True)
     return await raw_ajax(runtime, target_url, 'canvas', base_url, **kwargs)
 
 

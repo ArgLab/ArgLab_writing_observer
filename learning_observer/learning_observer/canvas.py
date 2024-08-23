@@ -1,10 +1,8 @@
 import functools
 
-import learning_observer.auth.social_sso
 import learning_observer.log_event
 import learning_observer.util
 import learning_observer.auth
-import learning_observer.runtime
 import learning_observer.lms_integration
 import pmss
 

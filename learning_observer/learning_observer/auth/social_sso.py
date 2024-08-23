@@ -96,6 +96,18 @@ pmss.register_field(
     required=True
 )
 
+pmss.register_field(
+    name='source',
+    type='roster_source',
+    description='Source to use for student class rosters. This can be\n'\
+                '`all`: aggregate all available students into a single class\n'\
+                '`test`: use sample course and student files\n'\
+                '`filesystem`: read rosters defined on filesystem\n'\
+                '`google_api`: fetch from Google API\n'\
+                '`canvas`: fetch from Canvas API',
+    required=True
+)
+
 
 DEFAULT_GOOGLE_SCOPES = [
     'https://www.googleapis.com/auth/userinfo.profile',
@@ -141,7 +153,10 @@ async def social_handler(request):
         )
 
     user = await _google(request)
-    if "canvas is activated":
+
+    # Check roster data source to obtain relevant authorization
+    roster_source = settings.pmss_settings.source(types=['roster_data'])
+    if roster_source == 'canvas':
         await _canvas(request)
 
     if constants.USER_ID in user:
@@ -251,7 +266,6 @@ async def _canvas(request):
         session = await aiohttp_session.get_session(request)
         session[constants.CANVAS_AUTH_HEADERS] = canvas_headers
         request[constants.CANVAS_AUTH_HEADERS] = canvas_headers
-        session.save()
         
     return data
 
