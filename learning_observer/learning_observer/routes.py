@@ -33,6 +33,20 @@ import learning_observer.settings as settings
 from learning_observer.log_event import debug_log, startup_state
 
 from learning_observer.utility_handlers import *
+import pmss
+
+
+pmss.register_field(
+    name='source',
+    type='roster_source',
+    description='Source to use for student class rosters. This can be\n'\
+                '`all`: aggregate all available students into a single class\n'\
+                '`test`: use sample course and student files\n'\
+                '`filesystem`: read rosters defined on filesystem\n'\
+                '`google_api`: fetch from Google API\n'\
+                '`canvas`: fetch from Canvas API',
+    required=True
+)
 
 
 def add_routes(app):
@@ -165,13 +179,32 @@ def add_routes(app):
     # and figuring stuff out, this feels safest to put last.
     register_wsgi_routes(app)
 
-
+   
 def register_lms_routes(app):
-    '''
-    Register routes for the various lms
-    '''    
+    """
+    Register routes for the various Learning Management Systems (LMS).
+
+    This function maps each LMS to its corresponding route initialization function 
+    and registers the routes based on the active roster data source.
+    
+    Parameters:
+    - app: An instance of aiohttp.web.Application where the routes will be registered.
+    """
+    
+    # Define a mapping of LMS names to their respective route initialization functions
+    LMS_ROUTES_MAP = {
+        'google': learning_observer.google.initialize_google_routes,
+        'canvas': learning_observer.canvas.initialize_canvas_routes
+    }
+    
+    # Retrieve the active roster data source from the settings (e.g., 'google', 'canvas').
+    roster_source = settings.pmss_settings.source(types=['roster_data'])
+    
+    # Call the corresponding route initialization function for the active LMS.
+    if roster_source in LMS_ROUTES_MAP:
+        LMS_ROUTES_MAP[roster_source](app)
+    
     learning_observer.google.initialize_google_routes(app)
-    learning_observer.canvas.initialize_canvas_routes(app)
 
 
 def register_debug_routes(app):
