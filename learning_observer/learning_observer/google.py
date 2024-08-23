@@ -161,8 +161,16 @@ class GoogleLMS(learning_observer.lms_integration.LMS):
         flat = sum(elements, [])
         text_chunks = [f.get('textRun', {}).get('content', '') for f in flat]
         if align:
-            lengths = [f['endIndex'] - f['startIndex'] for f in flat]
-            text_chunks = [_force_text_length(chunk, length) for chunk, length in zip(text_chunks, lengths)]
+            for f in flat:
+                text = f.get('textRun', {}).get('content', None)
+                if text != None:
+                    length = f['endIndex'] - f['startIndex']
+                    text_chunks.append(_force_text_length(text, length))
+        else:
+            for f in flat:
+                text = f.get('textRun', {}).get('content', None)
+                if text != None:
+                    text_chunks.append(text)
         text = ''.join(text_chunks)
 
         if EXTRACT_DEBUG_CHECKS:
