@@ -339,6 +339,8 @@ async def update_reconstruct_data_with_google_api(runtime, student_data):
         :return: The text of the latest document
         """
         import learning_observer.google
+        from learning_observer.stream_analytics.fields import KeyField, KeyStateType, EventField
+        
 
         kvs = learning_observer.kvs.KVS()
 
