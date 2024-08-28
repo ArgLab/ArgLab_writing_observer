@@ -33,20 +33,6 @@ import learning_observer.settings as settings
 from learning_observer.log_event import debug_log, startup_state
 
 from learning_observer.utility_handlers import *
-import pmss
-
-
-pmss.register_field(
-    name='source',
-    type='roster_source',
-    description='Source to use for student class rosters. This can be\n'\
-                '`all`: aggregate all available students into a single class\n'\
-                '`test`: use sample course and student files\n'\
-                '`filesystem`: read rosters defined on filesystem\n'\
-                '`google_api`: fetch from Google API\n'\
-                '`canvas`: fetch from Canvas API',
-    required=True
-)
 
 
 def add_routes(app):

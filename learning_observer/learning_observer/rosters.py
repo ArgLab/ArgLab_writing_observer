@@ -362,12 +362,10 @@ def init():
         )
     elif roster_source in ['test', 'filesystem']:
         ajax = synthetic_ajax
-    elif roster_source in ["google_api"]:
+    elif roster_source in ["google_api", "canvas"]:
         ajax = combined_ajax
     elif roster_source in ["all"]:
         ajax = all_ajax
-    elif roster_source in ["canvas"]:
-        ajax = combined_ajax
     else:
         raise learning_observer.prestartup.StartupCheck(
             "Settings file `roster_data` element should have `source` field\n"
@@ -415,13 +413,18 @@ async def courselist(request):
     '''
     List all of the courses a teacher manages: Helper
     '''
-    # New code
-    if settings.pmss_settings.source(types=['roster_data']) in ["google_api"]:
-        runtime = learning_observer.runtime.Runtime(request)
-        return await learning_observer.google.courses(runtime)
-    elif settings.pmss_settings.source(types=['roster_data']) in ["canvas"]:
-        runtime = learning_observer.runtime.Runtime(request)
-        return await learning_observer.canvas.courses(runtime)
+    
+    # A map of LMSes to their respective handler functions
+    lms_map = {
+        "google_api": learning_observer.google.courses,
+        "canvas": learning_observer.canvas.courses
+    }
+    
+    runtime = learning_observer.runtime.Runtime(request)
+    
+    roster_source = settings.pmss_settings.source(types=['roster_data'])
+    if roster_source in lms_map:
+        return await lms_map[roster_source](runtime)
 
     # Legacy code
     course_list = await ajax(
@@ -463,12 +466,18 @@ async def courseroster(request, course_id):
     '''
     List all of the students in a course: Helper
     '''
-    if settings.pmss_settings.source(types=['roster_data']) in ["google_api"]:
-        runtime = learning_observer.runtime.Runtime(request)
-        return await learning_observer.google.roster(runtime, courseId=course_id)
-    elif settings.pmss_settings.source(types=['roster_data']) in ["canvas"]:
-        runtime = learning_observer.runtime.Runtime(request)
-        return await learning_observer.canvas.roster(runtime, courseId=course_id)
+    
+    # A map of LMSes to their respective handler functions
+    lms_map = {
+        "google_api": learning_observer.google.roster,
+        "canvas": learning_observer.canvas.roster
+    }
+    
+    runtime = learning_observer.runtime.Runtime(request)
+    
+    roster_source = settings.pmss_settings.source(types=['roster_data'])
+    if roster_source in lms_map:
+        return await lms_map[roster_source](runtime, courseId=course_id)
 
     roster = await ajax(
         request,

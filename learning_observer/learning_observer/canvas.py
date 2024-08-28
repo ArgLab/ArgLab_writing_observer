@@ -4,14 +4,7 @@ import learning_observer.log_event
 import learning_observer.util
 import learning_observer.auth
 import learning_observer.lms_integration
-import pmss
 
-pmss.register_field(
-    name="default_server",
-    type=pmss.pmsstypes.TYPES.string,
-    description="The Canvas OAuth default server",
-    required=True
-)
 
 LMS_NAME = "canvas"
 

@@ -84,9 +84,9 @@ pmss.register_field(
     default=False
 )
 pmss.register_field(
-    name="default_server",
+    name="token_uri",
     type=pmss.pmsstypes.TYPES.string,
-    description="The Canvas OAuth default server",
+    description="The Canvas OAuth token uri",
     required=True
 )
 pmss.register_field(
@@ -154,10 +154,7 @@ async def social_handler(request):
 
     user = await _google(request)
 
-    # Check roster data source to obtain relevant authorization
-    roster_source = settings.pmss_settings.source(types=['roster_data'])
-    if roster_source == 'canvas':
-        await _canvas(request)
+    await handle_lms_request_authorization(request)
 
     if constants.USER_ID in user:
         await learning_observer.auth.utils.update_session_user_info(request, user)
@@ -170,6 +167,20 @@ async def social_handler(request):
         url = "/"
 
     return aiohttp.web.HTTPFound(url)
+
+
+async def handle_lms_request_authorization(request):
+    """
+    Handles the authorization of the specified Learning Management System (LMS)
+    by checking the roster data source and delegating the request to the appropriate handler 
+    based on the data source type.
+    """
+    # Retrieve the data source type for roster data from the PMSS settings
+    roster_source = settings.pmss_settings.source(types=['roster_data'])
+    
+    # Handle the request depending on the roster source
+    if roster_source == 'canvas':
+        await _canvas(request)
 
 
 async def _store_teacher_info_for_background_process(id, request):
@@ -246,16 +257,15 @@ async def _canvas(request):
     if 'error' in request.query:
         return {}
     
-    default_server = settings.pmss_settings.default_server(types=['lms', 'canvas_oauth'])
+    token_uri = settings.pmss_settings.token_uri(types=['lms', 'canvas_oauth'])
+    url = token_uri
     
-    url = f'https://{default_server}/login/oauth2/token'
-    common_params = {
+    params = {
         "grant_type": "refresh_token",
         'client_id': settings.pmss_settings.client_id(types=['lms', 'canvas_oauth']),
         'client_secret': settings.pmss_settings.client_secret(types=['lms', 'canvas_oauth']),
         "refresh_token": settings.pmss_settings.refresh_token(types=['lms', 'canvas_oauth'])
     }
-    params = common_params.copy()
     async with aiohttp.ClientSession(loop=request.app.loop) as client:
         async with client.post(url, data=params) as resp:
             data = await resp.json()

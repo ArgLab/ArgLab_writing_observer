@@ -13,9 +13,9 @@ import learning_observer.settings as settings
 import pmss
 
 pmss.register_field(
-    name="default_server",
+    name="lms_api",
     type=pmss.pmsstypes.TYPES.string,
-    description="The Canvas OAuth default server",
+    description="The Canvas Base API URL",
     required=True
 )
 
@@ -190,8 +190,9 @@ async def raw_ajax(runtime, target_url, lms_name, base_url=None, **kwargs):
     # Generate a unique cache key based on the service, user, and request URL
     cache_key = f"raw_{lms_name}/" + learning_observer.auth.encode_id('session', user[constants.USER_ID]) + '/' + learning_observer.util.url_pathname(url)
     
+    cache_flag = f"use_{lms_name}_ajax"
     # Check cache and return cached response if available
-    if settings.feature_flag(f"use_{lms_name}_ajax") is not None:
+    if settings.feature_flag(cache_flag) is not None:
         value = await cache[cache_key]
         if value is not None:
             # Translate keys if the service is Google, otherwise return raw JSON
@@ -212,7 +213,7 @@ async def raw_ajax(runtime, target_url, lms_name, base_url=None, **kwargs):
                 # Log the AJAX request and response
                 learning_observer.log_event.log_ajax(target_url, response, request)
                 # Cache the response if the feature flag is enabled
-                if settings.feature_flag(f"use_{lms_name}_ajax") is not None:
+                if settings.feature_flag(cache_flag) is not None:
                     await cache.set(cache_key, json.dumps(response, indent=2))
                 # Translate keys if the service is Google, otherwise return raw JSON
                 if lms_name == 'google':
@@ -235,8 +236,7 @@ async def raw_google_ajax(runtime, target_url, **kwargs):
     return await raw_ajax(runtime, target_url, 'google', **kwargs)
 
 async def raw_canvas_ajax(runtime, target_url, **kwargs):
-    default_server = settings.pmss_settings.default_server(types=['lms', 'canvas_oauth'])
-    base_url = f'https://{default_server}/api/v1/'
+    base_url = settings.pmss_settings.lms_api(types=['lms', 'canvas_oauth'])
     kwargs.setdefault('retry', True)
     return await raw_ajax(runtime, target_url, 'canvas', base_url, **kwargs)
 
