@@ -29,6 +29,7 @@ import learning_observer.module_loader
 
 import learning_observer.paths as paths
 import learning_observer.settings as settings
+import learning_observer.constants as constants
 
 from learning_observer.log_event import debug_log, startup_state
 
@@ -179,8 +180,8 @@ def register_lms_routes(app):
     
     # Define a mapping of LMS names to their respective route initialization functions
     LMS_ROUTES_MAP = {
-        'google': learning_observer.google.initialize_google_routes,
-        'canvas': learning_observer.canvas.initialize_canvas_routes
+        constants.GOOGLE: learning_observer.google.initialize_google_routes,
+        constants.CANVAS: learning_observer.canvas.initialize_canvas_routes
     }
     
     # Retrieve the active roster data source from the settings (e.g., 'google', 'canvas').

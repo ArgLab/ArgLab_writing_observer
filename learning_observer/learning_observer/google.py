@@ -37,7 +37,7 @@ import learning_observer.lms_integration
 
 
 cache = None
-LMS_NAME = "google"
+LMS_NAME = constants.GOOGLE
 
 
 GOOGLE_FIELDS = [
@@ -117,7 +117,7 @@ class GoogleLMS(learning_observer.lms_integration.LMS):
             # For the present there is only one external id so we will add that directly.
             if 'external_ids' not in student_json['profile']:
                 student_json['profile']['external_ids'] = []
-            student_json['profile']['external_ids'].append({"source": "google", "id": google_id})
+            student_json['profile']['external_ids'].append({"source": constants.GOOGLE, "id": google_id})
         return students
 
     @register_cleaner_with_endpoints("course_list", "courses")

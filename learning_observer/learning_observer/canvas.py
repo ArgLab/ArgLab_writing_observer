@@ -4,9 +4,10 @@ import learning_observer.log_event
 import learning_observer.util
 import learning_observer.auth
 import learning_observer.lms_integration
+import learning_observer.constants as constants
 
 
-LMS_NAME = "canvas"
+LMS_NAME = constants.CANVAS
 
 CANVAS_ENDPOINTS = list(map(lambda x: learning_observer.lms_integration.Endpoint(*x, "", None, LMS_NAME), [
     ("course_list", "/courses"),
@@ -44,7 +45,7 @@ class CanvasLMS(learning_observer.lms_integration.LMS):
             }
             if 'external_ids' not in student_json:
                 student_json['external_ids'] = []
-            student_json['external_ids'].append({"source": "canvas", "id": integration_id})
+            student_json['external_ids'].append({"source": constants.CANVAS, "id": integration_id})
             students_updated.append(student)
         return students_updated
 

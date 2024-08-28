@@ -138,7 +138,7 @@ kvs:
 
 The `roster_data` section configures the source of roster data.
 
-- `source`: The source of roster data, such as 'filesystem', 'google_api', 'all', or 'test'.
+- `source`: The source of roster data, such as 'filesystem', 'google', 'all', or 'test'.
 
 Example:
 

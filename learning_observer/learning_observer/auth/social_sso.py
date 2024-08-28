@@ -96,18 +96,6 @@ pmss.register_field(
     required=True
 )
 
-pmss.register_field(
-    name='source',
-    type='roster_source',
-    description='Source to use for student class rosters. This can be\n'\
-                '`all`: aggregate all available students into a single class\n'\
-                '`test`: use sample course and student files\n'\
-                '`filesystem`: read rosters defined on filesystem\n'\
-                '`google_api`: fetch from Google API\n'\
-                '`canvas`: fetch from Canvas API',
-    required=True
-)
-
 
 DEFAULT_GOOGLE_SCOPES = [
     'https://www.googleapis.com/auth/userinfo.profile',
@@ -154,7 +142,7 @@ async def social_handler(request):
 
     user = await _google(request)
 
-    await handle_lms_request_authorization(request)
+    await _set_lms_header_information(request)
 
     if constants.USER_ID in user:
         await learning_observer.auth.utils.update_session_user_info(request, user)
@@ -169,18 +157,26 @@ async def social_handler(request):
     return aiohttp.web.HTTPFound(url)
 
 
-async def handle_lms_request_authorization(request):
+async def determine_roster_source(request):
+    """
+    Retrieve the data source type for roster data from the PMSS settings
+    """
+    roster_source = settings.pmss_settings.source(types=['roster_data'])
+    return roster_source
+
+async def _set_lms_header_information(request, roster_source):
     """
     Handles the authorization of the specified Learning Management System (LMS)
-    by checking the roster data source and delegating the request to the appropriate handler 
+    based on the roster data source and delegating the request to the appropriate handler 
     based on the data source type.
-    """
-    # Retrieve the data source type for roster data from the PMSS settings
-    roster_source = settings.pmss_settings.source(types=['roster_data'])
-    
+    """    
+    lms_map = {
+        constants.CANVAS: _canvas
+    }
+        
     # Handle the request depending on the roster source
-    if roster_source == 'canvas':
-        await _canvas(request)
+    if roster_source in lms_map:
+        return await lms_map[roster_source](request)
 
 
 async def _store_teacher_info_for_background_process(id, request):

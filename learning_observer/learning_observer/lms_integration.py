@@ -173,8 +173,8 @@ async def raw_ajax(runtime, target_url, lms_name, base_url=None, **kwargs):
     # Retrieve session and determine the appropriate headers based on the service
     session = await aiohttp_session.get_session(request)
     headers = {
-        'google': request[constants.AUTH_HEADERS],
-        'canvas': session.get(constants.CANVAS_AUTH_HEADERS)
+        constants.GOOGLE: request[constants.AUTH_HEADERS],
+        constants.CANVAS: session.get(constants.CANVAS_AUTH_HEADERS)
     }
 
     # Ensure Google requests are authenticated
@@ -221,24 +221,26 @@ async def raw_ajax(runtime, target_url, lms_name, base_url=None, **kwargs):
                         response,
                         learning_observer.google.GOOGLE_TO_SNAKE
                     )
+                # Return response for other LMSes
                 else:
+                    # Raise an exception for non-successful HTTP responses
                     resp.raise_for_status()
                     return response
         # Handle 401 errors for Canvas with an optional retry
         except aiohttp.ClientResponseError as e:
-            if lms_name == 'canvas' and e.status == 401 and retry:
+            if lms_name == constants.CANVAS and e.status == 401 and retry:
                 new_tokens = await learning_observer.auth.social_sso._canvas(request)
                 if 'access_token' in new_tokens:
                     return await raw_ajax(runtime, target_url, lms_name, base_url, **kwargs)
             raise
 
 async def raw_google_ajax(runtime, target_url, **kwargs):
-    return await raw_ajax(runtime, target_url, 'google', **kwargs)
+    return await raw_ajax(runtime, target_url, constants.GOOGLE, **kwargs)
 
 async def raw_canvas_ajax(runtime, target_url, **kwargs):
     base_url = settings.pmss_settings.lms_api(types=['lms', 'canvas_oauth'])
     kwargs.setdefault('retry', True)
-    return await raw_ajax(runtime, target_url, 'canvas', base_url, **kwargs)
+    return await raw_ajax(runtime, target_url, constants.CANVAS, base_url, **kwargs)
 
 
 class LMS:
@@ -246,8 +248,8 @@ class LMS:
         self.lms_name = lms_name
         self.endpoints = endpoints
         self.raw_ajax_function = {
-            'google': raw_google_ajax,
-            'canvas': raw_canvas_ajax
+            constants.GOOGLE: raw_google_ajax,
+            constants.CANVAS: raw_canvas_ajax
         }
 
     def initialize_routes(self, app):

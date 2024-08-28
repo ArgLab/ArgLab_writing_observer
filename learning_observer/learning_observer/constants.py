@@ -18,3 +18,7 @@ IMPERSONATING_AS = 'impersonating_as'
 USER = 'user'
 # common user id reference for user object
 USER_ID = 'user_id'
+
+# used to identify LMSes
+GOOGLE = 'google'
+CANVAS = 'canvas'
