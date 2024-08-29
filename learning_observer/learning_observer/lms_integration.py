@@ -3,7 +3,6 @@ import recordclass
 import string
 import aiohttp
 import aiohttp.web
-import aiohttp_session
 
 import learning_observer
 import learning_observer.runtime

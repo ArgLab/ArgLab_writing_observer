@@ -275,9 +275,6 @@ async def update_reconstruct_reducer_with_google_api(runtime, doc_ids):
     We use a closure here to make use of memoization so we do not update the KVS
     every time we call this method.
     """
-    
-    import learning_observer.google
-    from learning_observer.stream_analytics.fields import KeyField, KeyStateType, EventField
 
     @learning_observer.cache.async_memoization()
     async def fetch_doc_from_google(student, doc_id):
@@ -287,6 +284,7 @@ async def update_reconstruct_reducer_with_google_api(runtime, doc_ids):
         """
         if student is None or doc_id is None or len(doc_id) == 0:
             return None
+        import learning_observer.google
 
         kvs = learning_observer.kvs.KVS()
 
@@ -339,8 +337,6 @@ async def update_reconstruct_data_with_google_api(runtime, student_data):
         :return: The text of the latest document
         """
         import learning_observer.google
-        from learning_observer.stream_analytics.fields import KeyField, KeyStateType, EventField
-        
 
         kvs = learning_observer.kvs.KVS()
 
