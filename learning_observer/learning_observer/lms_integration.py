@@ -170,15 +170,14 @@ async def raw_ajax(runtime, target_url, lms_name, base_url=None, **kwargs):
     # Extract 'retry' flag from kwargs (defaults to False)
     retry = kwargs.pop('retry', False)
     
-    # Retrieve session and determine the appropriate headers based on the service
-    session = await aiohttp_session.get_session(request)
+    # mapping to determine the appropriate headers based on the service
     headers = {
-        constants.GOOGLE: request[constants.AUTH_HEADERS],
-        constants.CANVAS: session.get(constants.CANVAS_AUTH_HEADERS)
+        constants.GOOGLE: request.get(constants.AUTH_HEADERS),
+        constants.CANVAS: request.get(constants.CANVAS_AUTH_HEADERS)
     }
 
     # Ensure Google requests are authenticated
-    if lms_name == 'google' and constants.AUTH_HEADERS not in request:
+    if lms_name == constants.GOOGLE and constants.AUTH_HEADERS not in request:
         raise aiohttp.web.HTTPUnauthorized(text="Please log in")
     
     # Construct the full URL using the base URL if provided, otherwise use the target URL directly
@@ -196,7 +195,7 @@ async def raw_ajax(runtime, target_url, lms_name, base_url=None, **kwargs):
         value = await cache[cache_key]
         if value is not None:
             # Translate keys if the service is Google, otherwise return raw JSON
-            if lms_name == 'google':
+            if lms_name == constants.GOOGLE:
                 return learning_observer.util.translate_json_keys(
                     json.loads(value),
                     learning_observer.google.GOOGLE_TO_SNAKE
@@ -216,7 +215,7 @@ async def raw_ajax(runtime, target_url, lms_name, base_url=None, **kwargs):
                 if settings.feature_flag(cache_flag) is not None:
                     await cache.set(cache_key, json.dumps(response, indent=2))
                 # Translate keys if the service is Google, otherwise return raw JSON
-                if lms_name == 'google':
+                if lms_name == constants.GOOGLE:
                     return learning_observer.util.translate_json_keys(
                         response,
                         learning_observer.google.GOOGLE_TO_SNAKE

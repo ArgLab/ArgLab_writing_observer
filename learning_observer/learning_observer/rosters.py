@@ -88,7 +88,7 @@ import learning_observer.communication_protocol.integration
 COURSE_URL = 'https://classroom.googleapis.com/v1/courses'
 ROSTER_URL = 'https://classroom.googleapis.com/v1/courses/{courseid}/students'
 
-pmss.parser('roster_source', parent='string', choices=['google', 'all', 'test', 'canvas', 'filesystem'], transform=None)
+pmss.parser('roster_source', parent='string', choices=['google_api', 'all', 'test', 'canvas', 'filesystem'], transform=None)
 pmss.register_field(
     name='source',
     type='roster_source',
@@ -96,7 +96,7 @@ pmss.register_field(
                 '`all`: aggregate all available students into a single class\n'\
                 '`test`: use sample course and student files\n'\
                 '`filesystem`: read rosters defined on filesystem\n'\
-                '`google`: fetch from Google API\n'\
+                '`google_api`: fetch from Google API\n'\
                 '`canvas`: fetch from Canvas API',
     required=True
 )
@@ -362,7 +362,7 @@ def init():
         )
     elif roster_source in ['test', 'filesystem']:
         ajax = synthetic_ajax
-    elif roster_source in [constants.GOOGLE, constants.CANVAS]:
+    elif roster_source in ['google_api', constants.CANVAS]:
         ajax = combined_ajax
     elif roster_source in ["all"]:
         ajax = all_ajax
@@ -371,7 +371,7 @@ def init():
             "Settings file `roster_data` element should have `source` field\n"
             "set to either:\n"
             "  test        (retrieve from files courses.json and students.json)\n"
-            "  google  (retrieve roster data from Google)\n"
+            "  google_api  (retrieve roster data from Google)\n"
             "  canvas  (retrieve roster data from Canvas)\n"
             "  filesystem  (retrieve roster data from file system hierarchy\n"
             "  all  (retrieve roster data as all students)"

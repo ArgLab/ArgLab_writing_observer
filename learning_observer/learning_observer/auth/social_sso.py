@@ -141,8 +141,10 @@ async def social_handler(request):
         )
 
     user = await _google(request)
+    
+    roster_source = await determine_roster_source(request)
 
-    await _set_lms_header_information(request)
+    await _set_lms_header_information(request, roster_source)
 
     if constants.USER_ID in user:
         await learning_observer.auth.utils.update_session_user_info(request, user)
