@@ -22,3 +22,4 @@ USER_ID = 'user_id'
 # used to identify LMSes
 GOOGLE = 'google'
 CANVAS = 'canvas'
+SCHOOLOGY = 'schoology'

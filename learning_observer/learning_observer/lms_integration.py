@@ -240,6 +240,11 @@ async def raw_canvas_ajax(runtime, target_url, **kwargs):
     kwargs.setdefault('retry', True)
     return await raw_ajax(runtime, target_url, constants.CANVAS, base_url, **kwargs)
 
+async def raw_schoology_ajax(runtime, target_url, **kwargs):
+    base_url = settings.pmss_settings.lms_api(types=['lms', 'schoology_oauth'])
+    kwargs.setdefault('retry', True)
+    return await raw_ajax(runtime, target_url, constants.CANVAS, base_url, **kwargs)
+
 
 class LMS:
     def __init__(self, lms_name, endpoints):
@@ -247,7 +252,8 @@ class LMS:
         self.endpoints = endpoints
         self.raw_ajax_function = {
             constants.GOOGLE: raw_google_ajax,
-            constants.CANVAS: raw_canvas_ajax
+            constants.CANVAS: raw_canvas_ajax,
+            constants.SCHOOLOGY: raw_schoology_ajax
         }
 
     def initialize_routes(self, app):
