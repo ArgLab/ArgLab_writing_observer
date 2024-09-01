@@ -67,13 +67,13 @@ pmss.register_field(
 pmss.register_field(
     name="client_id",
     type=pmss.pmsstypes.TYPES.string,
-    description="The Google OAuth client ID",
+    description="The Google/Canvas OAuth client ID",
     required=True
 )
 pmss.register_field(
     name="client_secret",
     type=pmss.pmsstypes.TYPES.string,
-    description="The Google OAuth client secret",
+    description="The Google/Canvas OAuth client secret",
     required=True
 )
 pmss.register_field(
@@ -82,6 +82,18 @@ pmss.register_field(
     description='Whether we should start an additional task that will '\
         'fetch all text from current rosters.',
     default=False
+)
+pmss.register_field(
+    name="token_uri",
+    type=pmss.pmsstypes.TYPES.string,
+    description="The Canvas OAuth token uri",
+    required=True
+)
+pmss.register_field(
+    name="refresh_token",
+    type=pmss.pmsstypes.TYPES.string,
+    description="The Canvas OAuth refresh token",
+    required=True
 )
 
 
@@ -129,6 +141,10 @@ async def social_handler(request):
         )
 
     user = await _google(request)
+    
+    roster_source = await determine_roster_source(request)
+
+    await _set_lms_header_information(request, roster_source)
 
     if constants.USER_ID in user:
         await learning_observer.auth.utils.update_session_user_info(request, user)
@@ -142,6 +158,28 @@ async def social_handler(request):
         url = "/"
 
     return aiohttp.web.HTTPFound(url)
+
+
+async def determine_roster_source(request):
+    """
+    Retrieve the data source type for roster data from the PMSS settings
+    """
+    roster_source = settings.pmss_settings.source(types=['roster_data'])
+    return roster_source
+
+async def _set_lms_header_information(request, roster_source):
+    """
+    Handles the authorization of the specified Learning Management System (LMS)
+    based on the roster data source and delegating the request to the appropriate handler 
+    based on the data source type.
+    """    
+    lms_map = {
+        constants.CANVAS: _canvas
+    }
+        
+    # Handle the request depending on the roster source
+    if roster_source in lms_map:
+        return await lms_map[roster_source](request)
 
 
 async def _store_teacher_info_for_background_process(id, request):
@@ -211,6 +249,34 @@ async def _store_teacher_info_for_background_process(id, request):
             await _process_student_documents(student)
     # TODO saved skipped doc ids somewhere?
 
+async def _canvas(request):
+    '''
+    Handle Canvas authorization
+    '''
+    if 'error' in request.query:
+        return {}
+    
+    token_uri = settings.pmss_settings.token_uri(types=['lms', 'canvas_oauth'])
+    url = token_uri
+    
+    params = {
+        "grant_type": "refresh_token",
+        'client_id': settings.pmss_settings.client_id(types=['lms', 'canvas_oauth']),
+        'client_secret': settings.pmss_settings.client_secret(types=['lms', 'canvas_oauth']),
+        "refresh_token": settings.pmss_settings.refresh_token(types=['lms', 'canvas_oauth'])
+    }
+    async with aiohttp.ClientSession(loop=request.app.loop) as client:
+        async with client.post(url, data=params) as resp:
+            data = await resp.json()
+        assert 'access_token' in data, data
+
+        # get user profile
+        canvas_headers = {'Authorization': 'Bearer ' + data['access_token']}
+        session = await aiohttp_session.get_session(request)
+        session[constants.CANVAS_AUTH_HEADERS] = canvas_headers
+        request[constants.CANVAS_AUTH_HEADERS] = canvas_headers
+        
+    return data
 
 async def _google(request):
     '''
