@@ -67,6 +67,7 @@ import os.path
 import aiohttp
 import aiohttp.web
 
+import learning_observer.schoology
 import pathvalidate
 import pmss
 
@@ -75,6 +76,7 @@ import learning_observer.cache
 import learning_observer.constants as constants
 import learning_observer.google
 import learning_observer.canvas
+import learning_observer.schoology
 import learning_observer.kvs
 import learning_observer.log_event as log_event
 from learning_observer.log_event import debug_log
@@ -88,7 +90,7 @@ import learning_observer.communication_protocol.integration
 COURSE_URL = 'https://classroom.googleapis.com/v1/courses'
 ROSTER_URL = 'https://classroom.googleapis.com/v1/courses/{courseid}/students'
 
-pmss.parser('roster_source', parent='string', choices=['google_api', 'all', 'test', 'canvas', 'filesystem'], transform=None)
+pmss.parser('roster_source', parent='string', choices=['google_api', 'all', 'test', 'canvas', 'schoology', 'filesystem'], transform=None)
 pmss.register_field(
     name='source',
     type='roster_source',
@@ -97,14 +99,15 @@ pmss.register_field(
                 '`test`: use sample course and student files\n'\
                 '`filesystem`: read rosters defined on filesystem\n'\
                 '`google_api`: fetch from Google API\n'\
-                '`canvas`: fetch from Canvas API',
+                '`canvas`: fetch from Canvas API\n'\
+                '`schoology`: fetch from Schoology API',
     required=True
 )
 
 
 def clean_combined_ajax_data(resp_json, key, sort_key, default=None, source=None):
     '''
-    This cleans up / standardizes Google/Canvas AJAX data. In particular:
+    This cleans up / standardizes Google/Canvas/Schoology AJAX data. In particular:
 
     - We want to handle errors and empty lists better
     - We often don't want the whole response, but just one field (`key`)
@@ -362,7 +365,7 @@ def init():
         )
     elif roster_source in ['test', 'filesystem']:
         ajax = synthetic_ajax
-    elif roster_source in ['google_api', constants.CANVAS]:
+    elif roster_source in ['google_api', constants.CANVAS, constants.SCHOOLOGY]:
         ajax = combined_ajax
     elif roster_source in ["all"]:
         ajax = all_ajax
@@ -417,7 +420,8 @@ async def courselist(request):
     # A map of LMSes to their respective handler functions
     lms_map = {
         constants.GOOGLE: learning_observer.google.courses,
-        constants.CANVAS: learning_observer.canvas.courses
+        constants.CANVAS: learning_observer.canvas.courses,
+        constants.SCHOOLOGY: learning_observer.schoology.courses
     }
     
     runtime = learning_observer.runtime.Runtime(request)

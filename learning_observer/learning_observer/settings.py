@@ -223,7 +223,7 @@ def initialized():
 
 
 # Not all of these are guaranteed to work on every branch of the codebase.
-AVAILABLE_FEATURE_FLAGS = ['uvloop', 'watchdog', 'auth_headers_page', 'merkle', 'save_google_ajax', 'use_google_ajax', 'use_canvas_ajax']
+AVAILABLE_FEATURE_FLAGS = ['uvloop', 'watchdog', 'auth_headers_page', 'merkle', 'save_google_ajax', 'use_google_ajax', 'use_canvas_ajax', 'use_schoology_ajax']
 
 
 def feature_flag(flag):

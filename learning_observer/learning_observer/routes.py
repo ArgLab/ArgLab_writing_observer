@@ -28,6 +28,7 @@ import learning_observer.rosters as rosters
 import learning_observer.module_loader
 
 import learning_observer.paths as paths
+import learning_observer.schoology
 import learning_observer.settings as settings
 import learning_observer.constants as constants
 
@@ -174,8 +175,9 @@ def register_lms_routes(app):
     Parameters:
     - app: An instance of aiohttp.web.Application where the routes will be registered.
     """
-    learning_observer.google.initialize_google_routes(app)
-    learning_observer.canvas.initialize_canvas_routes(app)
+    learning_observer.google.initialize_routes(app)
+    learning_observer.canvas.initialize_routes(app)
+    learning_observer.schoology.initialize_routes(app)
 
 
 def register_debug_routes(app):

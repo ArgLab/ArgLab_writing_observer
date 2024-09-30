@@ -95,6 +95,18 @@ pmss.register_field(
     description="The Canvas OAuth refresh token",
     required=True
 )
+pmss.register_field(
+    name="api_key",
+    type=pmss.pmsstypes.TYPES.string,
+    description="The OAuth api key",
+    required=True
+)
+pmss.register_field(
+    name="secret",
+    type=pmss.pmsstypes.TYPES.string,
+    description="The OAuth secret",
+    required=True
+)
 
 
 DEFAULT_GOOGLE_SCOPES = [
@@ -173,7 +185,8 @@ async def _set_lms_header_information(request, roster_source):
     based on the data source type.
     """    
     lms_map = {
-        constants.CANVAS: _canvas
+        constants.CANVAS: _canvas,
+        constants.SCHOOLOGY: _schoology
     }
         
     # Handle the request depending on the roster source
@@ -247,6 +260,22 @@ async def _store_teacher_info_for_background_process(id, request):
             # them before waiting for the next roster to process
             await _process_student_documents(student)
     # TODO saved skipped doc ids somewhere?
+
+async def _schoology(request):
+    '''
+    Handle Schoology authorization
+    '''
+    api_key = settings.pmss_settings.api_key(types=['lms', 'schoology_oauth'])
+    secret = settings.pmss_settings.secret(types=['lms', 'schoology_oauth'])
+    
+    auth_details = {
+        'api_key': api_key,
+         'secret': secret
+    }
+    
+    session = await aiohttp_session.get_session(request)
+    session[constants.SCHOOLOGY_AUTH_SIGNING] = auth_details
+    request[constants.SCHOOLOGY_AUTH_SIGNING] = auth_details
 
 async def _canvas(request):
     '''

@@ -11,6 +11,7 @@ good reason to live elsewhere.
 # used in request headers to hold auth information
 AUTH_HEADERS = 'auth_headers'
 CANVAS_AUTH_HEADERS = 'canvas_auth_headers'
+SCHOOLOGY_AUTH_SIGNING = 'schoology_auth_signing'
 # used for storing impersonation information in session
 IMPERSONATING_AS = 'impersonating_as'
 

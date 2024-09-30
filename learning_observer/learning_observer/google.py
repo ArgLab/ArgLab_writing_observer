@@ -224,7 +224,7 @@ class GoogleLMS(learning_observer.lms_integration.LMS):
         
 google_lms = GoogleLMS()
 
-def initialize_google_routes(app):
+def initialize_routes(app):
     google_lms.initialize_routes(app)
 
 if __name__ == '__main__':

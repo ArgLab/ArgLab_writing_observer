@@ -63,5 +63,5 @@ class CanvasLMS(learning_observer.lms_integration.LMS):
     
 canvas_lms = CanvasLMS()
 
-def initialize_canvas_routes(app):
+def initialize_routes(app):
     canvas_lms.initialize_routes(app)
