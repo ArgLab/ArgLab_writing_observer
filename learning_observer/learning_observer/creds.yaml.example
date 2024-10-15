@@ -101,3 +101,10 @@ modules:
     writing_observer:
         use_nlp: false
         openai_api_key: '' # can also be set with OPENAI_API_KEY environment variable
+lms:
+    canvas_oauth:
+        lms_api: {canvas-lms-api}
+        token_uri: {canvas-token-uri}
+        client_id: {canvas-client-id}
+        client_secret: {canvas-client-secret}
+        refresh_token: {canvas-refresh-token}
