@@ -1,7 +1,5 @@
 import functools
 
-import learning_observer.log_event
-import learning_observer.util
 import learning_observer.auth
 import learning_observer.lms_integration
 import learning_observer.constants as constants

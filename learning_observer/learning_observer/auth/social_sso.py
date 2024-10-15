@@ -140,9 +140,9 @@ async def social_handler(request):
             "We only handle Google logins. Non-google Provider"
         )
 
-    user = await _google(request)
+    user = await _handle_google_authorization(request)
     
-    roster_source = await determine_roster_source(request)
+    roster_source = settings.pmss_settings.source(types=['roster_data'])
 
     await _set_lms_header_information(request, roster_source)
 
@@ -159,13 +159,6 @@ async def social_handler(request):
     return aiohttp.web.HTTPFound(url)
 
 
-async def determine_roster_source(request):
-    """
-    Retrieve the data source type for roster data from the PMSS settings
-    """
-    roster_source = settings.pmss_settings.source(types=['roster_data'])
-    return roster_source
-
 async def _set_lms_header_information(request, roster_source):
     """
     Handles the authorization of the specified Learning Management System (LMS)
@@ -173,7 +166,7 @@ async def _set_lms_header_information(request, roster_source):
     based on the data source type.
     """    
     lms_map = {
-        constants.CANVAS: _canvas
+        constants.CANVAS: _handle_canvas_authorization
     }
         
     # Handle the request depending on the roster source
@@ -248,7 +241,7 @@ async def _store_teacher_info_for_background_process(id, request):
             await _process_student_documents(student)
     # TODO saved skipped doc ids somewhere?
 
-async def _canvas(request):
+async def _handle_canvas_authorization(request):
     '''
     Handle Canvas authorization
     '''
@@ -277,7 +270,7 @@ async def _canvas(request):
         
     return data
 
-async def _google(request):
+async def _handle_google_authorization(request):
     '''
     Handle Google login
     '''
