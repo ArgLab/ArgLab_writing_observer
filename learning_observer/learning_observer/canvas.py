@@ -16,11 +16,11 @@ CANVAS_ENDPOINTS = list(map(lambda x: learning_observer.lms_integration.Endpoint
 
 register_cleaner_with_endpoints = functools.partial(learning_observer.lms_integration.register_cleaner, endpoints=CANVAS_ENDPOINTS)
 
-        
+
 class CanvasLMS(learning_observer.lms_integration.LMS):
     def __init__(self):
         super().__init__(lms_name=LMS_NAME, endpoints=CANVAS_ENDPOINTS)
-        
+
     @register_cleaner_with_endpoints("course_roster", "roster")
     def clean_course_roster(canvas_json):
         students = canvas_json
@@ -52,14 +52,16 @@ class CanvasLMS(learning_observer.lms_integration.LMS):
         courses = canvas_json
         courses.sort(key=lambda x: x.get('name', 'ZZ'))
         return courses
-    
+
     @register_cleaner_with_endpoints("course_assignments", "assignments")
     def clean_course_assignment_list(canvas_json):
         assignments = canvas_json
         assignments.sort(key=lambda x: x.get('name', 'ZZ'))
         return assignments
-    
+
+
 canvas_lms = CanvasLMS()
+
 
 def initialize_canvas_routes(app):
     canvas_lms.initialize_routes(app)

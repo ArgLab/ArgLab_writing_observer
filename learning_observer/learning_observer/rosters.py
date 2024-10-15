@@ -92,11 +92,11 @@ pmss.parser('roster_source', parent='string', choices=['google_api', 'all', 'tes
 pmss.register_field(
     name='source',
     type='roster_source',
-    description='Source to use for student class rosters. This can be\n'\
-                '`all`: aggregate all available students into a single class\n'\
-                '`test`: use sample course and student files\n'\
-                '`filesystem`: read rosters defined on filesystem\n'\
-                '`google_api`: fetch from Google API\n'\
+    description='Source to use for student class rosters. This can be\n'
+                '`all`: aggregate all available students into a single class\n'
+                '`test`: use sample course and student files\n'
+                '`filesystem`: read rosters defined on filesystem\n'
+                '`google_api`: fetch from Google API\n'
                 '`canvas`: fetch from Canvas API',
     required=True
 )
@@ -413,15 +413,15 @@ async def courselist(request):
     '''
     List all of the courses a teacher manages: Helper
     '''
-    
+
     # A map of LMSes to their respective handler functions
     lms_map = {
         constants.GOOGLE: learning_observer.google.courses,
         constants.CANVAS: learning_observer.canvas.courses
     }
-    
+
     runtime = learning_observer.runtime.Runtime(request)
-    
+
     roster_source = settings.pmss_settings.source(types=['roster_data'])
     if roster_source in lms_map:
         return await lms_map[roster_source](runtime)
@@ -466,15 +466,15 @@ async def courseroster(request, course_id):
     '''
     List all of the students in a course: Helper
     '''
-    
+
     # A map of LMSes to their respective handler functions
     lms_map = {
         constants.GOOGLE: learning_observer.google.roster,
         constants.CANVAS: learning_observer.canvas.roster
     }
-    
+
     runtime = learning_observer.runtime.Runtime(request)
-    
+
     roster_source = settings.pmss_settings.source(types=['roster_data'])
     if roster_source in lms_map:
         return await lms_map[roster_source](runtime, courseId=course_id)

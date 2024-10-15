@@ -71,6 +71,7 @@ GOOGLE_ENDPOINTS = list(map(lambda x: learning_observer.lms_integration.Endpoint
 
 register_cleaner_with_endpoints = functools.partial(learning_observer.lms_integration.register_cleaner, endpoints=GOOGLE_ENDPOINTS)
 
+
 # Google Docs
 def _force_text_length(text, length):
     '''
@@ -84,6 +85,7 @@ def _force_text_length(text, length):
     '''
     return text[:length] + " " * (length - len(text))
 
+
 def get_error_details(error):
     messages = {
         403: 'Student working on private document.',
@@ -92,6 +94,7 @@ def get_error_details(error):
     code = error['code']
     message = messages.get(code, 'Unknown error.')
     return {'error': {'code': code, 'message': message}}
+
 
 class GoogleLMS(learning_observer.lms_integration.LMS):
     def __init__(self):
@@ -163,13 +166,13 @@ class GoogleLMS(learning_observer.lms_integration.LMS):
         if align:
             for f in flat:
                 text = f.get('textRun', {}).get('content', None)
-                if text != None:
+                if text is not None:
                     length = f['endIndex'] - f['startIndex']
                     text_chunks.append(_force_text_length(text, length))
         else:
             for f in flat:
                 text = f.get('textRun', {}).get('content', None)
-                if text != None:
+                if text is not None:
                     text_chunks.append(text)
         text = ''.join(text_chunks)
 
@@ -220,12 +223,15 @@ class GoogleLMS(learning_observer.lms_integration.LMS):
                         '```\ngoogle_cache:\n  type: filesystem\n  path: ./learning_observer/static_data/google\n'\
                         '  subdirs: true\n```\nOR\n'\
                         '```\ngoogle_cache:\n  type: redis_ephemeral\n  expiry: 600\n```'
-                    raise learning_observer.prestartup.StartupCheck("Google KVS: " + error_text) 
-        
+                    raise learning_observer.prestartup.StartupCheck("Google KVS: " + error_text)
+
+
 google_lms = GoogleLMS()
+
 
 def initialize_google_routes(app):
     google_lms.initialize_routes(app)
+
 
 if __name__ == '__main__':
     import json

@@ -166,11 +166,11 @@ def add_routes(app):
     # and figuring stuff out, this feels safest to put last.
     register_wsgi_routes(app)
 
-   
+
 def register_lms_routes(app):
     """
     Register routes for the various Learning Management Systems (LMS).
-    
+
     Parameters:
     - app: An instance of aiohttp.web.Application where the routes will be registered.
     """

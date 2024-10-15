@@ -55,14 +55,11 @@ async def user_from_session(request):
     '''
     session = await aiohttp_session.get_session(request)
     session_user = session.get(constants.USER, None)
-    
     header_keys = [constants.AUTH_HEADERS, constants.CANVAS_AUTH_HEADERS]
-    
     # Set headers in the request if they exist in the session
     for key in header_keys:
         if key in session:
             request[key] = session[key]
-            
     return session_user
 
 

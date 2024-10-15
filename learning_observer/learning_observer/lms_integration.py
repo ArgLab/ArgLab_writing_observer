@@ -20,11 +20,12 @@ pmss.register_field(
 
 cache = None
 
+
 class Endpoint(recordclass.make_dataclass("Endpoint", ["name", "remote_url", "doc", "cleaners", "lms"], defaults=["", None])):
     """
     The Endpoint class represents an API endpoint, allowing for parameter extraction,
     URL construction, and cleaner (function) management.
-    
+
     Attributes:
         name (str): The name of the endpoint.
         remote_url (str): The remote URL of the endpoint, which may contain parameters.
@@ -32,7 +33,7 @@ class Endpoint(recordclass.make_dataclass("Endpoint", ["name", "remote_url", "do
         cleaners (dict): A dictionary of cleaner functions associated with the endpoint.
         lms (str): The learning management system (LMS) that the endpoint belongs to.
     """
-    
+
     def arguments(self):
         """
         Extracts the parameters from the remote URL.
@@ -64,7 +65,7 @@ class Endpoint(recordclass.make_dataclass("Endpoint", ["name", "remote_url", "do
 
         Args:
             name (str): The name to associate with the cleaner.
-            cleaner (dict): The cleaner function to be added, optionally containing 
+            cleaner (dict): The cleaner function to be added, optionally containing
                             additional metadata such as its local URL.
         """
         if self.cleaners is None:
@@ -85,12 +86,13 @@ class Endpoint(recordclass.make_dataclass("Endpoint", ["name", "remote_url", "do
         else:
             return self.cleaners
 
+
 def extract_parameters_from_format_string(format_string):
     '''
     Extracts parameters from a format string. E.g.
     >>> ("hello {hi} my {bye}")]
     ['hi', 'bye']
-    
+
     Args:
         format_string (str): The format string containing parameters enclosed in braces.
 
@@ -98,6 +100,7 @@ def extract_parameters_from_format_string(format_string):
         list: A list of parameter names extracted from the format string.
     '''
     return [f[1] for f in string.Formatter().parse(format_string) if f[1] is not None]
+
 
 def raw_access_partial(raw_ajax_function, target_url, name=None):
     '''
@@ -117,7 +120,7 @@ def raw_access_partial(raw_ajax_function, target_url, name=None):
     async def ajax_caller(request, **kwargs):
         '''
         Make an AJAX request to LMS
-        
+
         Args:
             request: The incoming request object.
             **kwargs: Additional keyword arguments to pass to the raw AJAX function.
@@ -130,10 +133,11 @@ def raw_access_partial(raw_ajax_function, target_url, name=None):
 
     return ajax_caller
 
+
 def api_docs_handler(endpoints):
     '''
     Returns a list of available endpoints in a human-readable format.
-    
+
     Eventually, we should also document available function calls
 
     Args:
@@ -142,7 +146,7 @@ def api_docs_handler(endpoints):
     Returns:
         aiohttp.web.Response: A response object containing the documentation of endpoints.
     '''
-    
+
     response = "URL Endpoints:\n\n"
     for endpoint in endpoints:
         response += f"{endpoint._local_url()}\n"
@@ -151,6 +155,7 @@ def api_docs_handler(endpoints):
             response += f"   {cleaners[c]['local_url']}\n"
     response += "\n\n Globals:"
     return aiohttp.web.Response(text=response)
+
 
 def register_cleaner(data_source, cleaner_name, endpoints):
     '''
@@ -164,7 +169,7 @@ def register_cleaner(data_source, cleaner_name, endpoints):
 
     Returns:
         callable: A decorator for registering the cleaner function.
-    
+
     Raises:
         AttributeError: If the data source is not found in the endpoints.
     '''
@@ -187,6 +192,7 @@ def register_cleaner(data_source, cleaner_name, endpoints):
         return f
 
     return add_cleaner
+
 
 def make_ajax_raw_handler(raw_ajax_function, remote_url):
     '''
@@ -217,6 +223,7 @@ def make_ajax_raw_handler(raw_ajax_function, remote_url):
         return aiohttp.web.json_response(response)
     return ajax_passthrough
 
+
 def make_cleaner_handler(raw_function, cleaner_function, name=None):
     '''
     Creates a handler for the cleaner function.
@@ -244,24 +251,25 @@ def make_cleaner_handler(raw_function, cleaner_function, name=None):
         '''
         # Call the raw function with the request and match_info as parameters
         response = cleaner_function(await raw_function(request, **request.match_info))
-        
+
         # Determine the response type and return appropriately
         if isinstance(response, dict) or isinstance(response, list):
-            return aiohttp.web.json_response(response) # Return JSON response for dict or list
+            return aiohttp.web.json_response(response)  # Return JSON response for dict or list
         elif isinstance(response, str):
-            return aiohttp.web.Response(text=response) # Return plain text response if it's a string
+            return aiohttp.web.Response(text=response)  # Return plain text response if it's a string
         else:
-            raise AttributeError(f"Invalid response type: {type(response)}") # Handle unexpected response types
+            raise AttributeError(f"Invalid response type: {type(response)}")  # Handle unexpected response types
     if name is not None:
         setattr(cleaner_handler, "__qualname__", name + "_handler")
 
     return cleaner_handler
 
+
 def make_cleaner_function(raw_function, cleaner_function, name=None):
     """
     Creates a cleaner function that processes the output of a raw function.
 
-    This function wraps a raw function and a cleaner function, allowing the cleaner 
+    This function wraps a raw function and a cleaner function, allowing the cleaner
     to be applied to the response of the raw function.
 
     Args:
@@ -270,7 +278,7 @@ def make_cleaner_function(raw_function, cleaner_function, name=None):
         name (str, optional): The name to assign to the created cleaner function.
 
     Returns:
-        callable: An asynchronous cleaner function that calls the raw function 
+        callable: An asynchronous cleaner function that calls the raw function
                   and processes its output with the cleaner function.
     """
     async def cleaner_local(request, **kwargs):
@@ -287,23 +295,24 @@ def make_cleaner_function(raw_function, cleaner_function, name=None):
         lms_response = await raw_function(request, **kwargs)
         clean = cleaner_function(lms_response)
         return clean
-    
+
     if name is not None:
         setattr(cleaner_local, "__qualname__", name)
     return cleaner_local
 
+
 async def raw_ajax(runtime, target_url, lms_name, base_url=None, **kwargs):
     """
-    Make an authenticated AJAX call to a specified service (e.g., Google, Canvas), handling 
+    Make an authenticated AJAX call to a specified service (e.g., Google, Canvas), handling
     authorization, caching, and retries.
 
     Parameters:
     - runtime: An instance of the Runtime class containing request information.
     - lms_name: A string indicating the name of the service ('google' or 'canvas').
     - target_url: The URL endpoint to be called, with optional formatting using kwargs.
-    - base_url: An optional base URL for the service. If provided, it will be prefixed 
+    - base_url: An optional base URL for the service. If provided, it will be prefixed
       to target_url.
-    - kwargs: Additional keyword arguments to format the target_url or control behavior 
+    - kwargs: Additional keyword arguments to format the target_url or control behavior
       (e.g., retry).
 
     Returns:
@@ -316,10 +325,10 @@ async def raw_ajax(runtime, target_url, lms_name, base_url=None, **kwargs):
     # Retrieve the incoming request and active user
     request = runtime.get_request()
     user = await learning_observer.auth.get_active_user(request)
-    
+
     # Extract 'retry' flag from kwargs (defaults to False)
     retry = kwargs.pop('retry', False)
-    
+
     # mapping to determine the appropriate headers based on the service
     headers = {
         constants.GOOGLE: request.get(constants.AUTH_HEADERS),
@@ -329,7 +338,7 @@ async def raw_ajax(runtime, target_url, lms_name, base_url=None, **kwargs):
     # Ensure Google requests are authenticated
     if lms_name == constants.GOOGLE and constants.AUTH_HEADERS not in request:
         raise aiohttp.web.HTTPUnauthorized(text="Please log in")
-    
+
     # Construct the full URL using the base URL if provided, otherwise use the target URL directly
     if base_url:
         url = base_url + target_url.format(**kwargs)
@@ -338,7 +347,7 @@ async def raw_ajax(runtime, target_url, lms_name, base_url=None, **kwargs):
 
     # Generate a unique cache key based on the service, user, and request URL
     cache_key = f"raw_{lms_name}/" + learning_observer.auth.encode_id('session', user[constants.USER_ID]) + '/' + learning_observer.util.url_pathname(url)
-    
+
     cache_flag = f"use_{lms_name}_ajax"
     # Check cache and return cached response if available
     if settings.feature_flag(cache_flag) is not None:
@@ -350,7 +359,7 @@ async def raw_ajax(runtime, target_url, lms_name, base_url=None, **kwargs):
                     json.loads(value),
                     learning_observer.google.GOOGLE_TO_SNAKE
                 )
-            else: 
+            else:
                 return json.loads(value)
 
     # Make the actual AJAX call to the service
@@ -383,11 +392,13 @@ async def raw_ajax(runtime, target_url, lms_name, base_url=None, **kwargs):
                     return await raw_ajax(runtime, target_url, lms_name, base_url, **kwargs)
             raise
 
+
 # Abstract raw_ajax for each LMS to specify their different arguments
 
 async def raw_google_ajax(runtime, target_url, **kwargs):
     """Make an authenticated AJAX call to the Google API."""
     return await raw_ajax(runtime, target_url, constants.GOOGLE, **kwargs)
+
 
 async def raw_canvas_ajax(runtime, target_url, **kwargs):
     """Make an authenticated AJAX call to the Canvas API."""
@@ -426,13 +437,13 @@ class LMS:
         """
         Initializes the API routes for the specified LMS within the given web application.
 
-        This method sets up the endpoint routes and associates them with their corresponding 
+        This method sets up the endpoint routes and associates them with their corresponding
         handler functions.
 
         Args:
             app: An instance of the aiohttp web application to which routes will be added.
         """
-        
+
         # Add the main API documentation route
         app.add_routes([
             aiohttp.web.get(f"/{self.lms_name}", lambda _: api_docs_handler(self.endpoints))
@@ -440,25 +451,25 @@ class LMS:
 
         # Iterate through the endpoints to set up routes for each one
         for e in self.endpoints:
-            function_name = f"raw_{e.name}" # Construct the function name for the raw AJAX function
+            function_name = f"raw_{e.name}"  # Construct the function name for the raw AJAX function
             raw_function = raw_access_partial(
-                raw_ajax_function = self.raw_ajax_function[self.lms_name], # Get the appropriate raw AJAX function
-                target_url = e.remote_url, # Use the endpoint's remote URL
-                name = e.name # Set the name for the function
+                raw_ajax_function=self.raw_ajax_function[self.lms_name],  # Get the appropriate raw AJAX function
+                target_url=e.remote_url,  # Use the endpoint's remote URL
+                name=e.name  # Set the name for the function
             )
-            globals()[function_name] = raw_function # Register the raw function globally
-            
+            globals()[function_name] = raw_function  # Register the raw function globally
+
             # Add routes for each cleaner associated with the endpoint
             cleaners = e._cleaners()
             for c in cleaners:
                 app.add_routes([
                     aiohttp.web.get(
-                        cleaners[c]['local_url'], # The local URL for the cleaner
-                        make_cleaner_handler(raw_function, cleaners[c]['function'], name=cleaners[c]['name']) # Handler for the cleaner
+                        cleaners[c]['local_url'],  # The local URL for the cleaner
+                        make_cleaner_handler(raw_function, cleaners[c]['function'], name=cleaners[c]['name'])  # Handler for the cleaner
                     )
                 ])
-                lms_module = getattr(learning_observer, self.lms_name) # Get the module for the LMS
-                
+                lms_module = getattr(learning_observer, self.lms_name)  # Get the module for the LMS
+
                 # Create the cleaner function and set it in the LMS module
                 cleaner_function = make_cleaner_function(
                     raw_function,
@@ -466,11 +477,11 @@ class LMS:
                     name=cleaners[c]['name']
                 )
                 setattr(lms_module, cleaners[c]['name'], cleaner_function)
-                
+
             # Add the main route for the endpoint
             app.add_routes([
                 aiohttp.web.get(e._local_url(), make_ajax_raw_handler(
-                    self.raw_ajax_function[self.lms_name], # The raw AJAX function for the LMS
-                    e.remote_url # The endpoint's remote URL
+                    self.raw_ajax_function[self.lms_name],  # The raw AJAX function for the LMS
+                    e.remote_url  # The endpoint's remote URL
                 ))
             ])

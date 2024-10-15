@@ -79,8 +79,7 @@ pmss.register_field(
 pmss.register_field(
     name='fetch_additional_info_from_teacher_on_login',
     type=pmss.pmsstypes.TYPES.boolean,
-    description='Whether we should start an additional task that will '\
-        'fetch all text from current rosters.',
+    description='Whether we should start an additional task that will fetch all text from current rosters.',
     default=False
 )
 pmss.register_field(
@@ -141,7 +140,7 @@ async def social_handler(request):
         )
 
     user = await _handle_google_authorization(request)
-    
+
     roster_source = settings.pmss_settings.source(types=['roster_data'])
 
     await _set_lms_header_information(request, roster_source)
@@ -162,13 +161,13 @@ async def social_handler(request):
 async def _set_lms_header_information(request, roster_source):
     """
     Handles the authorization of the specified Learning Management System (LMS)
-    based on the roster data source and delegating the request to the appropriate handler 
+    based on the roster data source and delegating the request to the appropriate handler
     based on the data source type.
-    """    
+    """
     lms_map = {
         constants.CANVAS: _handle_canvas_authorization
     }
-        
+
     # Handle the request depending on the roster source
     if roster_source in lms_map:
         return await lms_map[roster_source](request)
@@ -241,16 +240,17 @@ async def _store_teacher_info_for_background_process(id, request):
             await _process_student_documents(student)
     # TODO saved skipped doc ids somewhere?
 
+
 async def _handle_canvas_authorization(request):
     '''
     Handle Canvas authorization
     '''
     if 'error' in request.query:
         return {}
-    
+
     token_uri = settings.pmss_settings.token_uri(types=['lms', 'canvas_oauth'])
     url = token_uri
-    
+
     params = {
         "grant_type": "refresh_token",
         'client_id': settings.pmss_settings.client_id(types=['lms', 'canvas_oauth']),
@@ -267,8 +267,9 @@ async def _handle_canvas_authorization(request):
         session = await aiohttp_session.get_session(request)
         session[constants.CANVAS_AUTH_HEADERS] = canvas_headers
         request[constants.CANVAS_AUTH_HEADERS] = canvas_headers
-        
+
     return data
+
 
 async def _handle_google_authorization(request):
     '''
