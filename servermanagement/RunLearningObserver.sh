@@ -1,4 +1,3 @@
-
 #!/usr/bin/env bash
 # ===============================
 # RunLearningObserver.sh
@@ -13,7 +12,7 @@
 
 # System Variables
 # --------------------------------------
-VIRTUALENV_PATH="/usr/local/share/projects/WritingObserver/VirtualENVs/WOvenv"
+VIRTUALENV_PATH="/usr/local/share/projects/WritingObserver/VENV/WOVenv"
 #VIRTUALENV_PYTHON="/usr/local/share/Projects/WritingObserver/VirtualENVs/learning_observer/bin/python3.9"
 LEARNING_OBSERVER_LOC="/usr/local/share/projects/WritingObserver/Repositories/ArgLab_writing_observer/learning_observer"
 LOGFILE_DEST="/usr/local/share/projects/WritingObserver/Repositories/ArgLab_writing_observer/learning_observer/learning_observer/logs"
@@ -32,9 +31,10 @@ echo $DOC_PROCESSOR_LOG;
 # --------------------------------------
 echo "Running Learning Observer Service..."
 cd $LEARNING_OBSERVER_LOC
+
 source $VIRTUALENV_PATH/bin/activate
 
-nohup python learning_observer/doc_processor.py > 2&1 &
+nohup python learning_observer/doc_processor.py > $DOC_PROCESSOR_LOG 2>&1 &
 DOC_PROCESS_ID=$!
 echo $DOC_PROCESS_ID > $LOGFILE_DEST/doc_run.pid
 
