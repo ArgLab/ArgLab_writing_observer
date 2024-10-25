@@ -13,10 +13,11 @@ import learning_observer.communication_protocol.integration
 import learning_observer.constants as constants
 import learning_observer.kvs
 import learning_observer.settings
-from learning_observer.stream_analytics.fields import KeyField, KeyStateType, EventField
 import learning_observer.stream_analytics.helpers
 # import traceback
 import learning_observer.util
+
+from learning_observer.log_event import debug_log
 
 pmss.register_field(
     name='use_nlp',
@@ -176,7 +177,6 @@ async def get_latest_student_documents(student_data):
 
     # Compile a list of the active students.
     active_students = [s for s in student_data if 'writing_observer.writing_analysis.last_document' in s]
-
     # Now collect documents for all of the active students.
     document_keys = ([
         learning_observer.stream_analytics.helpers.make_key(
@@ -190,6 +190,7 @@ async def get_latest_student_documents(student_data):
 
     kvs_data = await kvs.multiget(keys=document_keys)
 
+    
     # Return blank entries if no data, rather than None. This makes it possible
     # to use item.get with defaults sanely.  For the sake of later alignment
     # we also zip up the items with the keys and users that they come from
@@ -208,7 +209,9 @@ async def get_latest_student_documents(student_data):
         # Now insert the student data and pass it along.
         doc['student'] = student
         writing_data.append(doc)
-
+    
+    print(writing_data)
+    
     return writing_data
 
 
@@ -223,16 +226,19 @@ async def remove_extra_data(writing_data):
     return writing_data
 
 
-async def merge_with_student_data(writing_data, student_data):
-    '''
-    Add the student metadata to each text
-    '''
+# async def merge_with_student_data(writing_data, student_data):
+#     '''
+#     Add the student metadata to each text.  Because we may have
+#     fewer entries in writing_data than student_data we iterate 
+#     over the student_data locating writing data that matches it
+#     if any.
+#     '''
 
-    for item, student in zip(writing_data, student_data):
-        if 'edit_metadata' in item:
-            del item['edit_metadata']
-        item['student'] = student
-    return writing_data
+#     for item, student in zip(writing_data, student_data):
+#         if 'edit_metadata' in item:
+#             del item['edit_metadata']
+#         item['student'] = student
+#     return writing_data
 
 
 # TODO the use_nlp initialization code ought to live in a
@@ -377,6 +383,7 @@ async def latest_data(runtime, student_data, options=None):
     #         single_doc.update(annotated_text)
     :return: The latest writing data.
     '''
+    debug_log("WritingObserver latest_data students:", student_data)
 
     # HACK we have a cache downstream that relies on redis_ephemeral being setup
     # when that is resolved, we can remove the feature flag
@@ -387,29 +394,18 @@ async def latest_data(runtime, student_data, options=None):
     # Get the latest documents with the students appended.
     writing_data = await get_latest_student_documents(student_data)
 
-    # Strip out the unnecessary extra data.
+    # Strip out the unnecessary edit_metadata from the merged
+    # student and writing data.
     writing_data = await remove_extra_data(writing_data)
 
-    # print(">>> WRITE DATA-premerge: {}".format(writing_data))
-
-    # This is the error.  Skipping now.
-    writing_data_merge = await merge_with_student_data(writing_data, student_data)
-    # print(">>> WRITE DATA-postmerge: {}".format(writing_data_merge))
-
-    # #print(">>>> PRINT WRITE DATA: Merge")
-    # #print(writing_data)
-
-    # just_the_text = [w.get("text", "") for w in writing_data]
-
-    # annotated_texts = await writing_observer.awe_nlp.process_texts_parallel(just_the_text)
-
-    # for annotated_text, single_doc in zip(annotated_texts, writing_data):
-    #     if annotated_text != "Error":
-    #         single_doc.update(annotated_text)
-
-    writing_data = await merge_with_student_data(writing_data, student_data)
+    # Now process the remaining data.  Previously this called
+    # for merge_with_student_data however that is unnecessary
+    # as the steps above will already integrate the student
+    # information into the writing data.
     writing_data = await processor(writing_data, options)
 
+    debug_log("WritingObserver latest_data result: ", writing_data)
+    
     return {'latest_writing_data': writing_data}
 
 
