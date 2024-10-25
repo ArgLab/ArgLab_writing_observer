@@ -4,11 +4,11 @@ This is an interface to AWE_Workbench.
 
 import asyncio
 import enum
-import hashlib
-import time
 import functools
-import os
 import multiprocessing
+import os
+import pmss
+import time
 
 from concurrent.futures import ProcessPoolExecutor
 from learning_observer.log_event import debug_log
@@ -28,7 +28,26 @@ import warnings
 import writing_observer.nlp_indicators
 import learning_observer.kvs
 import learning_observer.paths
+import learning_observer.settings
 import learning_observer.util
+
+
+SPACY_PREFERENCE = {
+    'require': spacy.require_gpu,
+    'prefer': spacy.prefer_gpu,
+    'none': lambda: None
+}
+
+pmss.parser('spacy_gpu_preference', parent='string', choices=['require', 'prefer', 'none'], transform=None)
+pmss.register_field(
+    name='spacy_gpu_preference',
+    type='spacy_gpu_preference',
+    description='Determine if we should use the GPU for Spacy or not.\n'\
+                '`require`: use GPU for spacy operations, raises error if GPU is not preset.\n'\
+                '`prefer`: uses GPU, if available, for spacy operations, otherwise use CPU.\n'\
+                '`none`: use CPU for spacy operations.',
+    default='none'
+)
 
 RUN_MODES = enum.Enum('RUN_MODES', 'MULTIPROCESSING SERIAL')
 
@@ -38,15 +57,24 @@ def init_nlp():
     Initialize the spacy pipeline with the AWE components. This takes a while
     to run.
     '''
+    gpu_preference = learning_observer.settings.pmss_settings.spacy_gpu_preference()
+    debug_log(f'Spacy GPU preference set to {gpu_preference}.')
+    SPACY_PREFERENCE[gpu_preference]()
+
     warnings.filterwarnings('ignore', category=UserWarning, module='nltk')
     try:
         nlp = spacy.load("en_core_web_lg")
     except OSError as e:
         error_text = 'There was an issue loading `en_core_web_lg` from spacy. '\
                      '`awe_components` requires various models to operate properly. '\
-                     f'Run `{learning_observer.paths.PYTHON_EXECUTABLE} awe_components/setup/data.py` to install all '\
+                     f'Run `{learning_observer.paths.PYTHON_EXECUTABLE} -m awe_components.setup.data` to install all '\
                      'of the necessary models.'
-        raise OSError(error_text) from e
+
+        a = input('Spacy model `en_core_web_lg` not available. Would you like to download? (y/n)')
+        if a.strip().lower() not in ['y', 'yes']:
+            raise OSError(error_text) from e
+        import awe_components.setup.data
+        awe_components.setup.data.download_models()
 
     # Adding all of the components, since
     # each of them turns out to be implicated in
@@ -310,17 +338,20 @@ async def process_and_cache_missing_features(unfound_features, found_features, r
 async def process_writings_with_caching(writing_data, options=None, mode=RUN_MODES.MULTIPROCESSING, sleep_interval=1, wait_time_for_running_features=60):
     '''
     Caching:
+
     1. Create text hash.
     2. Check if hash exist in cache.
     3. Check if some options are a subset of features_available
-        Yes: add the intersection of features_available and options to results
+        * Yes: add the intersection of features_available and options to results
     4. Check if some options are a subset of running_features.
-        Yes: a. Wait for running_features to finish.
-             b. Update the cache
-             c. Add intersection of running_features and Options to results
+        * Yes:
+        a. Wait for running_features to finish.
+        b. Update the cache
+        c. Add intersection of running_features and Options to results
     5. Check if additional features are required.
-        Yes: a. Collect options not covered till now and add to running_features.
-             b. Once finished, update cache and return results.
+        * Yes:
+        a. Collect options not covered till now and add to running_features.
+        b. Once finished, update cache and return results.
 
     param writing_data: The writing data.
     :param options: The list of additional features (optional).
@@ -337,7 +368,7 @@ async def process_writings_with_caching(writing_data, options=None, mode=RUN_MOD
         RUN_MODES.SERIAL: process_texts_serial
     }
 
-    for writing in writing_data:
+    async for writing in writing_data:
         text = writing.get('text', '')
         if len(text) == 0:
             continue
@@ -349,20 +380,18 @@ async def process_writings_with_caching(writing_data, options=None, mode=RUN_MOD
         found_features, writing = await check_available_features_in_cache(cache, text_hash, requested_features, writing)
         # If all options were found
         if found_features == requested_features:
-            results.append(writing)
+            yield writing
             continue
 
         # Check if some options are a subset of running_features: features that are needed but are already running
         unfound_features, found_features, writing = await check_and_wait_for_running_features(writing, requested_features, found_features, cache, sleep_interval, wait_time_for_running_features, text_hash)
         # If all options are found
         if found_features == requested_features:
-            results.append(writing)
+            yield writing
             continue
 
         # Add not found options to running_features and update cache
-        results.append(await process_and_cache_missing_features(unfound_features, found_features, requested_features, cache, text_hash, writing))
-
-    return results
+        yield await process_and_cache_missing_features(unfound_features, found_features, requested_features, cache, text_hash, writing)
 
 
 if __name__ == '__main__':

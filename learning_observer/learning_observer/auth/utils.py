@@ -12,10 +12,10 @@ converting to int and back).
 The whole auth system ought to be reorganized at some point.
 '''
 
+import bcrypt
 import hashlib
 import functools
-
-import bcrypt
+import urllib.parse
 import yaml
 
 import aiohttp.web
@@ -177,9 +177,9 @@ def _role_required(role):
     '''
     def decorator(func):
         @functools.wraps(func)
-        def wrapper(request):
+        async def wrapper(request):
             if learning_observer.settings.settings['auth'].get("test_case_insecure", False):
-                return func(request)
+                return await func(request)
             '''TODO evaluate how we should be using `role` with the
             `authorized` key.
 
@@ -191,19 +191,22 @@ def _role_required(role):
             When this is resolved, we need to update each source of
             auth in our code (e.g. password, http_basic, google, etc.)
             '''
-            user = request.get(constants.USER, None)
+            user = await get_active_user(request)
             if user is not None:
                 session_authorized = user.get('authorized', False)
                 session_role = user.get('role', roles.ROLES.STUDENT)
                 if session_authorized and session_role in [role, roles.ROLES.ADMIN]:
-                    return func(request)
-            # Else, if unauthorized
-            # send user to login page /
-            # there may be a slight oddball with the url hash being
-            # included after the location updates
-            # luckily these are removed after the user logs in
+                    return await func(request)
+            # if they are not allowed to be here, redirect them to the home page
+            # NOTE when the location updates, the url's hash is still included.
+            # this is not sent with the request so this inclusion is ideal for
+            # the back_to parameter.
+            # TODO we ought to have a slightly different workflow for unauthorized users
+            # compared to non-users.
+            # This should be handled at the end of the above conditional statement.
+            # We ought to redirect them home and include a message about permissions.
             response = aiohttp.web.Response(status=302)
-            redirect_url = '/'
+            redirect_url = f'/?back_to={urllib.parse.quote(str(request.rel_url))}' if user is None else '/'
             response.headers['Location'] = redirect_url
             raise aiohttp.web.HTTPFound(location=redirect_url, headers=response.headers)
         return wrapper

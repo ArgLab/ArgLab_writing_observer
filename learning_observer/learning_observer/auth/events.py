@@ -289,14 +289,6 @@ async def test_case_identify(request, headers, first_event, source):
     }
 
 
-@register_event_auth("http_auth")
-async def http_auth_identify(request, headers, first_event, source):
-    '''
-    TODO: Allow events to be authorized by HTTP basic authentication
-    '''
-    raise NotImplementedError("Not yet built; sorry")
-
-
 async def authenticate(request, headers, first_event, source):
     '''
     Authenticate an event stream.
@@ -311,12 +303,12 @@ async def authenticate(request, headers, first_event, source):
     type (e.g. require auth for writing, but not for dynamic assessment)
 
     Our thoughts are that the auth metadata ought to contain:
+
     1. Whether the user was authenticated (`sec` field):
-       * `authenticated` -- we trust who they are
-       * `unauthenticated` -- we think we know who they are, without security
-       * `guest` -- we don't know who they are
-    2. Providence: How they were authenticated (if at all), or how we believe
-       they are who they are.
+        * `authenticated` -- we trust who they are
+        * `unauthenticated` -- we think we know who they are, without security
+        * `guest` -- we don't know who they are
+    2. Providence: How they were authenticated (if at all), or how we believe they are who they are.
     3. `user_id` -- a unique user identifier
     '''
     for auth_method in learning_observer.settings.settings['event_auth']:
