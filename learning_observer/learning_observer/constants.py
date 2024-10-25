@@ -10,6 +10,7 @@ good reason to live elsewhere.
 '''
 # used in request headers to hold auth information
 AUTH_HEADERS = 'auth_headers'
+CANVAS_AUTH_HEADERS = 'canvas_auth_headers'
 # used for storing impersonation information in session
 IMPERSONATING_AS = 'impersonating_as'
 
@@ -17,3 +18,7 @@ IMPERSONATING_AS = 'impersonating_as'
 USER = 'user'
 # common user id reference for user object
 USER_ID = 'user_id'
+
+# used to identify LMSes
+GOOGLE = 'google'
+CANVAS = 'canvas'

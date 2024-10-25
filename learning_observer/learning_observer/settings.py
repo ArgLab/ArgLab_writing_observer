@@ -39,6 +39,7 @@ if not __name__.startswith("learning_observer."):
 args = None
 parser = None
 
+
 def str_to_bool(arg):
     if isinstance(arg, bool):
         return arg
@@ -123,9 +124,9 @@ pmss.parser('run_mode', parent='string', choices=['dev', 'deploy', 'interactive'
 pmss.register_field(
     name='run_mode',
     type='run_mode',
-    description="Set which mode the server is running in.\n"\
-                "`dev` for local development with full debugging\n"\
-                "`deploy` for running on a server with better performance\n"\
+    description="Set which mode the server is running in.\n"
+                "`dev` for local development with full debugging\n"
+                "`deploy` for running on a server with better performance\n"
                 "`interactive` for processing data offline",
     required=True
 )
@@ -223,7 +224,7 @@ def initialized():
 
 
 # Not all of these are guaranteed to work on every branch of the codebase.
-AVAILABLE_FEATURE_FLAGS = ['uvloop', 'watchdog', 'auth_headers_page', 'merkle', 'save_google_ajax', 'use_google_ajax']
+AVAILABLE_FEATURE_FLAGS = ['uvloop', 'watchdog', 'auth_headers_page', 'merkle', 'save_google_ajax', 'use_google_ajax', 'use_canvas_ajax']
 
 
 def feature_flag(flag):

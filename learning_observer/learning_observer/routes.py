@@ -23,11 +23,13 @@ import learning_observer.impersonate
 import learning_observer.incoming_student_event as incoming_student_event
 import learning_observer.dashboard
 import learning_observer.google
+import learning_observer.canvas
 import learning_observer.rosters as rosters
 import learning_observer.module_loader
 
 import learning_observer.paths as paths
 import learning_observer.settings as settings
+import learning_observer.constants as constants
 
 from learning_observer.log_event import debug_log, startup_state
 
@@ -66,7 +68,7 @@ def add_routes(app):
     register_static_routes(app)
     register_incoming_event_views(app)
     register_debug_routes(app)
-    learning_observer.google.initialize_and_register_routes(app)
+    register_lms_routes(app)
 
     app.add_routes([
         aiohttp.web.get(
@@ -163,6 +165,17 @@ def add_routes(app):
     # want to provide that option in the future, but as we're prototyping
     # and figuring stuff out, this feels safest to put last.
     register_wsgi_routes(app)
+
+
+def register_lms_routes(app):
+    """
+    Register routes for the various Learning Management Systems (LMS).
+
+    Parameters:
+    - app: An instance of aiohttp.web.Application where the routes will be registered.
+    """
+    learning_observer.google.initialize_google_routes(app)
+    learning_observer.canvas.initialize_canvas_routes(app)
 
 
 def register_debug_routes(app):
