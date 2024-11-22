@@ -55,8 +55,8 @@ args = settings.parse_and_validate_arguments()
 # this to prefer the GPU where possible.
 # spacy.prefer_gpu()
 # debug_log("Preferring GPU Use.")
-# spacy.require_gpu()
-# debug_log("Requiring GPU Use.")
+spacy.require_gpu()
+debug_log("Requiring GPU Use.")
 
 
 def configure_event_loop():

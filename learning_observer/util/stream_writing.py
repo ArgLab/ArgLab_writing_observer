@@ -36,7 +36,6 @@ import names
 import random
 import sys
 import time
-import hashlib
 
 
 ARGS = docopt.docopt(__doc__)
@@ -91,11 +90,9 @@ def argument_list(argument, default):
     if isinstance(list_string, str):
         list_string = [list_string] * STREAMS
     if len(list_string) != STREAMS:
-        print(
-            f"Failure: {list_string}\nfrom {argument} should make {STREAMS} items")
+        print(f"Failure: {list_string}\nfrom {argument} should make {STREAMS} items")
         sys.exit(-1)
     return list_string
-
 
 # TODO what is `source_files` supposed to be?
 # when running this script for the workshop, we should either
@@ -106,11 +103,9 @@ source_files = None
 if ARGS["--gpt3"] is not None:
     import writing_observer.sample_essays
     TEXT = writing_observer.sample_essays.GPT3_TEXTS[ARGS["--gpt3"]]
-    text_to_use = TEXT[0]
-    TEXT = [text_to_use for _ in range(STREAMS)]
+    STREAMS = len(TEXT)
 elif source_files is None:
-    TEXT = ["\n".join(loremipsum.get_paragraphs(
-        int(ARGS.get("--text-length", 5)))) for i in range(STREAMS)]
+    TEXT = ["\n".join(loremipsum.get_paragraphs(int(ARGS.get("--text-length", 5)))) for i in range(STREAMS)]
 else:
     TEXT = [open(filename).read() for filename in source_files]
 
@@ -129,7 +124,6 @@ source_files = argument_list(
     None
 )
 
-
 if ARGS['--users'] is not None:
     USERS = argument_list('--users', None)
 elif ARGS['--fake-name']:
@@ -141,7 +135,6 @@ assert len(TEXT) == STREAMS, "len(filenames) != STREAMS."
 assert len(ICI) == STREAMS, "len(ICIs) != STREAMS."
 assert len(USERS) == STREAMS, "len(users) != STREAMS."
 assert len(DOC_IDS) == STREAMS, "len(document IDs) != STREAMS."
-
 
 def current_millis():
     return round(time.time() * 1000)
@@ -183,13 +176,6 @@ def identify(user):
             "origin": "stream_test_script"
         }
     ]
-
-
-def str_to_hex(s: str) -> str:
-    s = s.encode()
-    sha256_hasher = hashlib.sha256()
-    sha256_hasher.update(s)
-    return sha256_hasher.hexdigest()
 
 
 async def stream_document(text, ici, user, doc_id):
