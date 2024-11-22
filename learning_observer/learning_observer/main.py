@@ -9,7 +9,6 @@ small applications we are testing this system with as well (e.g. dynamic
 assessment).
 '''
 
-import spacy
 import sys
 
 import asyncio
@@ -53,6 +52,7 @@ args = settings.parse_and_validate_arguments()
 
 # This will need to move but for the moment we hack with
 # this to prefer the GPU where possible.
+import spacy
 # spacy.prefer_gpu()
 # debug_log("Preferring GPU Use.")
 spacy.require_gpu()
