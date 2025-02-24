@@ -256,7 +256,7 @@ def register_auth_webapp_views(app):
                 fn=settings.settings['auth']['password_file']
             ))
             print("Typically:")
-            print("{python_src} learning_observer/util/lo_passwd.py "
+            print("{python_src} scripts/lo_passwd.py "
                   "--username {username} --password {password} "
                   "--filename learning_observer/{fn}".format(
                       python_src=paths.PYTHON_EXECUTABLE,
@@ -451,7 +451,11 @@ def register_extra_views(app):
 
 def create_nextjs_handler(path):
     async def _nextjs_handler(request):
-        return aiohttp.web.FileResponse(os.path.join(path, 'index.html'))
+        sub_url = request.match_info.get('tail')
+        if sub_url is None:
+            return aiohttp.web.FileResponse(os.path.join(path, 'index.html'))
+        # TODO will this handle multi-layered sub-urls? /foo/bar
+        return aiohttp.web.FileResponse(os.path.join(path, f'{sub_url}.html'))
     return _nextjs_handler
 
 
@@ -467,6 +471,9 @@ def register_nextjs_routes(app):
         static_path = f'/_next{page_path}_next/static/'
         app.router.add_static(static_path, os.path.join(full_path, '_next', 'static'))
         app.router.add_get(page_path, create_nextjs_handler(full_path))
+        # The tail path handles suburls
+        tail_path = page_path + '{tail:.*}'
+        app.router.add_get(tail_path, create_nextjs_handler(full_path))
 
 
 def register_wsgi_routes(app):
