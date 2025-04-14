@@ -21,11 +21,19 @@ import learning_observer.paths
 
 import pmss
 
+school_config_paths = learning_observer.paths.get_school_config_files()
+school_rulesets = [pmss.YAMLFileRuleset(filename=path) for path in school_config_paths]
+
+base_ruleset = pmss.YAMLFileRuleset(filename=learning_observer.paths.config_file())
+
 pmss_settings = pmss.init(
     prog=__name__,
     description="A system for monitoring",
     epilog="For more information, see PMSS documentation.",
-    rulesets=[pmss.YAMLFileRuleset(filename=learning_observer.paths.config_file())]
+    rulesets=[
+        base_ruleset,
+        *school_rulesets
+    ]
 )
 
 # If we e.g. `import settings` and `import learning_observer.settings`, we

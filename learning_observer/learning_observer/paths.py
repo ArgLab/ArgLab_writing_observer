@@ -29,6 +29,7 @@ import errno
 import os
 import os.path
 import sys
+import glob
 
 
 BASE_PATH = os.path.abspath(os.path.dirname(__file__))
@@ -87,6 +88,22 @@ def config_file():
 
     return pathname
 
+def get_school_config_files():
+    '''
+    Return a list of all .yaml config files in the specified directory.
+    Defaults to a 'configs' folder next to the base path.
+    '''
+    school_config_dir = os.path.join(os.path.dirname(base_path()), 'school_configs')
+
+    if not os.path.isdir(school_config_dir):
+        raise FileNotFoundError(f"Config directory not found: {school_config_dir}")
+
+    school_config_files = glob.glob(os.path.join(school_config_dir, '*.yaml'))
+
+    if not school_config_files:
+        print(f"No .yaml school configuration files found in: {school_config_dir}")
+
+    return school_config_files
 
 DATA_PATH_OVERRIDE = None
 
