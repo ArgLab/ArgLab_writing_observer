@@ -58,7 +58,7 @@ const thunkStorage = {
  * `storage.sync.get`/`chrome.sync.get` API.
  */
 function getWithCallback (getItem) {
-  function get (items, callback) {
+  function get (items, callback = () => {}) {
     if (typeof items === 'string') {
       items = [items];
     }
@@ -77,7 +77,7 @@ function getWithCallback (getItem) {
  * `storage.sync.set`/`chrome.sync.set` API.
  */
 function setWithCallback (setItem) {
-  function set (items, callback) {
+  function set (items, callback = () => {}) {
     for (const item in items) {
       setItem(item, items[item]);
     }
@@ -107,12 +107,17 @@ if (typeof browser !== 'undefined') {
  * - window.localStorage
  * - thunkStorage
  */
-if (typeof b !== 'undefined' && b.storage && b.storage.sync) {
-  debug.info('Setting storage to storage.sync');
-  storage = b.storage.sync;
-} else if (typeof b !== 'undefined' && b.storage && b.storage.local) {
-  debug.info('Setting storage to storage.local');
-  storage = b.storage.local;
+if (typeof b !== 'undefined') {
+  if (b.storage && b.storage.sync) {
+    debug.info('Setting storage to storage.sync');
+    storage = b.storage.sync;
+  } else if (b.storage && b.storage.local) {
+    debug.info('Setting storage to storage.local');
+    storage = b.storage.local;
+  } else {
+    debug.info('Setting storage to default, thunkStorage');
+    storage = thunkStorage;
+  }
 } else if (typeof localStorage !== 'undefined') {
   // Add compatibility modifications for localStorage
   debug.info('Setting storage to localStorage');

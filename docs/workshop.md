@@ -67,9 +67,18 @@ NOTE: All future commands should be ran starting from the repository's root dire
 
 Make sure you are on a fresh virtual environment. In `virtualenvwrapper`:
 
+You can either run this
+
 ```bash
 mkvirtualenv lo_workshop
 workon lo_workshop
+```
+
+or run this to set up the virtual environment
+
+```bash
+python -m venv lo_workshop
+source lo_workshop/bin/activate
 ```
 
 Then run the install command:
@@ -149,7 +158,7 @@ We can stream data into the system to simulate a classroom of students working. 
 
 ```bash
 workon lo_workshop
-python learning_observer/util/stream_writing.py --streams=10
+python scripts/stream_writing.py --streams=10
 ```
 
 To avoid cache issues, we recommend this order:
