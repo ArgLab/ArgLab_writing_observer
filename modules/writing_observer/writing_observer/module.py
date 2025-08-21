@@ -78,6 +78,18 @@ pmss.register_field(
 nlp_source = learning_observer.settings.module_setting('writing_observer', setting='nlp_source')
 lt_single_source = learning_observer.settings.module_setting('writing_observer', setting='languagetool_individual_source')
 lt_group_source = learning_observer.settings.module_setting('writing_observer', setting='languagetool_source')
+
+gpt_bulk_essay = q.call('wo_bulk_essay_analysis.gpt_essay_prompt')
+
+# Document sources
+document_sources = source_selector(
+    sources={'timestamp': q.variable('docs_at_ts'),
+             'latest': q.variable('doc_ids'),
+             'assignment': q.variable('assignment_docs')
+            },
+    source=q.parameter('doc_source', required=False, default='latest')
+)
+
 EXECUTION_DAG = {
     "execution_dag": {
         "roster": course_roster(runtime=q.parameter("runtime"), course_id=q.parameter("course_id", required=True)),
@@ -89,9 +101,8 @@ EXECUTION_DAG = {
         'nlp_sep_proc': q.select(q.keys('writing_observer.nlp_components', STUDENTS=q.variable('roster'), STUDENTS_path='user_id', RESOURCES=q.variable("doc_ids"), RESOURCES_path='doc_id'), fields='All'),
         'nlp_combined': q.join(LEFT=q.variable(nlp_source), LEFT_ON='provenance.provenance.STUDENT.value.user_id', RIGHT=q.variable('roster'), RIGHT_ON='user_id'),
         # error dashboard activity map nodes
-        'time_on_task': q.select(q.keys('writing_observer.time_on_task', STUDENTS=q.variable("roster"), STUDENTS_path='user_id', RESOURCES=q.variable("doc_sources"), RESOURCES_path='doc_id'), fields={'saved_ts': 'last_ts'}),
+        'time_on_task': q.select(q.keys('writing_observer.time_on_task', STUDENTS=q.variable("roster"), STUDENTS_path='user_id', RESOURCES=q.variable("doc_sources"), RESOURCES_path='doc_id'), fields={'saved_ts': 'last_ts', 'total_time_on_task': 'time_on_task'}),
         'activity_map': q.map(determine_activity, q.variable('time_on_task'), value_path='last_ts'),
-        'activity_combined': q.join(LEFT=q.variable('activity_map'), LEFT_ON='provenance.value.provenance.provenance.STUDENT.value.user_id', RIGHT=q.variable('roster'), RIGHT_ON='user_id'),
         # single student language tool nodes
         'single_student_latest_doc': q.select(q.keys('writing_observer.last_document', STUDENTS=q.parameter("student_id", required=True), STUDENTS_path='user_id'), fields={'document_id': 'doc_id'}),
         'single_timestamped_docs': q.select(q.keys('writing_observer.document_access_timestamps', STUDENTS=q.parameter("student_id", required=True), STUDENTS_path='user_id'), fields={'timestamps': 'timestamps'}),
@@ -122,18 +133,28 @@ EXECUTION_DAG = {
         'tagged_doc_list': q.join(LEFT=q.variable('unwind_tags'), RIGHT=q.variable('unwind_doc_list'), LEFT_ON='doc_id', RIGHT_ON='doc.id'),
         'grouped_doc_list_by_student': group_docs_by(items=q.variable('tagged_doc_list'), value_path='provenance.provenance.value.user_id'),
         'tagged_docs_per_student': q.join(LEFT=q.variable('roster'), RIGHT=q.variable('grouped_doc_list_by_student'), LEFT_ON='user_id', RIGHT_ON='user_id'),
+        # Student document list
+        'document_list': q.select(q.keys('writing_observer.document_list', STUDENTS=q.variable('roster'), STUDENTS_path='user_id'), fields={'docs': 'availableDocuments'}),
 
         # the following nodes just fetches docs related to an assignment on Google Classroom
-        'assignment_docs': assignment_documents(runtime=q.parameter('runtime'), course_id=q.parameter('course_id', required=True), assignment_id=q.parameter('assignment_id', required=True)),
+        'assignment_docs': assignment_documents(runtime=q.parameter('runtime'), course_id=q.parameter('course_id', required=True), kwargs=q.parameter('doc_source_kwargs')),
 
         # fetch the doc less than or equal to a timestamp
         'timestamped_docs': q.select(q.keys('writing_observer.document_access_timestamps', STUDENTS=q.variable('roster'), STUDENTS_path='user_id'), fields={'timestamps': 'timestamps'}),
-        'docs_at_ts': document_access_ts(overall_timestamps=q.variable('timestamped_docs'), requested_timestamp=q.parameter('requested_timestamp')),
+        'docs_at_ts': document_access_ts(overall_timestamps=q.variable('timestamped_docs'), kwargs=q.parameter('doc_source_kwargs')),
 
         # figure out where to source document ids from
         # current options include `ts` for a given timestamp
         # or `latest` for the most recently accessed
-        'doc_sources': source_selector(sources={'ts': q.variable('docs_at_ts'), 'latest': q.variable('doc_ids')}, source=q.parameter('doc_source', required=False, default='latest')),
+        'doc_sources': document_sources,
+        'gpt_map': q.map(
+            gpt_bulk_essay,
+            values=q.variable('docs'),
+            value_path='text',
+            func_kwargs={'prompt': q.parameter('gpt_prompt'), 'system_prompt': q.parameter('system_prompt'), 'tags': q.parameter('tags', required=False, default={})},
+            parallel=True
+        ),
+        'gpt_bulk': q.join(LEFT=q.variable('gpt_map'), LEFT_ON='provenance.provenance.provenance.STUDENT.value.user_id', RIGHT=q.variable('roster'), RIGHT_ON='user_id'),
     },
     "exports": {
         "docs_with_roster": {
@@ -141,13 +162,38 @@ EXECUTION_DAG = {
             "parameters": ["course_id"],
             "output": ""
         },
+        "roster": {
+            "returns": "roster",
+            "parameters": ["course_id"],
+            "output": ""
+        },
+        "document_list": {
+            "returns": "document_list",
+            "parameters": ["course_id"],
+            "output": ""
+        },
+        "document_sources": {
+            "returns": "doc_sources",
+            "parameters": ["course_id"],
+            "output": ""
+        },
+        'gpt_bulk': {
+            'returns': 'gpt_bulk',
+            'parameters': ['course_id', 'gpt_prompt', 'system_prompt'],
+            'output': ''
+        },
         "docs_with_nlp_annotations": {
             "returns": "nlp_combined",
             "parameters": ["course_id", "nlp_options"],
             "output": ""
         },
         "activity": {
-            "returns": "activity_combined",
+            "returns": "activity_map",
+            "parameters": ["course_id"],
+            "output": ""
+        },
+        "time_on_task": {
+            "returns": "time_on_task",
             "parameters": ["course_id"],
             "output": ""
         },
@@ -164,10 +210,6 @@ EXECUTION_DAG = {
         'tagged_docs_per_student': {
             'returns': 'tagged_docs_per_student',
             'parameters': ['course_id', 'tag_path']
-        },
-        'assignment_docs': {
-            'returns': 'assignment_docs',
-            'parameters': ['course_id', 'assignment_id']
         },
         'latest_doc_ids': {
             'returns': 'latest_doc_ids',
@@ -274,6 +316,11 @@ REDUCERS = [
         'function': writing_observer.writing_analysis.languagetool_process,
         'default': {'text': '', 'category_counts': {}, 'matches': [], 'subcategory_counts': {}, 'wordcounts': {}}
     },
+    {
+        'context': "org.mitros.writing_analytics",
+        'scope': writing_observer.writing_analysis.student_scope,
+        'function': writing_observer.writing_analysis.student_profile,
+    }
 ]
 
 

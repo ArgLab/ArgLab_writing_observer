@@ -75,6 +75,7 @@ def init_nlp():
             raise OSError(error_text) from e
         import awe_components.setup.data
         awe_components.setup.data.download_models()
+        nlp = spacy.load('en_core_web_lg')
 
     # Adding all of the components, since
     # each of them turns out to be implicated in
@@ -153,7 +154,7 @@ def process_text(text, options=None):
         if item not in writing_observer.nlp_indicators.INDICATORS:
             continue
         indicator = writing_observer.nlp_indicators.INDICATORS[item]
-        (id, label, infoType, select, filterInfo, summaryType) = indicator
+        (id, label, infoType, select, filterInfo, summaryType, category) = indicator
         results[id] = outputIndicator(doc, select, infoType, stype=summaryType, text=text, added_filter=filterInfo)
         results[id].update({
             "label": label,
@@ -371,6 +372,7 @@ async def process_writings_with_caching(writing_data, options=None, mode=RUN_MOD
     async for writing in writing_data:
         text = writing.get('text', '')
         if len(text) == 0:
+            yield writing
             continue
 
         # Creating text hash and setting defaults
