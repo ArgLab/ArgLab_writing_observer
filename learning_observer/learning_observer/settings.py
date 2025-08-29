@@ -25,7 +25,10 @@ pmss_settings = pmss.init(
     prog=__name__,
     description="A system for monitoring",
     epilog="For more information, see PMSS documentation.",
-    rulesets=[pmss.YAMLFileRuleset(filename=learning_observer.paths.config_file())]
+    rulesets=[
+        pmss.YAMLFileRuleset(filename=learning_observer.paths.config_file()),
+        pmss.PMSSFileRuleset(filename='school_rosters.pmss')
+    ]
 )
 
 # If we e.g. `import settings` and `import learning_observer.settings`, we
