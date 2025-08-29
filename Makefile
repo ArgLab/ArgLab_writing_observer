@@ -62,8 +62,6 @@ install-packages:
 	# regarding compatibility with `protobuf`. Some installation
 	# files are missing from the protobuf binary on pip.
 	# Using the `--no-binary` option includes all files.
-	pip uninstall -y protobuf
-	pip install --no-binary=protobuf protobuf==4.25
 
 # Testing commands
 test:
