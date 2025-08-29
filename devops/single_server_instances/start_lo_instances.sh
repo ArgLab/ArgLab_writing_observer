@@ -33,6 +33,7 @@ for ((i=0; i<NUM_SERVERS; i++)); do
     PROCESS_ID=$!
     echo $PROCESS_ID > "$PIDFILE_NAME"
     echo "  -> PID $PROCESS_ID logged to $PIDFILE_NAME"
+    prlimit --pid $PROCESS_ID --nofile=8192
 done
 
 echo "✅ All servers started."
