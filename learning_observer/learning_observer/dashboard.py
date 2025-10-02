@@ -99,7 +99,7 @@ async def generic_dashboard(request):
     GraphQL looks super-relevant. Implementing it is a big lift, and
     it might need to be slightly adapted to the context.
 
-    The test case for this is in `util/generic_websocket_dashboard.py`
+    The test case for this is in `scripts/generic_websocket_dashboard.py`
     '''
     # We never send data more than twice per second, because performance.
     MIN_REFRESH = 0.5
@@ -560,10 +560,15 @@ def _find_student_or_resource(d):
         provenance = d['provenance']
         output = []
         if 'STUDENT' in provenance:
+            output.append('students')
             output.append(provenance['STUDENT']['user_id'])
         if 'RESOURCE' in provenance:
-            output.append('documents')
-            output.append(provenance['RESOURCE']['doc_id'])
+            if 'doc_id' in provenance['RESOURCE']:
+                output.append('documents')
+                output.append(provenance['RESOURCE']['doc_id'])
+            if 'assignment_id' in provenance['RESOURCE']:
+                output.append('assignments')
+                output.append(provenance['RESOURCE']['assignment_id'])
         if output:
             return output
         return _find_student_or_resource(provenance)
@@ -588,6 +593,7 @@ async def websocket_dashboard_handler(request):
     previous_client_query = None
     batch = []
     lock = asyncio.Lock()
+    background_tasks = set()
 
     async def _send_update(update):
         '''Send an update to our batch
@@ -625,9 +631,10 @@ async def websocket_dashboard_handler(request):
 
         # Create DAG generator and drive
         generator = await _create_dag_generator(dag_query, target, request)
-        await _drive_generator(generator, dag_query['kwargs'])
+        await _drive_generator(generator, dag_query['kwargs'], target=target)
 
         # Handle rescheduling the execution of the DAG for fresh data
+        # TODO add some way to specific specific endpoint delays
         dag_delay = dag_query['kwargs'].get('rerun_dag_delay', 10)
         if dag_delay < 0:
             # if dag_delay is negative, we skip repeated execution
@@ -635,18 +642,20 @@ async def websocket_dashboard_handler(request):
         await asyncio.sleep(dag_delay)
         await _execute_dag(dag_query, target, params)
 
-    async def _drive_generator(generator, dag_kwargs):
+    async def _drive_generator(generator, dag_kwargs, target=None):
         '''For each item in the generator, this method creates
         an update to send to the client.
         '''
         async for item in generator:
             scope = _find_student_or_resource(item)
             update_path = ".".join(scope)
-            if 'option_hash' in dag_kwargs:
-                item['option_hash'] = dag_kwargs['option_hash']
+            if 'option_hash' in dag_kwargs and target is not None:
+                item[f'option_hash_{target}'] = dag_kwargs['option_hash']
             await _send_update({'op': 'update', 'path': update_path, 'value': item})
 
-    send_batches = asyncio.create_task(_batch_send())
+    send_batches_task = asyncio.create_task(_batch_send())
+    background_tasks.add(send_batches_task)
+    send_batches_task.add_done_callback(background_tasks.discard)
 
     while True:
         try:
@@ -676,7 +685,9 @@ async def websocket_dashboard_handler(request):
             # reschedule timeout).
             for k, v in client_query.items():
                 for target in v.get('target_exports', []):
-                    asyncio.create_task(_execute_dag(v, target, client_query))
+                    execute_dag_task = asyncio.create_task(_execute_dag(v, target, client_query))
+                    background_tasks.add(execute_dag_task)
+                    execute_dag_task.add_done_callback(background_tasks.discard)
 
 
 # Obsolete code -- we should put this back in after our refactor. Allows us to use
