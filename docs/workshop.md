@@ -104,6 +104,9 @@ cp learning_observer/learning_observer/creds.yaml.workshop learning_observer/cre
 
 If you have a file comparison tool like `meld`, it might be worth comparing our changes: `meld learning_observer/creds.yaml learning_observer/learning_observer/creds.yaml.example`
 
+## Configuration: Create `creds.yaml`
+
+Instead of copying `creds.yaml.workshop`, create a **minimal, local-friendly config** file at:
 
 Paste this content:
 
@@ -146,6 +149,41 @@ To run the system, use the run command
 ```bash
 make run
 ```
+
+Notes:
+
+If using OpenAI, make sure you export your key:
+
+export OPENAI_API_KEY="your_api_key_here"
+
+
+If using Ollama, install and run it first (ollama run llama3.1:8b).
+
+Run & Verify
+
+Start the server (you may need to run this 1–3 times until setup completes):
+
+make run
+
+
+You should see:
+
+======== Running on http://0.0.0.0:8888 ========
+
+
+Then open in your browser:
+
+http://localhost:8888/
+
+or http://127.0.0.1:8888/
+
+On Windows/WSL, if localhost:8888 doesn’t work, find your WSL IP:
+
+hostname -I
+
+
+and open http://<that_ip>:8888/ in your Windows browser. Also check firewall settings if the page doesn’t load.
+
 
 *This does a lot of sanity checks on startup, and won't work the first time.* Rather, it will download required files, and create a file files (like `admins.yaml` and `teachers.yaml`, which are one way to define roles for teachers and admins on the system, but which we won't need for this workshop since we are using an insecure login). Once it is done, it will give you an opportunity to check whether it fixed issues correctly (we're working on having nice warnings, but we're not 100% of the way there). It did, so just run it again (perhaps 1-3 more times if it has more things to configure):
 
