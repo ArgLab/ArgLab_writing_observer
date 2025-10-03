@@ -104,6 +104,41 @@ cp learning_observer/learning_observer/creds.yaml.workshop learning_observer/cre
 
 If you have a file comparison tool like `meld`, it might be worth comparing our changes: `meld learning_observer/creds.yaml learning_observer/learning_observer/creds.yaml.example`
 
+
+Paste this content:
+
+```yaml
+# learning_observer/creds.yaml
+
+server:
+  host: 0.0.0.0
+  port: 8888
+
+db:
+  backend: filesystem
+  path: learning_observer/logs
+
+auth:
+  insecure_login: true   # disable Google OAuth for workshop
+  # Do not include any google_oauth block
+
+modules:
+  writing_observer:
+    use_nlp: false
+    use_languagetool: false
+
+    gpt_responders:
+      # Option A: Ollama (local LLM, recommended for offline use)
+      ollama:
+        model: llama3.1:8b
+        # host: http://localhost:11434   # uncomment if Ollama runs on a non-default host
+
+      # Option B: OpenAI (comment Ollama block and use this instead)
+      # openai:
+      #   model: gpt-4o-mini
+      #   api_key_env: OPENAI_API_KEY
+
+
 ## Test the system
 
 To run the system, use the run command
