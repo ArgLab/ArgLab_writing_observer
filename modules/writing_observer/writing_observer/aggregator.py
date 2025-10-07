@@ -17,6 +17,8 @@ import learning_observer.stream_analytics.helpers
 # import traceback
 import learning_observer.util
 
+from learning_observer.log_event import debug_log
+
 pmss.register_field(
     name='use_nlp',
     description='Flag for loading in and using AWE Components. These are '\
@@ -415,6 +417,7 @@ async def latest_data(runtime, student_data, options=None):
     #         single_doc.update(annotated_text)
 
     writing_data = await merge_with_student_data(writing_data, student_data)
+
     writing_data = await processor(writing_data, options)
 
     debug_log("WritingObserver latest_data result: ", writing_data)
