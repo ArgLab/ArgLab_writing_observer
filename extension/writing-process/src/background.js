@@ -10,8 +10,13 @@ var RAW_DEBUG = false;
  * the data will be sent to.  
 */
 //var WEBSOCKET_SERVER_URL = "wss://learning-observer.org/wsapi/in/";
-import { CONFIG } from './config_sample.js'; // <- new
+import { CONFIG } from './config_loader.js'; // <- new
+
+const CONFIG = await getConfig();                       // top-level await (module)
 const WEBSOCKET_SERVER_URL = CONFIG.WEBSOCKET_SERVER_URL;
+
+console.log('[Background] Using config:', CONFIG);
+console.log('[Background] WebSocket URL =', CONFIG.WEBSOCKET_SERVER_URL);
 
 import { googledocs_id_from_url } from './writing_common';
 
