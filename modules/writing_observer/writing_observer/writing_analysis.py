@@ -7,11 +7,28 @@ It just routes to smaller pipelines. Currently that's:
 '''
 # Necessary for the wrapper code below.
 import datetime
+import os
 import pmss
 import re
+import sys
 import time
 
 import writing_observer.reconstruct_doc
+
+GOOGLEDOC_RECON_PATH = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", "..", "..", "googledoc_reconstruction")
+)
+if GOOGLEDOC_RECON_PATH not in sys.path:
+    sys.path.insert(0, GOOGLEDOC_RECON_PATH)
+
+try:
+    import command_state as gdoc_command_state
+    import load_event as gdoc_load_event
+    _HAS_GOOGLEDOC_RECON = True
+except Exception:
+    gdoc_command_state = None
+    gdoc_load_event = None
+    _HAS_GOOGLEDOC_RECON = False
 
 import learning_observer.adapters
 import learning_observer.communication_protocol.integration
@@ -195,22 +212,81 @@ async def reconstruct(event, internal_state):
     if event['client']['event'] not in ["google_docs_save", "document_history"]:
         return False, False
 
-    internal_state = writing_observer.reconstruct_doc.google_text.from_json(
-        json_rep=internal_state)
-    if event['client']['event'] == "google_docs_save":
-        bundles = event['client']['bundles']
-        for bundle in bundles:
+    if not _HAS_GOOGLEDOC_RECON:
+        internal_state = writing_observer.reconstruct_doc.google_text.from_json(
+            json_rep=internal_state)
+        if event['client']['event'] == "google_docs_save":
+            bundles = event['client']['bundles']
+            for bundle in bundles:
+                internal_state = writing_observer.reconstruct_doc.command_list(
+                    internal_state, bundle['commands']
+                )
+        elif event['client']['event'] == "document_history":
+            change_list = [
+                i[0] for i in event['client']['history']['changelog']
+            ]
             internal_state = writing_observer.reconstruct_doc.command_list(
-                internal_state, bundle['commands']
+                writing_observer.reconstruct_doc.google_text(), change_list
             )
+        state = internal_state.json
+        if learning_observer.settings.module_setting('writing_observer', 'verbose'):
+            print(state)
+        return state, state
+
+    if internal_state is None:
+        internal_state = {}
+
+    doc_state_data = internal_state.get("doc_state") if isinstance(internal_state, dict) else None
+    if doc_state_data:
+        doc_state = gdoc_command_state.DocState.from_dict(doc_state_data)
+    else:
+        user_id = (
+            event.get("client", {}).get("auth", {}).get("safe_user_id")
+            or event.get("client", {}).get("auth", {}).get("user_id")
+            or ""
+        )
+        doc_id = get_doc_id(event) or ""
+        doc_state = gdoc_command_state.DocState(user_id, doc_id)
+        url = event.get("client", {}).get("url") or event.get("client", {}).get("object", {}).get("url") or ""
+        default_tab = gdoc_load_event.parse_tab_from_url(url) if gdoc_load_event else "t.0"
+        if internal_state.get("text"):
+            doc_state.tabs[default_tab].text = internal_state.get("text", "")
+
+    url = event.get("client", {}).get("url") or event.get("client", {}).get("object", {}).get("url") or ""
+    default_tab = gdoc_load_event.parse_tab_from_url(url) if gdoc_load_event else "t.0"
+
+    ts = event.get("client", {}).get("timestamp")
+    if ts is None:
+        ts = event.get("client", {}).get("metadata", {}).get("ts")
+    try:
+        ts_int = int(ts) if ts is not None else None
+    except (TypeError, ValueError):
+        ts_int = None
+
+    if event['client']['event'] == "google_docs_save":
+        bundles = event.get("client", {}).get("bundles", [])
+        for bundle in bundles:
+            doc_state.apply_bundle(bundle, default_tab, event_timestamp=ts_int)
     elif event['client']['event'] == "document_history":
         change_list = [
             i[0] for i in event['client']['history']['changelog']
         ]
-        internal_state = writing_observer.reconstruct_doc.command_list(
-            writing_observer.reconstruct_doc.google_text(), change_list
-        )
-    state = internal_state.json
+        for cmd in change_list:
+            doc_state.apply_bundle({"commands": [cmd]}, default_tab, event_timestamp=ts_int)
+
+    doc_state.last_timestamp = ts_int
+    doc_state.last_url = url
+    server_time = event.get("server", {}).get("time")
+    if server_time is not None:
+        doc_state.last_server_time = server_time
+
+    state = {
+        "text": gdoc_command_state.render_full_text(doc_state),
+        "position": internal_state.get("position", 0) if isinstance(internal_state, dict) else 0,
+        "edit_metadata": internal_state.get("edit_metadata", {"cursor": [], "length": []})
+            if isinstance(internal_state, dict) else {"cursor": [], "length": []},
+        "doc_state": doc_state.to_dict(),
+    }
     if learning_observer.settings.module_setting('writing_observer', 'verbose'):
         print(state)
     return state, state
@@ -350,6 +426,7 @@ async def last_document(event, internal_state):
     Small bit of data -- the last document accessed. This can be extracted from
     `document_list`, but we don't need that level of complexity for the 1.0
     dashboard.
+
     This code accesses the code below which provides some hackish support
     functions for the analysis.  Over time these may age off with a better
     model.
@@ -361,46 +438,6 @@ async def last_document(event, internal_state):
         return state, state
 
     return False, False
-
-
-# Basic class tests and extraction.
-# -------------------------------
-# A big part of this project is wrapping up google doc events.
-# In doing that we are reverse-engineering some of the elements
-# particularly the event types.  This code provides some basic
-# wrappers for event types to simplify extraction of key elements
-# and to simplify event recognition.
-#
-# Over time this will likely expand and will need to adapt to keep
-# up with any changes in the event structure.  For now it is just
-# a thin abstraction layer on a few of the pieces.
-
-def is_visibility_eventp(event):
-    """
-    Given an event return true if it is a visibility
-    event which indicates changing the doc shown or
-    active.
-
-    Here we look for an event with 'client'
-    containing the field 'event_type' of
-    'visibility'
-    """
-    Event_Type = event.get('client', {}).get('event', None)
-    return (Event_Type == 'visibility')
-
-
-def is_keystroke_eventp(event):
-    """
-    Given an event return true if it is a keystroke
-    event which indicates changing the doc shown or
-    active.
-
-    Here we look for an event with 'client'
-    containing the field 'event_type' of
-    'keystroke'
-    """
-    Event_Type = event.get('client', {}).get('event', None)
-    return (Event_Type == 'keystroke')
 
 
 # Simple hack to match URLs.  This should probably be moved as well

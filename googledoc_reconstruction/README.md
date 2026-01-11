@@ -17,6 +17,46 @@ This repository reconstructs a Google Doc’s content (including tabs-as-section
 
 ---
 
+## Tabs and command routing
+
+Google Docs tabs are treated as separate sections within a single document. Each tab has:
+- a unique tab id (e.g., `t.0`, `t.95y...`)
+- independent text content
+- its own embedded elements (dropdowns, images)
+
+How commands are routed to tabs:
+- URL routing: the event URL may contain `tab=...` and sets the default tab.
+- `nm` routing: a "new mutation" command may override the target tab using the `nmr` field.
+- Explicit routing: `ucp` and `ac` can name a specific tab id inside their `d` payload.
+- Default routing: text edits (`is`, `ds`, `as`) apply to the current/default tab.
+
+Tab ordering in the output is based on the first time each tab receives edits, so
+newer tabs appear later when rendered as sections.
+
+---
+
+## Command types (high level)
+
+Tab metadata:
+- `mkch` initialize tab names from nested list data
+- `ucp` rename existing tab
+- `ac` create a new tab
+
+Text editing:
+- `is` insert string at 1-based position
+- `ds` delete substring range `[si, ei)`
+- `as` replace substring range `[si, ei)` with a new string (style-only `as` are ignored)
+
+Embedded elements:
+- `ae` register element metadata (dropdowns, images, etc.)
+- `te` tie an element into text at a 1-based position
+
+Control flow:
+- `mlti` batch of sub-commands
+- `nm` mutation wrapper with routing
+
+---
+
 ## Repository structure (recommended)
 
 ```

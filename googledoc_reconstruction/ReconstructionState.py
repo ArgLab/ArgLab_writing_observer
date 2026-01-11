@@ -18,8 +18,30 @@ STATE_PATH = "state/reconstruction_state.pkl"
 
 class ReconstructionState:
     """
-    Holds reconstructed state for all docs.
-    Key: (user_id, doc_id)
+    Holds reconstructed state for all documents across all users.
+    
+    TAB MANAGEMENT AT THE DOCUMENT LEVEL:
+    This class manages the reconstruction state for multiple documents, where each document
+    can have multiple tabs. The docs dictionary uses (user_id, doc_id) as the key and stores
+    a DocState object for each document.
+    
+    Key responsibilities:
+    1. Track which documents are being reconstructed (via their user_id, doc_id pairs)
+    2. Route events to the correct DocState for processing
+    3. Persist state to disk for incremental reconstruction across sessions
+    
+    WORKFLOW:
+    1. For each GoogleDocsSaveEvent, extract (user_id, doc_id)
+    2. Get or create a DocState for that document
+    3. Pass the event's bundles to DocState.apply_bundle() with the event's tab_id
+    4. After all events are processed, call expand_dropdowns() on each document
+    5. Save the entire ReconstructionState for the next session
+    
+    USAGE:
+    - First run: load_reconstruction_state() creates empty ReconstructionState
+    - Process events: reconstruct_from_events(events, state) populates it
+    - Save: save_reconstruction_state(state) persists to disk
+    - Next run: load_reconstruction_state() retrieves previous state, events update it incrementally
     """
 
     def __init__(self):
@@ -52,11 +74,38 @@ def reconstruct_from_events(
     state: "ReconstructionState" = None,
 ) -> "ReconstructionState":
     """
-    Given a sequence of GoogleDocsSaveEvent objects, update
-    all docs (for all users/doc_ids) in memory.
+    Given a sequence of GoogleDocsSaveEvent objects, update all docs (for all users/doc_ids) in memory.
 
-    If `state` is provided, we mutate it in-place; otherwise
-    we create a new ReconstructionState.
+    If `state` is provided, we mutate it in-place; otherwise we create a new ReconstructionState.
+    
+    MULTI-TAB RECONSTRUCTION LOGIC:
+    This function handles the core reconstruction workflow:
+    
+    1. SORT EVENTS: Events are sorted by (server_time, timestamp) to ensure correct order.
+       This is critical for multi-tab documents where edits may arrive out of order.
+    
+    2. ROUTE TO TAB: Each event has:
+       - tab_id: Extracted from the event's URL (e.g., 't.0', 't.4n9p3wa3df6o')
+       - bundles: List of command bundles to apply
+       Each bundle is applied to the specific tab via apply_bundle(bundle, tab_id, timestamp)
+    
+    3. COMMAND PROCESSING: Within each bundle, commands like:
+       - Tab metadata (mkch, ucp, ac) update tab names and create/rename tabs
+       - Text editing (is, ds, as) modify tab content
+       - Element commands (ae, te) embed dropdowns, images, etc.
+    
+    4. TRACKING METADATA: Per-document metadata is updated:
+       - last_server_time: Latest server timestamp seen
+       - last_timestamp: Latest client timestamp seen  
+       - last_url: Most recent URL (includes tab_id)
+       - chrome_identity: Extension identity info
+    
+    Args:
+        events: Iterable of GoogleDocsSaveEvent objects from WritingObserver log
+        state: Existing ReconstructionState to update. If None, creates new one.
+    
+    Returns:
+        The updated ReconstructionState with all events applied
     """
     if state is None:
         state = ReconstructionState()

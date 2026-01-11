@@ -16,9 +16,33 @@ from typing import Dict, Tuple, Iterator, Optional, Any
 
 def parse_tab_from_url(url: str) -> str:
     """
-    Extracts the tab id from a docs URL, e.g.
-       ...&tab=t.4n9p3wa3df6o
-    Returns 't.0' if nothing is found.
+    Extracts the tab id from a Google Docs URL.
+    
+    MULTI-TAB URL STRUCTURE:
+    Google Docs URLs include a 'tab' query parameter that identifies which tab the user is on:
+       https://docs.google.com/document/d/{doc_id}/edit#gid=0&tab=t.4n9p3wa3df6o
+    
+    This function extracts that tab identifier (e.g., 't.4n9p3wa3df6o') so events can be
+    routed to the correct tab during reconstruction.
+    
+    TAB ID FORMAT:
+    - Tab IDs start with 't.' followed by alphanumeric characters
+    - Special tab: 't.0' is the default/initial tab
+    - Examples: 't.0', 't.95y...', 't.4n9p3wa3df6o'
+    
+    Args:
+        url: A Google Docs URL string, may contain 'tab=' parameter
+    
+    Returns:
+        The extracted tab_id (e.g., 't.4n9p3wa3df6o')
+        If no tab parameter found, returns 't.0' as default tab
+    
+    Example:
+        >>> parse_tab_from_url("https://docs.google.com/.../edit?tab=t.95y...")
+        't.95y...'
+        
+        >>> parse_tab_from_url("https://docs.google.com/.../edit")
+        't.0'
     """
     if not url or "tab=" not in url:
         return "t.0"
@@ -31,8 +55,37 @@ def parse_tab_from_url(url: str) -> str:
 @dataclass
 class GoogleDocsSaveEvent:
     """
-    Flattened view of a google_docs_save event.
-    This is what you will feed into the reconstruction later.
+    Flattened view of a google_docs_save event from WritingObserver log.
+    This is the primary data structure fed into the reconstruction pipeline.
+    
+    MULTI-TAB EVENT STRUCTURE:
+    Each event captures a user's save action in a Google Doc, which may involve one or more tabs.
+    The event includes:
+    - Document identification (user_id, doc_id)
+    - Tab information (tab_id extracted from the URL)
+    - Command bundles (commands that modified the document/tab)
+    - Timing information (client and server timestamps)
+    
+    COMMAND BUNDLES:
+    The 'bundles' list contains command bundles, where each bundle is a dict with:
+    - 'commands': list of individual commands to apply to the current tab
+    - Commands include tab metadata (mkch, ucp, ac), text editing (is, ds, as),
+      and element operations (ae, te)
+    
+    TIMING:
+    - timestamp: Client-side time (milliseconds) when the event was created
+    - server_time: Server-side time (epoch seconds) when event was received
+    These are used to chronologically order events and track when tabs were created/edited.
+    
+    Attributes:
+        user_id: Unique identifier for the user making edits
+        doc_id: Unique identifier for the Google Doc being edited
+        url: The full URL of the doc (contains tab_id in query parameter)
+        tab_id: Extracted tab identifier (e.g., 't.0', 't.95y...'); routes commands to correct tab
+        timestamp: Client timestamp in milliseconds (when user made changes)
+        server_time: Server timestamp in epoch seconds (when WritingObserver received event)
+        chrome_identity: Dict with extension identity info
+        bundles: List of command bundles to apply to the document
     """
     user_id: str
     doc_id: str

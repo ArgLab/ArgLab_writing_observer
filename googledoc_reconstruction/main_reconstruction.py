@@ -70,8 +70,41 @@ def get_docs_service():
 
 def build_full_text(doc_state: DocState) -> str:
     """
-    Build the full plain-text representation for a doc_state,
-    with one section per tab.
+    Build the full plain-text representation for a doc_state, with one section per tab.
+    
+    MULTI-TAB RENDERING STRATEGY:
+    Since the reconstructed Google Doc is a plain text document (not multi-tabbed),
+    each tab from the original document is rendered as a separate section with:
+    - Section header: The tab's name (e.g., "First Tab", "Overview")
+    - Section separator: Line of equals signs (e.g., "==========")
+    - Content: The reconstructed text from that tab
+    - Spacing: Blank lines between sections for readability
+    
+    TAB ORDERING:
+    Tabs are sorted by first_timestamp (when they first received edits), ensuring
+    that the rendering reflects the logical creation order of tabs.
+    
+    ELEMENT RECONSTRUCTION:
+    - Dropdowns: Rendered as readable text like "DROPDOWN: Priority – High"
+    - Images: Shown as placeholders like "[s-blob-v1-IMAGE-...]" (binary data not in logs)
+    - Placeholders: Text gaps filled with PLACEHOLDER (\x00) are removed
+    
+    OUTPUT FORMAT:
+    Tab A
+    =====
+    
+    Content of Tab A...
+    
+    Tab B
+    =====
+    
+    Content of Tab B...
+    
+    Args:
+        doc_state: DocState object with all tabs and their content
+    
+    Returns:
+        Full plain text with all tabs as sections
     """
     parts: List[str] = []
 
