@@ -12,7 +12,7 @@ var RAW_DEBUG = false;
 var WEBSOCKET_SERVER_URL = "wss://learning-observer.org/wsapi/in/";
 
 import { googledocs_id_from_url } from './writing_common';
-
+import { tab_id_from_url } from './writing_common';
 import * as loEvent from 'lo_event/lo_event/lo_event.js';
 import * as loEventDebug from 'lo_event/lo_event/debugLog.js';
 import { websocketLogger } from 'lo_event/lo_event/websocketLogger.js';
@@ -210,6 +210,7 @@ chrome.webRequest.onBeforeRequest.addListener(
                   versus GMT. */
                 event = {
                     'doc_id': googledocs_id_from_url(request.url),
+                    'tab_id': tab_id_from_url(request.url),
                     'url': request.url,
                     'bundles': JSON.parse(formdata.bundles),
                     'rev': formdata.rev,
@@ -223,6 +224,7 @@ chrome.webRequest.onBeforeRequest.addListener(
                 */
                 event = {
                     'doc_id': googledocs_id_from_url(request.url),
+                    'tab_id': tab_id_from_url(request.url),
                     'url': request.url,
                     'formdata': formdata,
                     'rev': formdata.rev,
