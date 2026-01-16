@@ -11,8 +11,7 @@ var RAW_DEBUG = false;
 */
 var WEBSOCKET_SERVER_URL = "wss://learning-observer.org/wsapi/in/";
 
-import { googledocs_id_from_url } from './writing_common';
-import { tab_id_from_url } from './writing_common';
+import { googledocs_id_from_url, tab_id_from_url } from './writing_common';
 import * as loEvent from 'lo_event/lo_event/lo_event.js';
 import * as loEventDebug from 'lo_event/lo_event/debugLog.js';
 import { websocketLogger } from 'lo_event/lo_event/websocketLogger.js';
