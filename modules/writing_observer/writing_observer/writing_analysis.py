@@ -7,28 +7,12 @@ It just routes to smaller pipelines. Currently that's:
 '''
 # Necessary for the wrapper code below.
 import datetime
-import os
 import pmss
 import re
-import sys
 import time
 
-import writing_observer.reconstruct_doc
-
-GOOGLEDOC_RECON_PATH = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "..", "..", "..", "googledoc_reconstruction")
-)
-if GOOGLEDOC_RECON_PATH not in sys.path:
-    sys.path.insert(0, GOOGLEDOC_RECON_PATH)
-
-try:
-    import command_state as gdoc_command_state
-    import load_event as gdoc_load_event
-    _HAS_GOOGLEDOC_RECON = True
-except Exception:
-    gdoc_command_state = None
-    gdoc_load_event = None
-    _HAS_GOOGLEDOC_RECON = False
+from . import command_state as gdoc_command_state
+from . import load_event as gdoc_load_event
 
 import learning_observer.adapters
 import learning_observer.communication_protocol.integration
@@ -95,6 +79,7 @@ if NEW:
 else:
     gdoc_scope = student_scope  # HACK for backwards-compatibility
 
+gdoc_tab_scope = Scope([KeyField.STUDENT, EventField('doc_id'), EventField('tab_id')])
 
 @learning_observer.communication_protocol.integration.publish_function('writing_observer.activity_map')
 def determine_activity_status(last_ts):
@@ -201,37 +186,42 @@ async def binned_time_on_task(event, internal_state):
     return internal_state, internal_state
 
 
-@kvs_pipeline(scope=gdoc_scope)
 async def reconstruct(event, internal_state):
     '''
     This is a thin layer to route events to `reconstruct_doc` which compiles
     Google's deltas into a document. It also adds a bit of metadata e.g. for
     Deane plots.
     '''
-    # If it's not a relevant event, ignore it
-    if event['client']['event'] not in ["google_docs_save", "document_history"]:
-        return False, False
+    def _extract_tab_id(client, root_event):
+        tab_id = client.get("tab_id") or root_event.get("tab_id")
+        if tab_id:
+            return tab_id
+        url = (
+            client.get("url")
+            or client.get("object", {}).get("url")
+            or root_event.get("url", "")
+        )
+        if not url:
+            return None
+        return gdoc_load_event.parse_tab_from_url(url) if gdoc_load_event else "t.0"
 
-    if not _HAS_GOOGLEDOC_RECON:
-        internal_state = writing_observer.reconstruct_doc.google_text.from_json(
-            json_rep=internal_state)
-        if event['client']['event'] == "google_docs_save":
-            bundles = event['client']['bundles']
-            for bundle in bundles:
-                internal_state = writing_observer.reconstruct_doc.command_list(
-                    internal_state, bundle['commands']
-                )
-        elif event['client']['event'] == "document_history":
-            change_list = [
-                i[0] for i in event['client']['history']['changelog']
-            ]
-            internal_state = writing_observer.reconstruct_doc.command_list(
-                writing_observer.reconstruct_doc.google_text(), change_list
-            )
-        state = internal_state.json
-        if learning_observer.settings.module_setting('writing_observer', 'verbose'):
-            print(state)
-        return state, state
+    def _extract_tab_title(client):
+        mouseclick = client.get("mouseclick", {})
+        class_name = mouseclick.get("target.className", "") or ""
+        if "chapter-label-content" in class_name:
+            title = mouseclick.get("target.innerText")
+            if title:
+                return title
+        return None
+
+    client = event.get("client", {}) or {}
+    event_type = client.get("event") or event.get("event")
+    tab_id = _extract_tab_id(client, event)
+    tab_title = _extract_tab_title(client)
+
+    # If it's not a relevant event and we have no tab metadata to update, ignore it
+    if event_type not in ["google_docs_save", "document_history"] and not tab_id:
+        return False, False
 
     if internal_state is None:
         internal_state = {}
@@ -252,8 +242,12 @@ async def reconstruct(event, internal_state):
         if internal_state.get("text"):
             doc_state.tabs[default_tab].text = internal_state.get("text", "")
 
-    url = event.get("client", {}).get("url") or event.get("client", {}).get("object", {}).get("url") or ""
-    default_tab = gdoc_load_event.parse_tab_from_url(url) if gdoc_load_event else "t.0"
+    url = (
+        client.get("url")
+        or client.get("object", {}).get("url")
+        or event.get("url", "")
+    )
+    default_tab = tab_id or (gdoc_load_event.parse_tab_from_url(url) if gdoc_load_event else "t.0")
 
     ts = event.get("client", {}).get("timestamp")
     if ts is None:
@@ -263,16 +257,36 @@ async def reconstruct(event, internal_state):
     except (TypeError, ValueError):
         ts_int = None
 
-    if event['client']['event'] == "google_docs_save":
-        bundles = event.get("client", {}).get("bundles", [])
+    if event_type == "google_docs_save":
+        bundles = client.get("bundles") or event.get("bundles") or []
+        if learning_observer.settings.module_setting('writing_observer', 'verbose'):
+            try:
+                bundle_count = len(bundles)
+                command_counts = [len(b.get("commands", [])) for b in bundles]
+            except Exception:
+                bundle_count = "?"
+                command_counts = "?"
+            print("reconstruct google_docs_save",
+                  "doc_id=", get_doc_id(event),
+                  "tab_id=", default_tab,
+                  "bundles=", bundle_count,
+                  "commands=", command_counts)
         for bundle in bundles:
             doc_state.apply_bundle(bundle, default_tab, event_timestamp=ts_int)
-    elif event['client']['event'] == "document_history":
+    elif event_type == "document_history":
         change_list = [
-            i[0] for i in event['client']['history']['changelog']
+            i[0] for i in client.get("history", {}).get("changelog", [])
         ]
         for cmd in change_list:
             doc_state.apply_bundle({"commands": [cmd]}, default_tab, event_timestamp=ts_int)
+    else:
+        if tab_title:
+            doc_state.tabs[default_tab].name = tab_title
+        if ts_int is not None:
+            tab = doc_state.tabs[default_tab]
+            if tab.first_timestamp is None:
+                tab.first_timestamp = ts_int
+            tab.last_timestamp = ts_int
 
     doc_state.last_timestamp = ts_int
     doc_state.last_url = url
@@ -280,8 +294,18 @@ async def reconstruct(event, internal_state):
     if server_time is not None:
         doc_state.last_server_time = server_time
 
+    tabs = []
+    for tab_id, tab in doc_state.tabs.items():
+        tabs.append({
+            "tab_id": tab_id,
+            "title": tab.name or tab_id,
+            "last_accessed": tab.last_timestamp or tab.first_timestamp,
+            "text": gdoc_command_state.render_tab_text(tab),
+        })
+
     state = {
         "text": gdoc_command_state.render_full_text(doc_state),
+        "tabs": tabs,
         "position": internal_state.get("position", 0) if isinstance(internal_state, dict) else 0,
         "edit_metadata": internal_state.get("edit_metadata", {"cursor": [], "length": []})
             if isinstance(internal_state, dict) else {"cursor": [], "length": []},
@@ -290,6 +314,16 @@ async def reconstruct(event, internal_state):
     if learning_observer.settings.module_setting('writing_observer', 'verbose'):
         print(state)
     return state, state
+
+
+gdoc_scope_reconstruct = kvs_pipeline(
+    scope=gdoc_scope,
+    qualname_override="gdoc_scope_reconstruct"
+)(reconstruct)
+gdoc_tab_scope_reconstruct = kvs_pipeline(
+    scope=gdoc_tab_scope,
+    qualname_override="gdoc_tab_scope_reconstruct"
+)(reconstruct)
 
 
 @kvs_pipeline(scope=gdoc_scope, null_state={"count": 0})

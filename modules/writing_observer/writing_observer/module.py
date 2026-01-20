@@ -222,7 +222,7 @@ COURSE_AGGREGATORS = {
     "writing_observer": {
         "sources": [  # These are the reducers whose outputs we aggregate
             writing_observer.writing_analysis.time_on_task,
-            writing_observer.writing_analysis.reconstruct
+            writing_observer.writing_analysis.gdoc_scope_reconstruct
             # TODO: "roster"
         ],
         #  Then, we pass the per-student data through the cleaner, if provided.
@@ -272,7 +272,13 @@ REDUCERS = [
     {
         'context': "org.mitros.writing_analytics",
         'scope': writing_observer.writing_analysis.gdoc_scope,
-        'function': writing_observer.writing_analysis.reconstruct,
+        'function': writing_observer.writing_analysis.gdoc_scope_reconstruct,
+        'default': {'text': ''}
+    },
+    {
+        'context': "org.mitros.writing_analytics",
+        'scope': writing_observer.writing_analysis.gdoc_tab_scope,
+        'function': writing_observer.writing_analysis.gdoc_tab_scope_reconstruct,
         'default': {'text': ''}
     },
     {
