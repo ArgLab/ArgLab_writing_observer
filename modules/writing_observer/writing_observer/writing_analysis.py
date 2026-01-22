@@ -11,8 +11,7 @@ import pmss
 import re
 import time
 
-from . import command_state as gdoc_command_state
-from . import load_event as gdoc_load_event
+from . import reconstruct_doc as gdoc_reconstruct_doc
 
 import learning_observer.adapters
 import learning_observer.communication_protocol.integration
@@ -203,7 +202,7 @@ async def reconstruct(event, internal_state):
         )
         if not url:
             return None
-        return gdoc_load_event.parse_tab_from_url(url) if gdoc_load_event else "t.0"
+        return gdoc_reconstruct_doc.parse_tab_from_url(url)
 
     def _extract_tab_title(client):
         mouseclick = client.get("mouseclick", {})
@@ -228,7 +227,7 @@ async def reconstruct(event, internal_state):
 
     doc_state_data = internal_state.get("doc_state") if isinstance(internal_state, dict) else None
     if doc_state_data:
-        doc_state = gdoc_command_state.DocState.from_dict(doc_state_data)
+        doc_state = gdoc_reconstruct_doc.DocState.from_dict(doc_state_data)
     else:
         user_id = (
             event.get("client", {}).get("auth", {}).get("safe_user_id")
@@ -236,9 +235,9 @@ async def reconstruct(event, internal_state):
             or ""
         )
         doc_id = get_doc_id(event) or ""
-        doc_state = gdoc_command_state.DocState(user_id, doc_id)
+        doc_state = gdoc_reconstruct_doc.DocState(user_id, doc_id)
         url = event.get("client", {}).get("url") or event.get("client", {}).get("object", {}).get("url") or ""
-        default_tab = gdoc_load_event.parse_tab_from_url(url) if gdoc_load_event else "t.0"
+        default_tab = gdoc_reconstruct_doc.parse_tab_from_url(url)
         if internal_state.get("text"):
             doc_state.tabs[default_tab].text = internal_state.get("text", "")
 
@@ -247,7 +246,7 @@ async def reconstruct(event, internal_state):
         or client.get("object", {}).get("url")
         or event.get("url", "")
     )
-    default_tab = tab_id or (gdoc_load_event.parse_tab_from_url(url) if gdoc_load_event else "t.0")
+    default_tab = tab_id or gdoc_reconstruct_doc.parse_tab_from_url(url)
 
     ts = event.get("client", {}).get("timestamp")
     if ts is None:
@@ -300,11 +299,11 @@ async def reconstruct(event, internal_state):
             "tab_id": tab_id,
             "title": tab.name or tab_id,
             "last_accessed": tab.last_timestamp or tab.first_timestamp,
-            "text": gdoc_command_state.render_tab_text(tab),
+            "text": gdoc_reconstruct_doc.render_tab_text(tab),
         })
 
     state = {
-        "text": gdoc_command_state.render_full_text(doc_state),
+        "text": gdoc_reconstruct_doc.render_full_text(doc_state),
         "tabs": tabs,
         "position": internal_state.get("position", 0) if isinstance(internal_state, dict) else 0,
         "edit_metadata": internal_state.get("edit_metadata", {"cursor": [], "length": []})
@@ -316,14 +315,8 @@ async def reconstruct(event, internal_state):
     return state, state
 
 
-gdoc_scope_reconstruct = kvs_pipeline(
-    scope=gdoc_scope,
-    qualname_override="gdoc_scope_reconstruct"
-)(reconstruct)
-gdoc_tab_scope_reconstruct = kvs_pipeline(
-    scope=gdoc_tab_scope,
-    qualname_override="gdoc_tab_scope_reconstruct"
-)(reconstruct)
+gdoc_scope_reconstruct = kvs_pipeline(scope=gdoc_scope)(reconstruct)
+gdoc_tab_scope_reconstruct = kvs_pipeline(scope=gdoc_tab_scope)(reconstruct)
 
 
 @kvs_pipeline(scope=gdoc_scope, null_state={"count": 0})

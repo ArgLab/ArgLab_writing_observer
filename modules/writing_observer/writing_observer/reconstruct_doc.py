@@ -7,7 +7,11 @@ new.
 See: `http://features.jsomers.net/how-i-reverse-engineered-google-docs/`
 '''
 
+import collections
 import json
+import re
+from dataclasses import dataclass, field
+from typing import Dict, List, Optional, Tuple
 
 """
 The placeholder character is used to fill gaps in the document, particularly
@@ -24,6 +28,16 @@ have 10 characters and when returning the output, all placeholders will be remov
 doc._text leaving only the character 'a'.
 """
 PLACEHOLDER = '\x00'
+
+
+def parse_tab_from_url(url: str) -> str:
+    '''
+    Extract the tab id from a Google Docs URL.
+    '''
+    if not url or "tab=" not in url:
+        return "t.0"
+    match = re.search(r"tab=([^&]+)", url)
+    return match.group(1) if match else "t.0"
 
 
 class google_text(object):
@@ -281,12 +295,24 @@ def replace(doc, ty, snapshot):
     return doc
 
 
-def alter(doc, si, ei, st, sm, ty):
+def alter(doc, si=None, ei=None, st=None, sm=None, ty=None, s=None, **kwargs):
     '''
     Alter commands change formatting.
 
-    We ignore these for now.
+    We ignore these for now, unless the command includes replacement text.
     '''
+    if s is None or si is None or ei is None:
+        return doc
+
+    try:
+        si_int = int(si)
+        ei_int = int(ei)
+    except (TypeError, ValueError):
+        return doc
+
+    # Replace text by deleting then inserting at the same position
+    doc = delete(doc, ty, si_int, ei_int)
+    doc = insert(doc, ty, si_int, s)
     return doc
 
 
@@ -349,6 +375,261 @@ dispatch = {
     'umv': null,
     'usfd': null,  # suggestion
 }
+
+
+@dataclass
+class TabState:
+    '''
+    Represents the state of a single tab within a Google Doc.
+    '''
+    doc: google_text = field(default_factory=google_text)
+    elements: Dict[str, dict] = field(default_factory=dict)
+    name: Optional[str] = None
+    first_timestamp: Optional[int] = None
+    last_timestamp: Optional[int] = None
+    dropdown_defs: Dict[str, dict] = field(default_factory=dict)
+    dropdown_elems: Dict[str, dict] = field(default_factory=dict)
+    dropdown_instances: List[Tuple[int, str]] = field(default_factory=list)
+
+    @property
+    def text(self) -> str:
+        return self.doc._text
+
+    @text.setter
+    def text(self, value: str) -> None:
+        self.doc._text = value or ""
+
+    def to_dict(self) -> dict:
+        return {
+            "text": self.doc._text,
+            "elements": self.elements,
+            "name": self.name,
+            "first_timestamp": self.first_timestamp,
+            "last_timestamp": self.last_timestamp,
+            "dropdown_defs": self.dropdown_defs,
+            "dropdown_elems": self.dropdown_elems,
+            "dropdown_instances": self.dropdown_instances,
+        }
+
+    @staticmethod
+    def from_dict(data: dict) -> "TabState":
+        tab = TabState()
+        if not data:
+            return tab
+        tab.doc = google_text.from_json(data)
+        tab.elements = data.get("elements", {}) or {}
+        tab.name = data.get("name")
+        tab.first_timestamp = data.get("first_timestamp")
+        tab.last_timestamp = data.get("last_timestamp")
+        tab.dropdown_defs = data.get("dropdown_defs", {}) or {}
+        tab.dropdown_elems = data.get("dropdown_elems", {}) or {}
+        tab.dropdown_instances = data.get("dropdown_instances", []) or []
+        return tab
+
+
+class DocState:
+    '''
+    In-memory representation of one Google Doc reconstructed from bundles.
+    '''
+    def __init__(self, user_id: str, doc_id: str):
+        self.user_id = user_id
+        self.doc_id = doc_id
+        self.tabs: Dict[str, TabState] = collections.defaultdict(TabState)
+        self.last_server_time: Optional[float] = None
+        self.last_timestamp: Optional[int] = None
+        self.last_url: Optional[str] = None
+        self.chrome_identity: Dict[str, Optional[str]] = {}
+
+    def to_dict(self) -> dict:
+        return {
+            "user_id": self.user_id,
+            "doc_id": self.doc_id,
+            "tabs": {tab_id: tab.to_dict() for tab_id, tab in self.tabs.items()},
+            "last_server_time": self.last_server_time,
+            "last_timestamp": self.last_timestamp,
+            "last_url": self.last_url,
+            "chrome_identity": self.chrome_identity,
+        }
+
+    @staticmethod
+    def from_dict(data: dict) -> "DocState":
+        doc = DocState(data.get("user_id", ""), data.get("doc_id", ""))
+        doc.tabs = collections.defaultdict(TabState)
+        for tab_id, tab_data in (data.get("tabs") or {}).items():
+            doc.tabs[tab_id] = TabState.from_dict(tab_data)
+        doc.last_server_time = data.get("last_server_time")
+        doc.last_timestamp = data.get("last_timestamp")
+        doc.last_url = data.get("last_url")
+        doc.chrome_identity = data.get("chrome_identity", {}) or {}
+        return doc
+
+    @staticmethod
+    def _extract_name_from_d(data):
+        def _walk(item):
+            if isinstance(item, str):
+                if item.startswith("t."):
+                    return None
+                return item
+            if isinstance(item, list):
+                for child in item:
+                    found = _walk(child)
+                    if found:
+                        return found
+            return None
+
+        return _walk(data)
+
+    def apply_bundle(self, bundle: dict, default_tab: str, event_timestamp: Optional[int] = None) -> None:
+        commands = bundle.get("commands", [])
+        for cmd in commands:
+            self._apply_cmd(cmd, default_tab, event_timestamp)
+
+    def _apply_cmd(self, cmd: dict, current_tab: str, event_timestamp: Optional[int] = None) -> None:
+        ty = cmd.get("ty")
+        if not ty:
+            return
+
+        tab = self.tabs[current_tab]
+        if event_timestamp is not None:
+            if tab.first_timestamp is None:
+                tab.first_timestamp = event_timestamp
+            tab.last_timestamp = event_timestamp
+
+        if ty == "mlti":
+            for sub in cmd.get("mts", []):
+                self._apply_cmd(sub, current_tab, event_timestamp)
+            return
+
+        if ty == "nm":
+            target_tab = current_tab
+            nmr = cmd.get("nmr") or []
+            for item in reversed(nmr):
+                if isinstance(item, str) and item.startswith("t."):
+                    target_tab = item
+                    break
+            inner_cmd = cmd.get("nmc", {})
+            self._apply_cmd(inner_cmd, target_tab, event_timestamp)
+            return
+
+        if ty == "mkch":
+            name = self._extract_name_from_d(cmd.get("d"))
+            if name:
+                tab.name = name
+            return
+
+        if ty == "ucp":
+            data = cmd.get("d")
+            if not isinstance(data, list) or len(data) < 2:
+                return
+            tab_id = data[0] or current_tab
+            name = self._extract_name_from_d(data[1])
+            if name:
+                target = self.tabs[tab_id]
+                target.name = name
+                if event_timestamp is not None:
+                    if target.first_timestamp is None:
+                        target.first_timestamp = event_timestamp
+                    target.last_timestamp = event_timestamp
+            return
+
+        if ty == "ac":
+            data = cmd.get("d")
+            if not isinstance(data, list) or len(data) < 2:
+                return
+            tab_id = data[0]
+            if not isinstance(tab_id, str):
+                return
+            name = self._extract_name_from_d(data[1])
+            target = self.tabs[tab_id]
+            if name:
+                target.name = name
+            if event_timestamp is not None:
+                if target.first_timestamp is None:
+                    target.first_timestamp = event_timestamp
+                target.last_timestamp = event_timestamp
+            return
+
+        if ty == "ae":
+            el_id = cmd.get("id")
+            if not el_id:
+                return
+            et = cmd.get("et")
+            if et == "dropdown-definition":
+                tab.dropdown_defs[el_id] = cmd
+                return
+            if et == "dropdown":
+                tab.dropdown_elems[el_id] = cmd
+                return
+            tab.elements[el_id] = cmd
+            return
+
+        if ty == "te":
+            el_id = cmd.get("id")
+            spi = cmd.get("spi")
+            if not el_id or not isinstance(spi, int):
+                return
+            if el_id in tab.dropdown_elems:
+                tab.dropdown_instances.append((spi, el_id))
+                return
+            placeholder = f"[{el_id}]"
+            insert(tab.doc, "is", spi, placeholder)
+            return
+
+        if ty in dispatch:
+            dispatch[ty](tab.doc, **cmd)
+            return
+
+
+def _render_tab_text(tab: TabState) -> str:
+    text = tab.doc._text
+    if tab.dropdown_instances:
+        for spi, elem_id in sorted(tab.dropdown_instances, key=lambda x: x[0], reverse=True):
+            dropdown_cmd = tab.dropdown_elems.get(elem_id)
+            if not dropdown_cmd:
+                continue
+
+            epm = dropdown_cmd.get("epm", {})
+            def_id = epm.get("dde_di")
+            selected_item_id = epm.get("dde-sii")
+            selected_fallback_value = epm.get("dde-fdv")
+
+            def_cmd = tab.dropdown_defs.get(def_id, {})
+            ddefe = def_cmd.get("epm", {}).get("ddefe-ddi", {})
+            config_name = def_cmd.get("epm", {}).get("ddefe-t", "Dropdown")
+            items = ddefe.get("cv", {}).get("opValue", [])
+
+            selected_label = selected_fallback_value
+            for item in items:
+                if item.get("di-id") == selected_item_id:
+                    selected_label = item.get("di-dv") or item.get("di-v") or selected_label
+                    break
+
+            human = f"DROPDOWN: {config_name} - {selected_label}"
+            if 1 <= spi <= len(text):
+                text = text[: spi - 1] + human + text[spi:]
+
+    return text.replace(PLACEHOLDER, "")
+
+
+def render_tab_text(tab: TabState) -> str:
+    return _render_tab_text(tab)
+
+
+def render_full_text(doc_state: DocState) -> str:
+    parts: List[str] = []
+
+    def _tab_sort_key(item):
+        _tab_id, tab_state = item
+        return tab_state.first_timestamp or 0
+
+    for tab_id, tab in sorted(doc_state.tabs.items(), key=_tab_sort_key):
+        display_name = tab.name or tab_id
+        parts.append(f"{display_name}\n")
+        parts.append(f"{'=' * len(display_name)}\n\n")
+        parts.append(_render_tab_text(tab))
+        parts.append("\n\n")
+
+    return "".join(parts) if parts else ""
 
 if __name__ == '__main__':
     google_json = json.load(open("sample3.json"))
