@@ -191,19 +191,6 @@ async def reconstruct(event, internal_state):
     Google's deltas into a document. It also adds a bit of metadata e.g. for
     Deane plots.
     '''
-    def _extract_tab_id(client, root_event):
-        tab_id = client.get("tab_id") or root_event.get("tab_id")
-        if tab_id:
-            return tab_id
-        url = (
-            client.get("url")
-            or client.get("object", {}).get("url")
-            or root_event.get("url", "")
-        )
-        if not url:
-            return None
-        return gdoc_reconstruct_doc.parse_tab_from_url(url)
-
     def _extract_tab_title(client):
         mouseclick = client.get("mouseclick", {})
         class_name = mouseclick.get("target.className", "") or ""
@@ -215,7 +202,7 @@ async def reconstruct(event, internal_state):
 
     client = event.get("client", {}) or {}
     event_type = client.get("event") or event.get("event")
-    tab_id = _extract_tab_id(client, event)
+    tab_id = client.get("tab_id") or event.get("tab_id")
     tab_title = _extract_tab_title(client)
 
     # If it's not a relevant event and we have no tab metadata to update, ignore it
@@ -246,7 +233,7 @@ async def reconstruct(event, internal_state):
         or client.get("object", {}).get("url")
         or event.get("url", "")
     )
-    default_tab = tab_id or gdoc_reconstruct_doc.parse_tab_from_url(url)
+    default_tab = tab_id or "t.0"
 
     ts = event.get("client", {}).get("timestamp")
     if ts is None:
@@ -298,7 +285,6 @@ async def reconstruct(event, internal_state):
         tabs.append({
             "tab_id": tab_id,
             "title": tab.name or tab_id,
-            "last_accessed": tab.last_timestamp or tab.first_timestamp,
             "text": gdoc_reconstruct_doc.render_tab_text(tab),
         })
 
