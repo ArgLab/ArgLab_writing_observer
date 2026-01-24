@@ -36,7 +36,7 @@ def parse_tab_from_url(url: str) -> str:
     '''
     if not url or "tab=" not in url:
         return "t.0"
-    match = re.search(r"tab=([^&]+)", url)
+    match = re.search(r"tab=([^&#]+)", url)
     return match.group(1) if match else "t.0"
 
 
@@ -190,8 +190,8 @@ def command_list(doc, commands):
     new `save` requests.
     '''
     for item in commands:
-        if item['ty'] in dispatch:
-            doc = dispatch[item['ty']](doc, **item)
+        if item['ty'] in text_dispatch:
+            doc = text_dispatch[item['ty']](doc, **item)
         else:
             print("Unrecogized Google Docs command: " + repr(item['ty']))
             # TODO: Log issue and fix it!
@@ -328,7 +328,7 @@ def null(doc, **kwargs):
 
 
 # This dictionary maps the `ty` parameter to the function which
-# handles data of that type.
+# handles text edits.
 
 # TODO: `ae,``ue,` `de,` and `te` need to be
 # reverse-engineered. These happens if we e.g. make a new bullet
@@ -337,7 +337,7 @@ def null(doc, **kwargs):
 # TODO: 'iss' and 'dss' are generated when suggested text is inserted or deleted.
 # these can't be handled like plain 'is' or 'ds' because the include different fields
 # (e.g., 'sugid', presumably, suggestion id.)
-dispatch = {
+text_dispatch = {
     'ae': null,
     'ase': null,  # suggestion
     'ast': null,  # suggestion. Image?
@@ -377,6 +377,141 @@ dispatch = {
 }
 
 
+def _touch_tab(tab, event_timestamp):
+    if event_timestamp is None:
+        return
+    if tab.first_timestamp is None:
+        tab.first_timestamp = event_timestamp
+    tab.last_timestamp = event_timestamp
+
+
+@dataclass
+class CommandContext:
+    doc_state: "DocState"
+    current_tab: str
+    event_timestamp: Optional[int]
+
+    @property
+    def tab(self) -> "TabState":
+        return self.doc_state.tabs[self.current_tab]
+
+
+def _cmd_text(ctx: CommandContext, **cmd):
+    ty = cmd.get("ty")
+    if ty in text_dispatch:
+        text_dispatch[ty](ctx.tab.doc, **cmd)
+
+
+def _cmd_mlti(ctx: CommandContext, mts=None, **kwargs):
+    for sub in mts or []:
+        ctx.doc_state._dispatch_cmd(sub, ctx.current_tab, ctx.event_timestamp)
+
+
+def _cmd_nm(ctx: CommandContext, nmr=None, nmc=None, **kwargs):
+    target_tab = ctx.current_tab
+    for item in reversed(nmr or []):
+        if isinstance(item, str) and item.startswith("t."):
+            target_tab = item
+            break
+    ctx.doc_state._dispatch_cmd(nmc or {}, target_tab, ctx.event_timestamp)
+
+
+def _cmd_mkch(ctx: CommandContext, d=None, **kwargs):
+    name = ctx.doc_state._extract_name_from_d(d)
+    if name:
+        ctx.tab.name = name
+
+
+def _cmd_ucp(ctx: CommandContext, d=None, **kwargs):
+    if not isinstance(d, list) or len(d) < 2:
+        return
+    tab_id = d[0] or ctx.current_tab
+    name = ctx.doc_state._extract_name_from_d(d[1])
+    if not name:
+        return
+    target = ctx.doc_state.tabs[tab_id]
+    target.name = name
+    _touch_tab(target, ctx.event_timestamp)
+
+
+def _cmd_ac(ctx: CommandContext, d=None, **kwargs):
+    if not isinstance(d, list) or len(d) < 2:
+        return
+    tab_id = d[0]
+    if not isinstance(tab_id, str):
+        return
+    target = ctx.doc_state.tabs[tab_id]
+    name = ctx.doc_state._extract_name_from_d(d[1])
+    if name:
+        target.name = name
+    _touch_tab(target, ctx.event_timestamp)
+
+
+def _cmd_ae(ctx: CommandContext, id=None, et=None, **kwargs):
+    if not id:
+        return
+    if et == "dropdown-definition":
+        ctx.tab.dropdown_defs[id] = {"id": id, "et": et, **kwargs}
+        return
+    if et == "dropdown":
+        ctx.tab.dropdown_elems[id] = {"id": id, "et": et, **kwargs}
+        return
+    ctx.tab.elements[id] = {"id": id, "et": et, **kwargs}
+
+
+def _cmd_te(ctx: CommandContext, id=None, spi=None, **kwargs):
+    if not id or not isinstance(spi, int):
+        return
+    if id in ctx.tab.dropdown_elems:
+        ctx.tab.dropdown_instances.append((spi, id))
+        return
+    insert(ctx.tab.doc, "is", spi, f"[{id}]")
+
+
+def _cmd_null(ctx: CommandContext, **kwargs):
+    return
+
+
+# Centralized dispatch for all command types.
+dispatch = {
+    'mlti': _cmd_mlti,
+    'nm': _cmd_nm,
+    'mkch': _cmd_mkch,
+    'ucp': _cmd_ucp,
+    'ac': _cmd_ac,
+    'ae': _cmd_ae,
+    'te': _cmd_te,
+    'as': _cmd_text,
+    'ds': _cmd_text,
+    'is': _cmd_text,
+    'iss': _cmd_text,
+    'mefd': _cmd_text,
+    'msfd': _cmd_text,
+    'null': _cmd_null,
+    'ord': _cmd_text,
+    'ras': _cmd_text,
+    'rplc': _cmd_text,
+    'rte': _cmd_text,
+    'rue': _cmd_text,
+    'rvrt': _cmd_text,
+    'sas': _cmd_text,
+    'sl': _cmd_text,
+    'ste': _cmd_text,
+    'sue': _cmd_text,
+    'uefd': _cmd_text,
+    'use': _cmd_text,
+    'umv': _cmd_text,
+    'usfd': _cmd_text,
+    'ase': _cmd_null,
+    'ast': _cmd_null,
+    'astss': _cmd_null,
+    'ue': _cmd_null,
+    'de': _cmd_null,
+    'dse': _cmd_null,
+    'dss': _cmd_null,
+}
+
+
 @dataclass
 class TabState:
     '''
@@ -402,6 +537,8 @@ class TabState:
     def to_dict(self) -> dict:
         return {
             "text": self.doc._text,
+            "position": self.doc.position,
+            "edit_metadata": self.doc.edit_metadata,
             "elements": self.elements,
             "name": self.name,
             "first_timestamp": self.first_timestamp,
@@ -482,102 +619,18 @@ class DocState:
     def apply_bundle(self, bundle: dict, default_tab: str, event_timestamp: Optional[int] = None) -> None:
         commands = bundle.get("commands", [])
         for cmd in commands:
-            self._apply_cmd(cmd, default_tab, event_timestamp)
+            self._dispatch_cmd(cmd, default_tab, event_timestamp)
 
-    def _apply_cmd(self, cmd: dict, current_tab: str, event_timestamp: Optional[int] = None) -> None:
+    def _dispatch_cmd(self, cmd: dict, current_tab: str, event_timestamp: Optional[int] = None) -> None:
         ty = cmd.get("ty")
         if not ty:
             return
 
-        tab = self.tabs[current_tab]
-        if event_timestamp is not None:
-            if tab.first_timestamp is None:
-                tab.first_timestamp = event_timestamp
-            tab.last_timestamp = event_timestamp
-
-        if ty == "mlti":
-            for sub in cmd.get("mts", []):
-                self._apply_cmd(sub, current_tab, event_timestamp)
-            return
-
-        if ty == "nm":
-            target_tab = current_tab
-            nmr = cmd.get("nmr") or []
-            for item in reversed(nmr):
-                if isinstance(item, str) and item.startswith("t."):
-                    target_tab = item
-                    break
-            inner_cmd = cmd.get("nmc", {})
-            self._apply_cmd(inner_cmd, target_tab, event_timestamp)
-            return
-
-        if ty == "mkch":
-            name = self._extract_name_from_d(cmd.get("d"))
-            if name:
-                tab.name = name
-            return
-
-        if ty == "ucp":
-            data = cmd.get("d")
-            if not isinstance(data, list) or len(data) < 2:
-                return
-            tab_id = data[0] or current_tab
-            name = self._extract_name_from_d(data[1])
-            if name:
-                target = self.tabs[tab_id]
-                target.name = name
-                if event_timestamp is not None:
-                    if target.first_timestamp is None:
-                        target.first_timestamp = event_timestamp
-                    target.last_timestamp = event_timestamp
-            return
-
-        if ty == "ac":
-            data = cmd.get("d")
-            if not isinstance(data, list) or len(data) < 2:
-                return
-            tab_id = data[0]
-            if not isinstance(tab_id, str):
-                return
-            name = self._extract_name_from_d(data[1])
-            target = self.tabs[tab_id]
-            if name:
-                target.name = name
-            if event_timestamp is not None:
-                if target.first_timestamp is None:
-                    target.first_timestamp = event_timestamp
-                target.last_timestamp = event_timestamp
-            return
-
-        if ty == "ae":
-            el_id = cmd.get("id")
-            if not el_id:
-                return
-            et = cmd.get("et")
-            if et == "dropdown-definition":
-                tab.dropdown_defs[el_id] = cmd
-                return
-            if et == "dropdown":
-                tab.dropdown_elems[el_id] = cmd
-                return
-            tab.elements[el_id] = cmd
-            return
-
-        if ty == "te":
-            el_id = cmd.get("id")
-            spi = cmd.get("spi")
-            if not el_id or not isinstance(spi, int):
-                return
-            if el_id in tab.dropdown_elems:
-                tab.dropdown_instances.append((spi, el_id))
-                return
-            placeholder = f"[{el_id}]"
-            insert(tab.doc, "is", spi, placeholder)
-            return
-
-        if ty in dispatch:
-            dispatch[ty](tab.doc, **cmd)
-            return
+        ctx = CommandContext(self, current_tab, event_timestamp)
+        _touch_tab(ctx.tab, event_timestamp)
+        handler = dispatch.get(ty)
+        if handler:
+            handler(ctx, **cmd)
 
 
 def _render_tab_text(tab: TabState) -> str:

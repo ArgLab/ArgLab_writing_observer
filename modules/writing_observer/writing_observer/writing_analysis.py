@@ -302,17 +302,24 @@ async def reconstruct(event, internal_state):
             "text": gdoc_reconstruct_doc.render_tab_text(tab),
         })
 
-    state = {
+    active_tab = doc_state.tabs[default_tab]
+    position = active_tab.doc.position
+    edit_metadata = active_tab.doc.edit_metadata
+
+    internal_state = {
+        "doc_state": doc_state.to_dict(),
+        "position": position,
+        "edit_metadata": edit_metadata,
+    }
+    external_state = {
         "text": gdoc_reconstruct_doc.render_full_text(doc_state),
         "tabs": tabs,
-        "position": internal_state.get("position", 0) if isinstance(internal_state, dict) else 0,
-        "edit_metadata": internal_state.get("edit_metadata", {"cursor": [], "length": []})
-            if isinstance(internal_state, dict) else {"cursor": [], "length": []},
-        "doc_state": doc_state.to_dict(),
+        "position": position,
+        "edit_metadata": edit_metadata,
     }
     if learning_observer.settings.module_setting('writing_observer', 'verbose'):
-        print(state)
-    return state, state
+        print(external_state)
+    return internal_state, external_state
 
 
 gdoc_scope_reconstruct = kvs_pipeline(scope=gdoc_scope)(reconstruct)
