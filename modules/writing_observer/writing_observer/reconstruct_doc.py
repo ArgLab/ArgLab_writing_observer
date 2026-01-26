@@ -189,13 +189,12 @@ def command_list(doc, commands):
     loading the history of a new doc, or in updating a document from
     new `save` requests.
     '''
+    doc_state = DocState(user_id="", doc_id="")
+    tab = doc_state.tabs["t.0"]
+    tab.doc = doc
     for item in commands:
-        if item['ty'] in text_dispatch:
-            doc = text_dispatch[item['ty']](doc, **item)
-        else:
-            print("Unrecogized Google Docs command: " + repr(item['ty']))
-            # TODO: Log issue and fix it!
-    return doc
+        doc_state._dispatch_cmd(item, "t.0", None)
+    return tab.doc
 
 
 def multi(doc, mts, ty):
@@ -327,56 +326,6 @@ def null(doc, **kwargs):
     return doc
 
 
-# This dictionary maps the `ty` parameter to the function which
-# handles text edits.
-
-# TODO: `ae,``ue,` `de,` and `te` need to be
-# reverse-engineered. These happens if we e.g. make a new bullet
-# list, or add an image.
-
-# TODO: 'iss' and 'dss' are generated when suggested text is inserted or deleted.
-# these can't be handled like plain 'is' or 'ds' because the include different fields
-# (e.g., 'sugid', presumably, suggestion id.)
-text_dispatch = {
-    'ae': null,
-    'ase': null,  # suggestion
-    'ast': null,  # suggestion. Image?
-    'astss': null,  # suggestion. Autospell?
-    'ue': null,
-    'de': null,
-    'dse': null,  # suggestion
-    'dss': null,  # suggested deletion
-    'te': null,
-    'as': alter,
-    'ds': delete,
-    'is': insert,
-    'iss': null,  # suggested insertion
-    'mefd': null,  # suggestion
-    'mlti': multi,
-    'msfd': null,  # suggestion
-    'null': null,
-    'ord': null,
-    'ras': null,  # suggestion. Autospell?
-    'rplc': replace,  # rplc is called as the first edit
-                      # when the document is created from
-                      # a template, so if you want to know
-                      # what text was NOT written by the author,
-                      # logging the text buffer after the initial
-                      # rplc action will give you that.
-    'rte': null,  # suggestion
-    'rue': null,  # suggestion
-    'rvrt': replace,  # apparently logged after an undo
-    'sas': null,  # suggestion. Autospell?
-    'sl': null,
-    'ste': null,  # suggestion
-    'sue': null,  # suggestion
-    'uefd': null,  # suggestion
-    'use': null,  # suggestion
-    'umv': null,
-    'usfd': null,  # suggestion
-}
-
-
 def _touch_tab(tab, event_timestamp):
     if event_timestamp is None:
         return
@@ -396,10 +345,26 @@ class CommandContext:
         return self.doc_state.tabs[self.current_tab]
 
 
-def _cmd_text(ctx: CommandContext, **cmd):
-    ty = cmd.get("ty")
-    if ty in text_dispatch:
-        text_dispatch[ty](ctx.tab.doc, **cmd)
+def _cmd_is(ctx: CommandContext, ty=None, ibi=None, s=None, **kwargs):
+    if ibi is None or s is None:
+        return
+    insert(ctx.tab.doc, ty, ibi, s)
+
+
+def _cmd_ds(ctx: CommandContext, ty=None, si=None, ei=None, **kwargs):
+    if si is None or ei is None:
+        return
+    delete(ctx.tab.doc, ty, si, ei)
+
+
+def _cmd_as(ctx: CommandContext, **cmd):
+    alter(ctx.tab.doc, **cmd)
+
+
+def _cmd_rplc(ctx: CommandContext, ty=None, snapshot=None, **kwargs):
+    if snapshot is None:
+        return
+    replace(ctx.tab.doc, ty, snapshot)
 
 
 def _cmd_mlti(ctx: CommandContext, mts=None, **kwargs):
@@ -473,6 +438,10 @@ def _cmd_null(ctx: CommandContext, **kwargs):
 
 
 # Centralized dispatch for all command types.
+#
+# Notes:
+# - Some commands are formatting-only or suggested edits and are treated as no-ops.
+# - Dropdown and element handling is routed through tab-aware handlers.
 dispatch = {
     'mlti': _cmd_mlti,
     'nm': _cmd_nm,
@@ -481,34 +450,34 @@ dispatch = {
     'ac': _cmd_ac,
     'ae': _cmd_ae,
     'te': _cmd_te,
-    'as': _cmd_text,
-    'ds': _cmd_text,
-    'is': _cmd_text,
-    'iss': _cmd_text,
-    'mefd': _cmd_text,
-    'msfd': _cmd_text,
+    'as': _cmd_as,
+    'ds': _cmd_ds,
+    'is': _cmd_is,
+    'rplc': _cmd_rplc,  # rplc is called as the first edit when a doc is created from a template
+    'rvrt': _cmd_rplc,  # apparently logged after an undo
+    'iss': _cmd_null,  # suggested insertion (ignored)
+    'mefd': _cmd_null,  # suggestion
+    'msfd': _cmd_null,  # suggestion
     'null': _cmd_null,
-    'ord': _cmd_text,
-    'ras': _cmd_text,
-    'rplc': _cmd_text,
-    'rte': _cmd_text,
-    'rue': _cmd_text,
-    'rvrt': _cmd_text,
-    'sas': _cmd_text,
-    'sl': _cmd_text,
-    'ste': _cmd_text,
-    'sue': _cmd_text,
-    'uefd': _cmd_text,
-    'use': _cmd_text,
-    'umv': _cmd_text,
-    'usfd': _cmd_text,
-    'ase': _cmd_null,
-    'ast': _cmd_null,
-    'astss': _cmd_null,
+    'ord': _cmd_null,
+    'ras': _cmd_null,  # suggestion. Autospell?
+    'rte': _cmd_null,  # suggestion
+    'rue': _cmd_null,  # suggestion
+    'sas': _cmd_null,  # suggestion. Autospell?
+    'sl': _cmd_null,
+    'ste': _cmd_null,  # suggestion
+    'sue': _cmd_null,  # suggestion
+    'uefd': _cmd_null,  # suggestion
+    'use': _cmd_null,  # suggestion
+    'umv': _cmd_null,
+    'usfd': _cmd_null,  # suggestion
+    'ase': _cmd_null,  # suggestion
+    'ast': _cmd_null,  # suggestion. Image?
+    'astss': _cmd_null,  # suggestion. Autospell?
     'ue': _cmd_null,
     'de': _cmd_null,
-    'dse': _cmd_null,
-    'dss': _cmd_null,
+    'dse': _cmd_null,  # suggestion
+    'dss': _cmd_null,  # suggested deletion
 }
 
 
