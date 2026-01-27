@@ -191,22 +191,12 @@ async def reconstruct(event, internal_state):
     Google's deltas into a document. It also adds a bit of metadata e.g. for
     Deane plots.
     '''
-    def _extract_tab_title(client):
-        mouseclick = client.get("mouseclick", {})
-        class_name = mouseclick.get("target.className", "") or ""
-        if "chapter-label-content" in class_name:
-            title = mouseclick.get("target.innerText")
-            if title:
-                return title
-        return None
-
     client = event.get("client", {}) or {}
     event_type = client.get("event") or event.get("event")
     tab_id = client.get("tab_id") or event.get("tab_id")
-    tab_title = _extract_tab_title(client)
 
-    # If it's not a relevant event and we have no tab metadata to update, ignore it
-    if event_type not in ["google_docs_save", "document_history"] and not tab_id:
+    # If it's not a relevant event, ignore it
+    if event_type not in ["google_docs_save", "document_history"]:
         return False, False
 
     if internal_state is None:
@@ -233,7 +223,7 @@ async def reconstruct(event, internal_state):
         or client.get("object", {}).get("url")
         or event.get("url", "")
     )
-    default_tab = tab_id or "t.0"
+    default_tab = tab_id or gdoc_reconstruct_doc.parse_tab_from_url(url)
 
     ts = event.get("client", {}).get("timestamp")
     if ts is None:
@@ -265,28 +255,6 @@ async def reconstruct(event, internal_state):
         ]
         for cmd in change_list:
             doc_state.apply_bundle({"commands": [cmd]}, default_tab, event_timestamp=ts_int)
-    else:
-        if tab_title:
-            doc_state.tabs[default_tab].name = tab_title
-        if ts_int is not None:
-            tab = doc_state.tabs[default_tab]
-            if tab.first_timestamp is None:
-                tab.first_timestamp = ts_int
-            tab.last_timestamp = ts_int
-
-    doc_state.last_timestamp = ts_int
-    doc_state.last_url = url
-    server_time = event.get("server", {}).get("time")
-    if server_time is not None:
-        doc_state.last_server_time = server_time
-
-    tabs = []
-    for tab_id, tab in doc_state.tabs.items():
-        tabs.append({
-            "tab_id": tab_id,
-            "title": tab.name or tab_id,
-            "text": gdoc_reconstruct_doc.render_tab_text(tab),
-        })
 
     active_tab = doc_state.tabs[default_tab]
     position = active_tab.doc.position
@@ -299,7 +267,6 @@ async def reconstruct(event, internal_state):
     }
     external_state = {
         "text": gdoc_reconstruct_doc.render_full_text(doc_state),
-        "tabs": tabs,
         "position": position,
         "edit_metadata": edit_metadata,
     }
