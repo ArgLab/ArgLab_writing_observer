@@ -11,11 +11,12 @@ import pmss
 import re
 import time
 
-from . import reconstruct_doc as gdoc_reconstruct_doc
+import writing_observer.reconstruct_doc
 
 import learning_observer.adapters
 import learning_observer.communication_protocol.integration
 from learning_observer.stream_analytics.helpers import student_event_reducer, kvs_pipeline, KeyField, EventField, Scope
+import learning_observer.stream_analytics.time_on_task
 import learning_observer.settings
 import learning_observer.util
 
@@ -34,21 +35,6 @@ import learning_observer.util
 # (e.g. all the numbers would go up/down 20%, but behavior was
 # substantatively identical).
 
-pmss.register_field(
-    name='time_on_task_threshold',
-    type=pmss.pmsstypes.TYPES.integer,
-    description='Maximum time to pass before marking a session as over. '\
-        'Should be 60-300 seconds in production, but 5 seconds is nice for '\
-        'debugging in a local deployment.',
-    default=60
-)
-pmss.register_field(
-    name='binned_time_on_task_bin_size',
-    type=pmss.pmsstypes.TYPES.integer,
-    description='How large (in seconds) to make timestamp bins when '\
-        'recording binned time on task.',
-    default=600
-)
 pmss.register_field(
     name='activity_threshold',
     type=pmss.pmsstypes.TYPES.integer,
@@ -78,7 +64,6 @@ if NEW:
 else:
     gdoc_scope = student_scope  # HACK for backwards-compatibility
 
-gdoc_tab_scope = Scope([KeyField.STUDENT, EventField('doc_id'), EventField('tab_id')])
 
 @learning_observer.communication_protocol.integration.publish_function('writing_observer.activity_map')
 def determine_activity_status(last_ts):
@@ -94,64 +79,12 @@ async def time_on_task(event, internal_state):
     goes away for 2 hours without typing, we only add e.g. 5 minutes if
     `time_threshold` is set to 300.
     '''
-    if internal_state is None:
-        internal_state = {
-            'saved_ts': None,
-            'total_time_on_task': 0
-        }
-    last_ts = internal_state['saved_ts']
-    internal_state['saved_ts'] = event['server']['time']
-
-    # Initial conditions
-    if last_ts is None:
-        last_ts = internal_state['saved_ts']
-    if last_ts is not None:
-        delta_t = min(
-            learning_observer.settings.module_setting('writing_obersver', 'time_on_task_threshold'),  # Maximum time step
-            internal_state['saved_ts'] - last_ts  # Time step
-        )
-        internal_state['total_time_on_task'] += delta_t
-    return internal_state, internal_state
-
-
-def _get_time_delta(last_event_timestamp, current_event_timestamp):
-    return min(
-        learning_observer.settings.module_setting('writing_obersver', 'time_on_task_threshold'),  # Maximum time step
-        last_event_timestamp - current_event_timestamp  # Time step
+    internal_state = learning_observer.stream_analytics.time_on_task.apply_time_on_task(
+        internal_state,
+        event['server']['time'],
+        learning_observer.settings.module_setting('writing_obersver', 'time_on_task_threshold')
     )
-
-
-def _get_time_bin(timestamp):
-    bin_size = learning_observer.settings.module_setting('writing_obersver', 'binned_time_on_task_bin_size')
-    b = (timestamp // bin_size) * bin_size
-    b = int(b)
-    return b
-
-
-def _update_binned_time_on_task(internal_state, current_bin, last_timestamp, delta_time):
-    '''Handle updating the internal state for binned time on task.
-    '''
-    next_bin = current_bin + learning_observer.settings.module_setting('writing_obersver', 'binned_time_on_task_bin_size')
-    next_bin_str = str(next_bin)
-
-    # default current_bin to 0 if it doesn't exist
-    current_bin_str = str(current_bin)
-    if current_bin_str not in internal_state['binned_time_on_task']:
-        internal_state['binned_time_on_task'][current_bin_str] = 0
-
-    # time-on-task overflows to the next bin
-    # first add a portion of the time to the current bin
-    # default the next bin to 0 if it doesn't exist
-    # add remaining time to next bin
-    if last_timestamp + delta_time >= next_bin:
-        internal_state['binned_time_on_task'][current_bin_str] += next_bin - last_timestamp
-        if next_bin_str not in internal_state['binned_time_on_task']:
-            internal_state['binned_time_on_task'][next_bin_str] = 0
-        internal_state['binned_time_on_task'][next_bin_str] += last_timestamp + delta_time - next_bin
-    # process normal within bin time on task update
-    else:
-        internal_state['binned_time_on_task'][current_bin_str] += delta_time
-
+    return internal_state, internal_state
 
 
 @kvs_pipeline(scope=gdoc_scope)
@@ -160,123 +93,45 @@ async def binned_time_on_task(event, internal_state):
     Similar to the `time_on_task` reducer defined above, except it
     bins the time spent.
     '''
-    if internal_state is None:
-        internal_state = {
-            'saved_ts': None,
-            'binned_time_on_task': {},
-            'current_bin': None
-        }
-    last_timestamp = internal_state['saved_ts']
-    current_bin = internal_state['current_bin']
-    internal_state['saved_ts'] = event['server']['time']
-
-    # Initialization
-    if last_timestamp is None:
-        last_timestamp = internal_state['saved_ts']
-    if current_bin is None:
-        current_bin = _get_time_bin(last_timestamp)
-
-    if last_timestamp is not None:
-        delta_time = _get_time_delta(internal_state['saved_ts'], last_timestamp)
-        _update_binned_time_on_task(internal_state, current_bin, last_timestamp, delta_time)
-
-    # update our current bin with the current event's timestamp
-    internal_state['current_bin'] = _get_time_bin(internal_state['saved_ts'])
+    internal_state = learning_observer.stream_analytics.time_on_task.apply_binned_time_on_task(
+        internal_state,
+        event['server']['time'],
+        learning_observer.settings.module_setting('writing_obersver', 'time_on_task_threshold'),
+        learning_observer.settings.module_setting('writing_obersver', 'binned_time_on_task_bin_size')
+    )
     return internal_state, internal_state
 
 
+@kvs_pipeline(scope=gdoc_scope)
 async def reconstruct(event, internal_state):
     '''
     This is a thin layer to route events to `reconstruct_doc` which compiles
     Google's deltas into a document. It also adds a bit of metadata e.g. for
     Deane plots.
     '''
-    client = event.get("client", {}) or {}
-    event_type = client.get("event") or event.get("event")
-    tab_id = client.get("tab_id") or event.get("tab_id")
-
     # If it's not a relevant event, ignore it
-    if event_type not in ["google_docs_save", "document_history"]:
+    if event['client']['event'] not in ["google_docs_save", "document_history"]:
         return False, False
 
-    if internal_state is None:
-        internal_state = {}
-
-    doc_state_data = internal_state.get("doc_state") if isinstance(internal_state, dict) else None
-    if doc_state_data:
-        doc_state = gdoc_reconstruct_doc.DocState.from_dict(doc_state_data)
-    else:
-        user_id = (
-            event.get("client", {}).get("auth", {}).get("safe_user_id")
-            or event.get("client", {}).get("auth", {}).get("user_id")
-            or ""
-        )
-        doc_id = get_doc_id(event) or ""
-        doc_state = gdoc_reconstruct_doc.DocState(user_id, doc_id)
-        url = event.get("client", {}).get("url") or event.get("client", {}).get("object", {}).get("url") or ""
-        default_tab = gdoc_reconstruct_doc.parse_tab_from_url(url)
-        if internal_state.get("text"):
-            doc_state.tabs[default_tab].text = internal_state.get("text", "")
-
-    url = (
-        client.get("url")
-        or client.get("object", {}).get("url")
-        or event.get("url", "")
-    )
-    default_tab = tab_id or gdoc_reconstruct_doc.parse_tab_from_url(url)
-
-    ts = event.get("client", {}).get("timestamp")
-    if ts is None:
-        ts = event.get("client", {}).get("metadata", {}).get("ts")
-    try:
-        ts_int = int(ts) if ts is not None else None
-    except (TypeError, ValueError):
-        ts_int = None
-
-    if event_type == "google_docs_save":
-        bundles = client.get("bundles") or event.get("bundles") or []
-        if learning_observer.settings.module_setting('writing_observer', 'verbose'):
-            try:
-                bundle_count = len(bundles)
-                command_counts = [len(b.get("commands", [])) for b in bundles]
-            except Exception:
-                bundle_count = "?"
-                command_counts = "?"
-            print("reconstruct google_docs_save",
-                  "doc_id=", get_doc_id(event),
-                  "tab_id=", default_tab,
-                  "bundles=", bundle_count,
-                  "commands=", command_counts)
+    internal_state = writing_observer.reconstruct_doc.google_text.from_json(
+        json_rep=internal_state)
+    if event['client']['event'] == "google_docs_save":
+        bundles = event['client']['bundles']
         for bundle in bundles:
-            doc_state.apply_bundle(bundle, default_tab, event_timestamp=ts_int)
-    elif event_type == "document_history":
+            internal_state = writing_observer.reconstruct_doc.command_list(
+                internal_state, bundle['commands']
+            )
+    elif event['client']['event'] == "document_history":
         change_list = [
-            i[0] for i in client.get("history", {}).get("changelog", [])
+            i[0] for i in event['client']['history']['changelog']
         ]
-        for cmd in change_list:
-            doc_state.apply_bundle({"commands": [cmd]}, default_tab, event_timestamp=ts_int)
-
-    active_tab = doc_state.tabs[default_tab]
-    position = active_tab.doc.position
-    edit_metadata = active_tab.doc.edit_metadata
-
-    internal_state = {
-        "doc_state": doc_state.to_dict(),
-        "position": position,
-        "edit_metadata": edit_metadata,
-    }
-    external_state = {
-        "text": gdoc_reconstruct_doc.render_full_text(doc_state),
-        "position": position,
-        "edit_metadata": edit_metadata,
-    }
+        internal_state = writing_observer.reconstruct_doc.command_list(
+            writing_observer.reconstruct_doc.google_text(), change_list
+        )
+    state = internal_state.json
     if learning_observer.settings.module_setting('writing_observer', 'verbose'):
-        print(external_state)
-    return internal_state, external_state
-
-
-gdoc_scope_reconstruct = kvs_pipeline(scope=gdoc_scope)(reconstruct)
-gdoc_tab_scope_reconstruct = kvs_pipeline(scope=gdoc_tab_scope)(reconstruct)
+        print(state)
+    return state, state
 
 
 @kvs_pipeline(scope=gdoc_scope, null_state={"count": 0})
@@ -405,6 +260,59 @@ async def document_list(event, internal_state):
         return internal_state, internal_state
 
     return False, False
+
+
+def _extract_tab_title(client):
+    mouseclick = client.get("mouseclick", {})
+    class_name = mouseclick.get("target.className", "") or ""
+    if "chapter-label-content" in class_name:
+        title = mouseclick.get("target.innerText")
+        if title:
+            return title
+    return None
+
+
+def _extract_tab_id(event):
+    client = event.get("client", {}) or {}
+    tab_id = client.get("tab_id") or event.get("tab_id")
+    if tab_id:
+        return tab_id
+    url = client.get("url") or client.get("object", {}).get("url") or event.get("url")
+    if not url:
+        return None
+    match = re.search(r"tab=([^&#]+)", url)
+    return match.group(1) if match else None
+
+
+@kvs_pipeline(scope=gdoc_scope, null_state={"tabs": {}})
+async def tab_list_reducer(event, internal_state):
+    '''
+    Track per-document tab metadata (tab_id, title, last_accessed) per student.
+    '''
+    if internal_state is None:
+        internal_state = {"tabs": {}}
+
+    client = event.get("client", {}) or {}
+    tab_id = _extract_tab_id(event)
+    if not tab_id:
+        return False, False
+
+    tabs = internal_state.get("tabs") or {}
+    entry = tabs.get(tab_id, {})
+
+    title = _extract_tab_title(client) or entry.get("title")
+    server_time = event.get("server", {}).get("time")
+    if server_time is None:
+        server_time = client.get("timestamp") or client.get("metadata", {}).get("ts")
+
+    tabs[tab_id] = {
+        "tab_id": tab_id,
+        "title": title,
+        "last_accessed": server_time,
+    }
+
+    internal_state["tabs"] = tabs
+    return internal_state, internal_state
 
 
 @kvs_pipeline(scope=student_scope)
