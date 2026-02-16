@@ -469,11 +469,25 @@ async def courselist(request):
     return course_list
 
 
+# async def courseroster_runtime(runtime, course_id):
+#     '''
+#     Wrapper to call courseroster with a runtime object
+#     '''
+#     return await courseroster(runtime.get_request(), course_id)
+
+# learning_observer/learning_observer/rosters.py:L507
 async def courseroster_runtime(runtime, course_id):
     '''
     Wrapper to call courseroster with a runtime object
     '''
-    return await courseroster(runtime.get_request(), course_id)
+    roster = await courseroster(runtime.get_request(), course_id)
+    # HACK add in provenance so we can call roster endpoint without needing another
+    # node in our DAG
+    for student in roster:
+        if constants.USER_ID not in student:
+            continue
+        student['provenance'] = {'STUDENT': {constants.USER_ID: student[constants.USER_ID]}}
+    return roster
 
 
 @learning_observer.communication_protocol.integration.publish_function('learning_observer.courseroster')
