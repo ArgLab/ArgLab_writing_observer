@@ -71,8 +71,10 @@ from learning_observer.communication_protocol import query
 
 roster = query.call("get_course_roster", args={"course_id": course_id})
 reducer_keys = query.keys(
-    reducer="reading_fluency",
-    entities=query.variable(roster, "students"),
+    "reading_fluency",
+    scope_fields={
+        "student": {"values": query.variable(roster), "path": "user_id"},
+    },
 )
 reducer_docs = query.select(
     keys=reducer_keys,
@@ -91,6 +93,47 @@ Guidelines:
 * Use `query.variable(node, path=None)` for downstream access to prior outputs.
 * Encapsulate repeated or complex logic in functions for reuse and testing.
 * Use explicit names and keyword arguments—avoid positional arguments for clarity.
+
+### Defining reducer scopes for `keys` (preferred vs. legacy)
+
+Reducers define a scope (e.g., student, student+document, student+document+tab). When
+building a `keys` node, pass scope values that align with the reducer scope so the
+executor can build the right Redis keys.
+
+**Preferred: `scope_fields` (supports arbitrary scopes)**
+
+Use `scope_fields` to supply each scope axis with either a `values` iterable or a
+single value (applied across all items), plus an optional `path` into each item.
+The scope field names should match the reducer scope: `student`,
+`doc_id`, `tab_id`, `page_id`, etc.
+
+```python
+reducer_keys = query.keys(
+    "writing_observer.some_tabbed_reducer",
+    scope_fields={
+        "student": {"values": query.variable("roster"), "path": "user_id"},
+        "doc_id": {"values": query.variable("documents"), "path": "doc_id"},
+        "tab_id": {"values": query.variable("tabs"), "path": "tab_id"},
+        # or a single value
+        "student": "bobs_user_id"
+    },
+)
+```
+
+**Legacy: `STUDENTS`/`RESOURCES`**
+
+The older hack only supported student-only or student+document scopes. It is still
+accepted for backward compatibility, but prefer `scope_fields` for new work.
+
+```python
+reducer_keys = query.keys(
+    "writing_observer.last_document",
+    STUDENTS=query.variable("roster"),
+    STUDENTS_path="user_id",
+    RESOURCES=query.variable("documents"),
+    RESOURCES_path="doc_id",
+)
+```
 
 ## 6. Define Exports and Integrations
 
@@ -147,6 +190,12 @@ Submit the flattened DAG to the communication protocol endpoint with runtime par
 
 On success, the response includes export payloads keyed by export name. Inspect `DAGExecutionException` for error details.
 
+The executor validates each requested export before any DAG work begins. If an
+export name is unknown - or if its declared `returns` node cannot be found - the
+server responds with a `DAGExecutionException` describing the missing export or
+node. Surfacing these errors in logs or UI telemetry helps diagnose typos and
+stale configuration quickly.
+
 When using integration bindings, call the generated async function with the same parameters.
 
 ## 10. Construct Websocket Requests
@@ -182,6 +231,33 @@ The server streams back updates in messages shaped like:
 ```
 
 If `rerun_dag_delay` is set, the server automatically re-executes the DAG and pushes updates.
+
+### Manual testing with the generic websocket dashboards
+
+Two helper scripts live in `scripts/` for exercising websocket flows without running a full dashboard UI:
+
+* `generic_websocket_dashboard.py` (Python + `aiohttp`)
+* `generic_websocket_dashboard.js` (Node.js + `ws`)
+
+Both scripts ship with a template payload under the `REQUEST` constant. Update the payload to target the exports and parameters you want to test—for example, changing `execution_dag`, `target_exports`, or `kwargs.course_id`.
+
+To run the Python version:
+
+```bash
+python scripts/generic_websocket_dashboard.py
+```
+
+The script opens a websocket to `/wsapi/communication_protocol`, sends the JSON request, and pretty-prints any responses. Install dependencies with `pip install aiohttp` if needed.
+
+The Node.js version follows the same pattern. After adjusting `REQUEST`, run:
+
+```bash
+node scripts/generic_websocket_dashboard.js
+```
+
+If you copy the script into a browser console, delete the `require('ws')` line so the native `WebSocket` implementation is used.
+
+Use these scripts to confirm executor behaviour during development—for example, to observe partial updates or to verify that query parameters are wired correctly before embedding a request in a Dash dashboard.
 
 ## 11. Iterate and Maintain
 

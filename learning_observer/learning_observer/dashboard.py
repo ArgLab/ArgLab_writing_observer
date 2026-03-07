@@ -9,11 +9,13 @@ place than we started.
 
 import asyncio
 import copy
+import datetime
 import inspect
 import json
 import aiohttp.client_exceptions
 import jsonschema
 import numbers
+import os
 import pmss
 import queue
 import time
@@ -33,10 +35,12 @@ import learning_observer.paths as paths
 import learning_observer.auth
 import learning_observer.constants as constants
 import learning_observer.rosters as rosters
+import learning_observer.util
 
-from learning_observer.log_event import debug_log
+from learning_observer.log_event import debug_log, log_event, close_logfile
 
 import learning_observer.module_loader
+import learning_observer.communication_protocol.executor
 import learning_observer.communication_protocol.integration
 import learning_observer.communication_protocol.query
 import learning_observer.communication_protocol.schema
@@ -49,6 +53,14 @@ pmss.register_field(
                 '(directed acyclic graphs) or user created execution DAGs. '\
                 'This is useful for developing new system queries, but should not '\
                 'be used in production.',
+    default=False
+)
+
+pmss.register_field(
+    name='logging_enabled',
+    type=pmss.pmsstypes.TYPES.boolean,
+    description='Allow data to be logged or not. Used in within namespaces '\
+                'such as `dashboard_settings` or `lms_integration`.',
     default=False
 )
 
@@ -456,7 +468,8 @@ async def dispatch_named_execution_dag(dag_name):
     except KeyError:
         debug_log(await dag_not_found(dag_name))
     finally:
-        return query
+        pass
+    return query
 
 
 async def dispatch_defined_execution_dag(dag):
@@ -475,7 +488,8 @@ async def dispatch_defined_execution_dag(dag):
         debug_log(await dag_incorrect_format(e))
         return query
     finally:
-        return query
+        pass
+    return query
 
 
 DAG_DISPATCH = {dict: dispatch_defined_execution_dag, str: dispatch_named_execution_dag}
@@ -507,11 +521,11 @@ async def _handle_dependent_dags(query):
     return query
 
 
-async def _prepare_dag_as_generator(client_query, query, target, request):
+async def _prepare_dag_as_generators(client_query, query, targets, request):
     '''
     Prepares the query for execution, sets up client parameters and runtime.
     '''
-    target_exports = [target]
+    target_exports = list(targets)
 
     # Prepare the DAG execution function
     query_func = learning_observer.communication_protocol.integration.prepare_dag_execution(query, target_exports)
@@ -521,12 +535,41 @@ async def _prepare_dag_as_generator(client_query, query, target, request):
     runtime = learning_observer.runtime.Runtime(request)
     client_parameters['runtime'] = runtime
 
-    # Execute the query and return the first value from the generator
+    # Execute the query and return generators keyed by export targets.
     generator_dictionary = await query_func(**client_parameters)
-    return next(iter(generator_dictionary.values()))
+    target_nodes_to_targets = {}
+    exports = query.get('exports', {})
+    execution_nodes = query.get('execution_dag', {})
+    for target in target_exports:
+        if target in exports:
+            node = exports[target].get('returns')
+            if node not in execution_nodes:
+                node = f'__missing_export__:{target}'
+        else:
+            node = f'__missing_export__:{target}'
+        target_nodes_to_targets.setdefault(node, []).append(target)
+
+    generators_by_id = {}
+    for node, node_targets in target_nodes_to_targets.items():
+        generator = generator_dictionary.get(node)
+        if generator is None:
+            debug_log(f'Missing generator for DAG node {node}')
+            continue
+        generator_id = id(generator)
+        if generator_id not in generators_by_id:
+            generators_by_id[generator_id] = {
+                'generator': generator,
+                'targets': []
+            }
+        generators_by_id[generator_id]['targets'].extend(node_targets)
+    return [
+        (entry['targets'], entry['generator'])
+        for entry in generators_by_id.values()
+    ]
 
 
-async def _create_dag_generator(client_query, target, request):
+
+async def _create_dag_generators(client_query, targets, request):
     dag = client_query['execution_dag']
     if type(dag) not in DAG_DISPATCH:
         debug_log(await dag_unsupported_type(type(dag)))
@@ -538,7 +581,83 @@ async def _create_dag_generator(client_query, target, request):
         debug_log('The submitted query failed.')
         return
     query = await _handle_dependent_dags(query)
-    return await _prepare_dag_as_generator(client_query, query, target, request)
+    return await _prepare_dag_as_generators(client_query, query, targets, request)
+
+
+def _scope_segment_for_provenance_key(key):
+    if key == 'RESOURCE':
+        return 'documents'
+    if key.startswith('EventField.'):
+        field_name = key.split('EventField.', 1)[1]
+        if field_name == 'doc_id':
+            return 'documents'
+        if field_name.endswith('_id'):
+            return f"{field_name}s"
+        return f"{field_name}s"
+    if key == 'CLASS':
+        return 'classes'
+    return f"{key.lower()}s"
+
+
+def _provenance_key_for_scope_field(field):
+    if isinstance(field, sa_helpers.KeyField):
+        return field.name
+    if isinstance(field, sa_helpers.EventField):
+        if field.event == 'doc_id':
+            return 'RESOURCE'
+        return f'EventField.{field.event}'
+    return str(field)
+
+
+def _scope_key_order_for_reducer(reducer):
+    if not reducer:
+        return []
+    scope = reducer.get('scope', [])
+    ordered_scope = sorted(
+        scope,
+        key=lambda field: (0 if isinstance(field, sa_helpers.KeyField) else 1, getattr(field, 'name', str(field)))
+    )
+    return [_provenance_key_for_scope_field(field) for field in ordered_scope]
+
+
+def _find_reducer_from_provenance_key(key):
+    if not key:
+        return None
+    parts = key.split(',')
+    if len(parts) < 2:
+        return None
+    reducer_name = parts[1]
+    for reducer in learning_observer.module_loader.reducers():
+        function_name = sa_helpers.fully_qualified_function_name(reducer['function'])
+        if function_name == reducer_name:
+            return reducer
+    return None
+
+
+def _value_from_provenance_entry(key, entry):
+    if not isinstance(entry, dict):
+        return entry
+    if key == 'STUDENT':
+        for candidate in ('user_id', 'student_id', 'id'):
+            if candidate in entry:
+                return entry[candidate]
+    if key in ('RESOURCE', 'EventField.doc_id'):
+        for candidate in ('doc_id', 'resource_id', 'id'):
+            if candidate in entry:
+                return entry[candidate]
+    if key == 'CLASS':
+        for candidate in ('class_id', 'id'):
+            if candidate in entry:
+                return entry[candidate]
+    if key == 'TEACHER':
+        for candidate in ('user_id', 'teacher_id', 'id'):
+            if candidate in entry:
+                return entry[candidate]
+    if key.startswith('EventField.'):
+        field_name = key.split('EventField.', 1)[1]
+        if field_name in entry:
+            return entry[field_name]
+    return entry.get('value')
 
 
 def _find_student_or_resource(d):
@@ -550,29 +669,59 @@ def _find_student_or_resource(d):
     user output. However, this method assumes that the provenance is still
     around.
     This method digs into the provenance and extracts the corresponding
-    student or student/document id. This information is used to tell the
-    client which items in their data-tree to update (i.e. update Billy's
-    History Essay with this new information).
+    scope ids. This information is used to tell the client which items in
+    their data-tree to update (i.e. update Billy's History Essay with this
+    new information).
     '''
     if not isinstance(d, dict):
         return []
     if 'provenance' in d:
         provenance = d['provenance']
+        provenance_data = provenance
+        provenance_key = None
+        if isinstance(provenance, dict):
+            provenance_data = provenance.get('provenance', provenance)
+            provenance_key = provenance.get('key')
+        while isinstance(provenance_data, dict) and 'provenance' in provenance_data:
+            provenance_key = provenance_data.get('key', provenance_key)
+            next_provenance = provenance_data.get('provenance')
+            if next_provenance is None or next_provenance is provenance_data:
+                break
+            provenance_data = next_provenance
         output = []
-        if 'STUDENT' in provenance:
-            output.append('students')
-            output.append(provenance['STUDENT']['user_id'])
-        if 'RESOURCE' in provenance:
-            if 'doc_id' in provenance['RESOURCE']:
-                output.append('documents')
-                output.append(provenance['RESOURCE']['doc_id'])
-            if 'assignment_id' in provenance['RESOURCE']:
-                output.append('assignments')
-                output.append(provenance['RESOURCE']['assignment_id'])
+        if isinstance(provenance_data, dict):
+            reducer = _find_reducer_from_provenance_key(provenance_key)
+            scope_order = _scope_key_order_for_reducer(reducer)
+            scope_order_index = {key: idx for idx, key in enumerate(scope_order)} if scope_order else {}
+            if scope_order_index:
+                ordered_entries = sorted(
+                    ((key, entry) for key, entry in provenance_data.items() if key in scope_order_index),
+                    key=lambda item: scope_order_index[item[0]]
+                )
+            else:
+                ordered_entries = provenance_data.items()
+            for key, entry in ordered_entries:
+                if scope_order_index and key not in scope_order_index:
+                    continue
+                segment = _scope_segment_for_provenance_key(key)
+                if segment is None:
+                    continue
+                value = _value_from_provenance_entry(key, entry)
+                if value is None:
+                    continue
+                output.append(segment)
+                output.append(str(value))
+
         if output:
             return output
-        return _find_student_or_resource(provenance)
+        return _find_student_or_resource(provenance_data)
     return []
+
+
+# We track protocol log creation per-process so that concurrent websocket
+# connections produce unique filenames even when they open at the same time.
+DASHBOARD_PROTOCOL_LOG_COUNTER = 0
+DASHBOARD_PROTOCOL_LOG_LOCK = asyncio.Lock()
 
 
 @learning_observer.auth.teacher
@@ -587,30 +736,137 @@ async def websocket_dashboard_handler(request):
     Returns:
         aiohttp web response.
     '''
+    active_user = await learning_observer.auth.get_active_user(request)
+    user_context = {
+        'user_id': (active_user or {}).get('user_id'),
+        'user_email': (active_user or {}).get('email'),
+        'user_role': (active_user or {}).get('role'),
+    }
+    # Fetch PMSS setting flag for dashboard logging, scoped by user's email domain
+    user_domain = learning_observer.util.get_domain_from_email(user_context['user_email'])
+    dashboard_protocol_logging_enabled = learning_observer.settings.pmss_settings.logging_enabled(types=['dashboard_settings'], attributes={'domain': user_domain})
+
+    global DASHBOARD_PROTOCOL_LOG_COUNTER
+    async with DASHBOARD_PROTOCOL_LOG_LOCK:
+        current_counter = DASHBOARD_PROTOCOL_LOG_COUNTER
+        DASHBOARD_PROTOCOL_LOG_COUNTER += 1
+
+    # TODO this is similar to our incoming student event log file names
+    # this ought to be abstracted to a helper function
+    # The combination of timestamp / user / process / counter creates
+    # unique filenames for each dashboard session
+    protocol_log_filename = "{timestamp}-{user:-<15}-{remote:-<15}-{counter:0>10}-{pid}.dashboard".format(
+        timestamp=datetime.datetime.utcnow().isoformat(),
+        user=(user_context.get('user_id') or 'UNKNOWN')[:15],
+        remote=(request.remote or '')[:15],
+        counter=current_counter,
+        pid=os.getpid(),
+    )
+
+    is_protocol_log_closed = False
+
+    def close_protocol_log():
+        '''Close the structured protocol log if logging is enabled.'''
+        if not dashboard_protocol_logging_enabled:
+            return
+        nonlocal is_protocol_log_closed
+        if not is_protocol_log_closed:
+            try:
+                close_logfile(protocol_log_filename)
+            finally:
+                is_protocol_log_closed = True
+
+    has_logged_connection_closure = False
+    lock_field_event = {
+        'event': 'lock_fields',
+        'fields': {
+            'user_id': user_context.get('user_id'),
+            'user_email': user_context.get('user_email'),
+            'user_role': user_context.get('user_role'),
+            'remote': request.remote,
+            'request_path': str(request.rel_url)
+        }
+    }
+    if dashboard_protocol_logging_enabled:
+        log_event(lock_field_event, filename=protocol_log_filename)
+
+    def _log_protocol_event(event, **extra):
+        '''
+        Emit structured logs describing websocket activity.
+        '''
+        if not dashboard_protocol_logging_enabled:
+            return
+        nonlocal has_logged_connection_closure  # ensure we mutate the outer flag
+        payload = {
+            'event': event,
+            'timestamp': str(datetime.datetime.now()),
+        }
+        payload.update(extra)
+        try:
+            log_event(payload, filename=protocol_log_filename)
+        except TypeError:
+            # Fall back to logging the raw payload if serialization fails.
+            log_event({
+                'event_type': 'communication_protocol_event',
+                'event': event,
+                'serialization_failed': True,
+                'payload_repr': repr(payload),
+            }, filename=protocol_log_filename)
+        if event == 'connection_closed':
+            has_logged_connection_closure = True
+
+    def _close_connection_and_cleanup(reason: str):
+        """
+        Idempotently log connection closure and close the protocol log file.
+        """
+        if not has_logged_connection_closure:
+            _log_protocol_event('connection_closed', reason=reason)
+        close_protocol_log()
+
+    def _create_query_summary_for_logging(query):
+        '''
+        Provide a compact description of the query for log aggregation.
+        '''
+        summary = {}
+        for key, value in (query or {}).items():
+            if not isinstance(value, dict):
+                summary[key] = {'non_dict_value': repr(value)}
+                continue
+            execution_dag = value.get('execution_dag')
+            summary[key] = {
+                'target_exports': value.get('target_exports', []),
+                'execution_dag_type': type(execution_dag).__name__,
+                'execution_dag_name': execution_dag if isinstance(execution_dag, str) else None,
+                'kwargs': value.get('kwargs', {}),
+            }
+        return summary
+
+    _log_protocol_event('connection_opened')
+
     ws = aiohttp.web.WebSocketResponse(receive_timeout=0.3)
     await ws.prepare(request)
     client_query = None
     previous_client_query = None
-    batch = []
-    lock = asyncio.Lock()
+    pending_updates = []
+    pending_updates_lock = asyncio.Lock()
     background_tasks = set()
 
-    async def _send_update(update):
+    async def _queue_update(update):
         '''Send an update to our batch
         '''
-        async with lock:
-            batch.append(update)
+        async with pending_updates_lock:
+            pending_updates.append(update)
 
-    async def _batch_send():
-        '''If our batch has any items, send them to the client
-        then wait before checking again.
+    async def _send_pending_updates_to_client():
+        '''If our queue has any items, send them to the client, clear
+        the queue, then wait before checking again.
         '''
         while True:
-            async with lock:
-                if batch:
+            async with pending_updates_lock:
+                if pending_updates:
                     try:
-                        await ws.send_json(batch)
-                        batch.clear()
+                        await ws.send_json(pending_updates)
+                        pending_updates.clear()
                     except aiohttp.web_ws.WebSocketError:
                         break
                     except aiohttp.client_exceptions.ClientConnectionResetError:
@@ -620,7 +876,7 @@ async def websocket_dashboard_handler(request):
             # TODO this ought to be pulled from somewhere
             await asyncio.sleep(1)
 
-    async def _execute_dag(dag_query, target, params):
+    async def _execute_dag(dag_query, targets, params):
         '''This method creates the DAG generator and drives it.
         Once finished, we wait until rescheduling it. If the parameters
         change, we exit before creating and driving the generator.
@@ -630,64 +886,130 @@ async def websocket_dashboard_handler(request):
             return
 
         # Create DAG generator and drive
-        generator = await _create_dag_generator(dag_query, target, request)
-        await _drive_generator(generator, dag_query['kwargs'], target=target)
+        generators = await _create_dag_generators(dag_query, targets, request)
+        if generators is None:
+            return
+        drive_tasks = []
+        for target_group, generator in generators:
+            drive_tasks.append(asyncio.create_task(
+                _drive_generator(generator, dag_query['kwargs'], targets=target_group)
+            ))
+        if drive_tasks:
+            await asyncio.gather(*drive_tasks)
 
         # Handle rescheduling the execution of the DAG for fresh data
-        # TODO add some way to specific specific endpoint delays
+        # TODO add some way to specify specific endpoint delays
         dag_delay = dag_query['kwargs'].get('rerun_dag_delay', 10)
         if dag_delay < 0:
             # if dag_delay is negative, we skip repeated execution
             return
         await asyncio.sleep(dag_delay)
-        await _execute_dag(dag_query, target, params)
+        await _execute_dag(dag_query, targets, params)
 
-    async def _drive_generator(generator, dag_kwargs, target=None):
+    async def _drive_generator(generator, dag_kwargs, targets=None):
         '''For each item in the generator, this method creates
         an update to send to the client.
         '''
+        target_exports = targets or [None]
         async for item in generator:
             scope = _find_student_or_resource(item)
             update_path = ".".join(scope)
-            if 'option_hash' in dag_kwargs and target is not None:
-                item[f'option_hash_{target}'] = dag_kwargs['option_hash']
-            await _send_update({'op': 'update', 'path': update_path, 'value': item})
+            for target in target_exports:
+                item_payload = item
+                if 'option_hash' in dag_kwargs and target is not None and isinstance(item, dict):
+                    item_payload = dict(item)
+                    item_payload[f'option_hash_{target}'] = dag_kwargs['option_hash']
+                # TODO this ought to be flag - we might want to see the provenance in some settings
+                item_without_provenance = learning_observer.communication_protocol.executor.strip_provenance(item_payload)
+                update_payload = {'op': 'update', 'path': update_path, 'value': item_without_provenance}
+                _log_protocol_event(
+                    'update_enqueued',
+                    payload=update_payload,
+                    target_export=target
+                )
+                await _queue_update(update_payload)
 
-    send_batches_task = asyncio.create_task(_batch_send())
+    send_batches_task = asyncio.create_task(_send_pending_updates_to_client())
     background_tasks.add(send_batches_task)
     send_batches_task.add_done_callback(background_tasks.discard)
 
-    while True:
-        try:
-            received_params = await ws.receive_json()
-            client_query = received_params
-            # TODO we should validate the client_query structure
-        except (TypeError, ValueError):
-            # these Errors may signal a close
-            if (await ws.receive()).type == aiohttp.WSMsgType.CLOSE:
-                debug_log("Socket closed!")
-                return aiohttp.web.Response()
-        except asyncio.exceptions.TimeoutError:
-            # this is the normal path of the code
-            # if the client_query hasn't been set, keep waiting for it
-            if client_query is None:
+    try:
+        while True:
+            try:
+                received_params = await ws.receive_json()
+                client_query = received_params
+                _log_protocol_event(
+                    'query_received',
+                    query_summary=_create_query_summary_for_logging(client_query),
+                )
+                # TODO we should validate the client_query structure
+            except aiohttp.client_exceptions.WSMessageTypeError as e:
+                # Check if this was a close message
+                if ws.closed:
+                    _close_connection_and_cleanup('websocket_closed_with_message_error')
+                    break
+                # Log the unexpected message type and continue
+                _log_protocol_event('unexpected_message_type', error=str(e))
                 continue
+            except (TypeError, ValueError) as e:
+                _log_protocol_event(
+                    'json_parse_error',
+                    error_type=type(e).__name__,
+                    error_message=str(e)
+                )
+                if ws.closed:
+                    _close_connection_and_cleanup('websocket_closed_during_json_parse')
+                    break
+                continue
+            except asyncio.exceptions.TimeoutError:
+                # this is the normal path of the code
+                # if the client_query hasn't been set, keep waiting for it
+                if client_query is None:
+                     continue
 
-        if ws.closed:
-            debug_log("Socket closed.")
-            return aiohttp.web.Response()
+            if ws.closed:
+                _close_connection_and_cleanup('websocket_closed_flag')
+                break
 
-        if client_query != previous_client_query:
-            previous_client_query = copy.deepcopy(client_query)
-            # HACK even though we can specificy multiple targets for a
-            # single DAG, this creates a new DAG for each. This eventually
-            # allows us to specify different parameters (such as the
-            # reschedule timeout).
-            for k, v in client_query.items():
-                for target in v.get('target_exports', []):
-                    execute_dag_task = asyncio.create_task(_execute_dag(v, target, client_query))
+            if client_query != previous_client_query:
+                previous_client_query = copy.deepcopy(client_query)
+                for k, v in client_query.items():
+                    targets = v.get('target_exports', [])
+                    execute_dag_task = asyncio.create_task(_execute_dag(v, targets, client_query))
                     background_tasks.add(execute_dag_task)
                     execute_dag_task.add_done_callback(background_tasks.discard)
+
+    # Various ways we might encounter an exception
+    except asyncio.CancelledError:
+        _close_connection_and_cleanup('server_cancelled')
+    except (aiohttp.web_ws.WebSocketError,
+            aiohttp.client_exceptions.ClientConnectionResetError,
+            ConnectionResetError) as e:
+        _log_protocol_event(
+            'connection_closed_gracefully',
+            exception_type=type(e).__name__,
+            detail=str(e))
+        _close_connection_and_cleanup('client_disconnected')
+    except Exception as e:
+        _log_protocol_event(
+            'handler_exception',
+            exception_type=type(e).__name__,
+            detail=repr(e))
+        _close_connection_and_cleanup('server_exception')
+    finally:
+        # Ensure all background tasks are stopped cleanly
+        for t in list(background_tasks):
+            t.cancel()
+        if background_tasks:
+            await asyncio.gather(*background_tasks, return_exceptions=True)
+
+        # Close WebSocket gracefully if not already closed
+        if not ws.closed:
+            try:
+                await ws.close()
+            except Exception:
+                pass
+    return aiohttp.web.Response()
 
 
 # Obsolete code -- we should put this back in after our refactor. Allows us to use

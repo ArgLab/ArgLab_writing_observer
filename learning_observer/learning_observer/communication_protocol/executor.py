@@ -9,6 +9,7 @@ import collections
 import concurrent.futures
 import functools
 import inspect
+import weakref
 
 import learning_observer.communication_protocol.query
 import learning_observer.communication_protocol.util
@@ -20,6 +21,110 @@ import learning_observer.stream_analytics.helpers
 from learning_observer.log_event import debug_log
 from learning_observer.util import get_nested_dict_value, clean_json, ensure_async_generator, async_zip
 from learning_observer.communication_protocol.exception import DAGExecutionException
+
+
+class _SharedAsyncIterable:
+    """Fan out one async iterable to multiple consumers without runaway memory use.
+
+    The execution DAG can reuse a single async iterable in multiple downstream nodes.
+    We do not want to eagerly drain the source in a background task, because that
+    defeats backpressure and retains every item indefinitely. This wrapper only
+    pulls items when a consumer needs them and discards items once every consumer
+    has advanced past them.
+    """
+    def __init__(self, source):
+        self._source = source
+        self._source_iter = source.__aiter__()
+        self._buffer = []
+        self._start_index = 0
+        self._done = False
+        self._exception = None
+        self._condition = asyncio.Condition()
+        self._fetch_lock = asyncio.Lock()
+        self._iterators = weakref.WeakSet()
+
+    async def _fetch_next(self, target_index):
+        async with self._fetch_lock:
+            async with self._condition:
+                if self._exception is not None or self._done:
+                    return
+                if target_index < self._start_index + len(self._buffer):
+                    return
+            # Only fetch when a consumer needs a new item to avoid eager draining.
+            try:
+                item = await self._source_iter.__anext__()
+            except StopAsyncIteration:
+                async with self._condition:
+                    self._done = True
+                    self._condition.notify_all()
+                return
+            except Exception as e:
+                async with self._condition:
+                    self._exception = e
+                    self._done = True
+                    self._condition.notify_all()
+                raise
+            async with self._condition:
+                self._buffer.append(item)
+                self._condition.notify_all()
+
+    async def _trim_buffer(self):
+        async with self._condition:
+            if not self._iterators:
+                # No active consumers, so we can drop everything immediately.
+                self._start_index += len(self._buffer)
+                self._buffer.clear()
+                return
+            # Drop any buffered items that all active consumers have passed.
+            min_index = min(iterator._index for iterator in self._iterators)
+            trim_count = min_index - self._start_index
+            if trim_count > 0:
+                del self._buffer[:trim_count]
+                self._start_index = min_index
+
+    def _discard_iterator(self, iterator):
+        if iterator not in self._iterators:
+            return
+        self._iterators.discard(iterator)
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            return
+        # Schedule trimming outside of __del__ to avoid blocking finalization.
+        loop.create_task(self._trim_buffer())
+
+    def __aiter__(self):
+        iterator = _SharedAsyncIterator(self)
+        self._iterators.add(iterator)
+        return iterator
+
+
+class _SharedAsyncIterator:
+    """Advance through the shared buffer and coordinate with other consumers."""
+    def __init__(self, shared):
+        self._shared = shared
+        self._index = shared._start_index
+
+    async def __anext__(self):
+        while True:
+            async with self._shared._condition:
+                buffer_offset = self._index - self._shared._start_index
+                if buffer_offset < len(self._shared._buffer):
+                    item = self._shared._buffer[buffer_offset]
+                    self._index += 1
+                    break
+                if self._shared._exception is not None:
+                    raise self._shared._exception
+                if self._shared._done:
+                    raise StopAsyncIteration
+            # Trigger a fetch if we are caught up with the shared buffer.
+            await self._shared._fetch_next(self._index)
+        await self._shared._trim_buffer()
+        return item
+
+    def __del__(self):
+        self._shared._discard_iterator(self)
+
 
 dispatch = learning_observer.communication_protocol.query.dispatch
 
@@ -446,7 +551,7 @@ async def handle_select(keys, fields=learning_observer.communication_protocol.qu
 
         # Determine fields to keep based on the current resulting_value if fields is All
         if fields == learning_observer.communication_protocol.query.SelectFields.All:
-            current_fields_to_keep = {key: key for key in resulting_value.keys() if key != 'provenance'}
+            current_fields_to_keep = {key: key for key in resulting_value.keys() if key != 'provenance'} if resulting_value else {}
         else:
             current_fields_to_keep = fields_to_keep
 
@@ -465,73 +570,289 @@ async def handle_select(keys, fields=learning_observer.communication_protocol.qu
         yield query_response_element
 
 
-# @handler(learning_observer.communication_protocol.query.DISPATCH_MODES.KEYS)
-def handle_keys(function, value_path, **kwargs):
+def _normalize_scope_field_key(key):
+    return str(key).strip().lower()
+
+
+def _scope_field_candidates(field):
+    if isinstance(field, learning_observer.stream_analytics.fields.KeyField):
+        base = field.name
+        plural = f'{base.lower()}s'
+        if base == 'CLASS':
+            plural = 'classes'
+        return [
+            base,
+            f'KeyField.{base}',
+            base.lower(),
+            plural
+        ]
+
+    if isinstance(field, learning_observer.stream_analytics.helpers.EventField):
+        base = field.event
+        candidates = [
+            base,
+            f'EventField.{base}',
+            base.lower(),
+            base.upper()
+        ]
+        if base == 'doc_id':
+            candidates.extend(['RESOURCE', 'RESOURCES', 'resource', 'resources'])
+        return candidates
+
+    return []
+
+
+# ==============================================================================
+# Scope Value Handling
+# ==============================================================================
+#
+# Scope fields can be specified as:
+# 1. A single value (string, None, etc.) - broadcast across all items
+# 2. An iterable of values - one per scope entry
+# 3. An async iterable - same as above, but async
+#
+# SingleValue wraps case 1 to distinguish it from iterables.
+
+
+class SingleValue:
+    """Wrapper indicating a single value to broadcast across all scope items.
+
+    When building keys across multiple scope dimensions, single values are
+    repeated infinitely so they can be zipped with finite iterables from
+    other dimensions.
+
+    Example: student="bob_id" with documents=[doc1, doc2, doc3] produces
+    keys for (bob_id, doc1), (bob_id, doc2), (bob_id, doc3).
     """
-    We WANT TO dispatch this function whenever we process a DISPATCH_MODES.KEYS node.
-    Whenever a user wants to perform a select operation, they first must make sure their
-    keys are formatted properly. This method builds the keys to access the appropriate
-    reducers output.
+    __slots__ = ('value',)
 
-    We have not yet implemented this because there is not a clear way of how different
-    sets of KeyFields should interact with one another. The easy solution is when we
-    just have a single KeyField. For example, with Students, we iterate over each one
-    and create the key. It is not clear how each item in the superset of KeyField
-    combinations should behave.
+    def __init__(self, value):
+        self.value = value
 
-    Currently we use `hack_handle_keys` instead.
+    def __repr__(self):
+        return f'SingleValue({self.value!r})'
+
+
+def _is_single_value(value):
+    """Check if value is a SingleValue wrapper."""
+    return isinstance(value, SingleValue)
+
+
+def _normalize_scope_value(value):
+    """Normalize a scope field value for consistent handling.
+
+    - None, strings, and other scalars become SingleValue (broadcast)
+    - Lists and iterables pass through (one item per scope entry)
+    - Async iterables pass through unchanged
+    - Dicts pass through (will be iterated or accessed via path)
     """
-    return unimplemented_handler()
+    if value is None:
+        return SingleValue(None)
+    if _is_single_value(value):
+        return value
+    if isinstance(value, collections.abc.AsyncIterable):
+        return value
+    if isinstance(value, (str, bytes)):
+        return SingleValue(value)
+    if isinstance(value, dict):
+        # Dicts represent structured data, not a collection to iterate
+        return value
+    if isinstance(value, collections.abc.Iterable):
+        return value
+    return SingleValue(value)
 
 
-async def _extract_fields_with_provenance_for_students(students, student_path):
-    '''This is a helper function for the `hack_handle_keys` function.
-    This function prepares the key field dictionary and the provenance
-    for each student.
-    The key field dictionary is used to create the key we are attempting
-    to fetch from the KVS (used later in `hack_handle_keys`). The passed in
-    `item_path` is used for setting the appropriate dictionary value.
-    The provenance is the current history of the communication protocol for each item.
-    '''
-    async for s in ensure_async_generator(students):
-        s_field = get_nested_dict_value(s, student_path, '')
-        field = {
-            learning_observer.stream_analytics.fields.KeyField.STUDENT: s_field
+async def _repeat_forever(value):
+    """Async generator that yields the same value indefinitely."""
+    while True:
+        yield value
+
+
+def _expand_scope_value(value, *, broadcast=False):
+    """Convert a normalized scope value to an iterable.
+
+    Args:
+        value: A normalized scope value (SingleValue or iterable).
+        broadcast: If True, single values repeat infinitely for zipping
+                   with other dimensions. If False, yield once.
+
+    Returns:
+        An iterable (sync or async) suitable for iteration.
+    """
+    if _is_single_value(value):
+        return _repeat_forever(value.value) if broadcast else [value.value]
+    return value
+
+
+def _parse_scope_spec(spec):
+    """Parse a scope specification into (values, path).
+
+    Supports formats:
+        roster                                    -> (roster, None)
+        {"values": roster, "path": "user_id"}    -> (roster, "user_id")
+        {"value": roster}                        -> (roster, None)
+
+    Returns:
+        Tuple of (values, path) where path may be None.
+    """
+    if not isinstance(spec, dict):
+        return spec, None
+
+    # Check for known value keys in priority order
+    for key in ('values', 'value', 'items', 'data'):
+        if key in spec:
+            values = spec[key]
+            path = spec.get('path') or spec.get('value_path')
+            return values, path
+
+    # No recognized keys - treat entire dict as the value
+    return spec, None
+
+
+def _normalize_scope_field_specs(raw_specs):
+    """Normalize scope field specifications to a consistent format.
+
+    Returns:
+        Dict mapping normalized field names to {"values": ..., "path": ...}
+    """
+    normalized = {}
+    for key, spec in raw_specs.items():
+        normalized_key = _normalize_scope_field_key(key)
+        values, path = _parse_scope_spec(spec)
+        normalized[normalized_key] = {
+            'values': _normalize_scope_value(values),
+            'path': path
         }
-        provenance = s.get('provenance', {'value': s})
-        provenance[student_path] = s_field
-        yield field, {'STUDENT': provenance}
+    return normalized
 
 
-async def _extract_fields_with_provenance_for_students_and_resources(students, student_path, resources, resources_path):
-    '''This is a helper function for the `hack_handle_keys` function.
-    This function prepares the key field dictionary and the provenance
-    for each student/resource pair.
-    The key field dictionary is used to create the key we are attempting
-    to fetch from the KVS (used later in `hack_handle_keys`). The passed in
-    `item_path` is used for setting the appropriate dictionary value.
-    The provenance is the current history of the communication protocol for each item.
-    '''
-    async for s, r in async_zip(students, resources):
-        s_field = get_nested_dict_value(s, student_path, '')
-        r_field = get_nested_dict_value(r, resources_path, '')
-        fields = {
-            learning_observer.stream_analytics.fields.KeyField.STUDENT: s_field,
-            learning_observer.stream_analytics.helpers.EventField('doc_id'): r_field
-        }
-        s_provenance = s.get('provenance', {'value': s})
-        s_provenance[student_path] = s_field
-        r_provenance = r.get('provenance', {'value': r})
-        r_provenance[resources_path] = r_field
-        provenance = {
-            'STUDENT': s_provenance,
-            'RESOURCE': r_provenance
-        }
+def _provenance_key_for_field(field):
+    if isinstance(field, learning_observer.stream_analytics.fields.KeyField):
+        return field.name
+    if isinstance(field, learning_observer.stream_analytics.helpers.EventField):
+        if field.event == 'doc_id':
+            return 'RESOURCE'
+        return f'EventField.{field.event}'
+    return str(field)
+
+
+async def _async_zip_many(iterables):
+    generators = [ensure_async_generator(it) for it in iterables]
+    try:
+        while True:
+            values = await asyncio.gather(*[gen.__anext__() for gen in generators])
+            yield values
+    except StopAsyncIteration:
+        return
+
+
+async def _extract_fields_with_provenance(scope_specs):
+    """Prepare the key field dictionary and provenance for each scope tuple."""
+    if not scope_specs:
+        return
+
+    if len(scope_specs) == 1:
+        # Single dimension: simple iteration
+        field, values, path = scope_specs[0]
+        async for item in ensure_async_generator(_expand_scope_value(values, broadcast=False)):
+            field_value = get_nested_dict_value(item, path or '', '')
+            fields = {field: field_value}
+            item_provenance = item.get('provenance', {'value': item}) if isinstance(item, dict) else {'value': item}
+            if path:
+                item_provenance[path] = field_value
+            provenance = {_provenance_key_for_field(field): item_provenance}
+            yield fields, provenance
+        return
+
+    # Multiple dimensions: zip with broadcasting for single values
+    # Avoid infinite iteration when all dimensions are single values.
+    broadcast = not all(_is_single_value(values) for _, values, _ in scope_specs)
+    iterables = [_expand_scope_value(values, broadcast=broadcast) for _, values, _ in scope_specs]
+
+    async for items in _async_zip_many(iterables):
+        fields = {}
+        provenance = {}
+        for (field, _, path), item in zip(scope_specs, items):
+            field_value = get_nested_dict_value(item, path or '', '')
+            fields[field] = field_value
+            item_provenance = item.get('provenance', {'value': item}) if isinstance(item, dict) else {'value': item}
+            if path:
+                item_provenance[path] = field_value
+            provenance[_provenance_key_for_field(field)] = item_provenance
         yield fields, provenance
 
 
+def _resolve_scope_specs(scope, kwargs):
+    scope_specs = {}
+    raw_scope_specs = kwargs.get('scope_fields', {})
+    if isinstance(raw_scope_specs, dict):
+        scope_specs.update(_normalize_scope_field_specs(raw_scope_specs))
+
+    allowed_scope_keys = set()
+    for field in scope:
+        allowed_scope_keys.update(
+            _normalize_scope_field_key(candidate)
+            for candidate in _scope_field_candidates(field)
+        )
+
+    for key, value in kwargs.items():
+        if key in {'scope_fields', 'STUDENTS', 'STUDENTS_path', 'RESOURCES', 'RESOURCES_path'}:
+            continue
+        if key.endswith('_path'):
+            continue
+        path_key = f"{key}_path"
+        if path_key in kwargs:
+            scope_specs.setdefault(
+                _normalize_scope_field_key(key),
+                {'values': _normalize_scope_value(value), 'path': kwargs[path_key]}
+            )
+
+    if 'STUDENTS' in kwargs:
+        scope_specs.setdefault(
+            'student',
+            {'values': _normalize_scope_value(kwargs['STUDENTS']), 'path': kwargs.get('STUDENTS_path')}
+        )
+    if 'RESOURCES' in kwargs:
+        scope_specs.setdefault(
+            'doc_id',
+            {'values': _normalize_scope_value(kwargs['RESOURCES']), 'path': kwargs.get('RESOURCES_path')}
+        )
+
+    unexpected_scope_keys = set(scope_specs.keys()) - allowed_scope_keys
+    if unexpected_scope_keys:
+        raise DAGExecutionException(
+            'Provided scope fields do not match reducer scope.',
+            inspect.currentframe().f_code.co_name,
+            {
+                'scope': [str(field) for field in scope],
+                'unexpected_fields': sorted(unexpected_scope_keys)
+            }
+        )
+
+    specs = []
+    for field in sorted(scope, key=str):
+        field_specs = None
+        for candidate in _scope_field_candidates(field):
+            candidate_key = _normalize_scope_field_key(candidate)
+            if candidate_key in scope_specs:
+                field_specs = scope_specs[candidate_key]
+                break
+        if field_specs is None:
+            return None
+        specs.append((field, field_specs['values'], field_specs.get('path')))
+
+    return specs
+
+
+def _find_reducer_by_key(function):
+    for reducer in learning_observer.module_loader.reducers():
+        if reducer.get('id') == function or reducer.get('string_id') == function:
+            return reducer
+    return None
+
+
 @handler(learning_observer.communication_protocol.query.DISPATCH_MODES.KEYS)
-async def hack_handle_keys(function, STUDENTS=None, STUDENTS_path=None, RESOURCES=None, RESOURCES_path=None):
+async def handle_keys(function, **kwargs):
     """
     This function is a HACK that is being used instead of `handle_keys` for any
     `DISPATCH_MODE.KEYS` nodes.
@@ -540,17 +861,18 @@ async def hack_handle_keys(function, STUDENTS=None, STUDENTS_path=None, RESOURCE
     keys are formatted properly. This method builds the keys to access the appropriate
     reducers output.
 
-    This function only supports the creation of Student keys and Student/Resource pair keys.
+    This function supports creation of keys based on the reducer scope.
     We create a list of fields needed for the `make_key()` function as well as the provenance
     associated with each. These are zipped together and returned to the user.
     """
     # TODO do something if `func` is not found
-    func = next((item for item in learning_observer.module_loader.reducers() if item['id'] == function), None)
-    fields_and_provenances = None
-    if STUDENTS is not None and RESOURCES is None:
-        fields_and_provenances = _extract_fields_with_provenance_for_students(STUDENTS, STUDENTS_path)
-    elif STUDENTS is not None and RESOURCES is not None:
-        fields_and_provenances = _extract_fields_with_provenance_for_students_and_resources(STUDENTS, STUDENTS_path, RESOURCES, RESOURCES_path)
+    func = _find_reducer_by_key(function)
+    if func is None:
+        return
+    scope_specs = _resolve_scope_specs(func.get('scope', []), kwargs)
+    if scope_specs is None:
+        return
+    fields_and_provenances = _extract_fields_with_provenance(scope_specs)
 
     if fields_and_provenances is None:
         return
@@ -666,10 +988,39 @@ async def execute_dag(endpoint, parameters, functions, target_exports):
 
     See `learning_observer/communication_protocol/test_cases.py` for usage examples.
     """
-    target_nodes = [endpoint['exports'][key]['returns'] for key in target_exports]
-
+    exports = endpoint.get('exports', {})
+    nodes = endpoint.get('execution_dag', {})
     visited = set()
-    nodes = endpoint['execution_dag']
+
+    # --- Resolve targets and collect any obvious errors early ---
+    target_nodes = []
+    target_errors = {}  # maps target node name -> error dict
+
+    for key in target_exports:
+        if key not in exports:
+            # Unknown export requested
+            target_name = f'__missing_export__:{key}'
+            target_nodes.append(target_name)
+            target_errors[target_name] = DAGExecutionException(
+                f'Export `{key}` not found in endpoint.exports.',
+                inspect.currentframe().f_code.co_name,
+                {'requested_export': key, 'available_exports': list(exports.keys())}
+            ).to_dict()
+            continue
+
+        target_node = exports[key].get('returns')
+        if target_node not in nodes:
+            # Export exists, but its `returns` node is missing from the DAG
+            target_name = f'__missing_export__:{key}'
+            target_nodes.append(target_name)
+            target_errors[target_name] = DAGExecutionException(
+                f'Target DAG node `{target_node}` not found in execution_dag.',
+                inspect.currentframe().f_code.co_name,
+                {'target_node': target_node, 'available_nodes': list(nodes.keys())}
+            ).to_dict()
+            continue
+
+        target_nodes.append(target_node)
 
     async def dispatch_node(node):
         """
@@ -739,14 +1090,37 @@ async def execute_dag(endpoint, parameters, functions, target_exports):
                       f'{error_texts}')
         else:
             nodes[node_name] = await dispatch_node(nodes[node_name])
+            if isinstance(nodes[node_name], collections.abc.AsyncIterable) and not isinstance(nodes[node_name], _SharedAsyncIterable):
+                nodes[node_name] = _SharedAsyncIterable(nodes[node_name])
+
 
         visited.add(node_name)
         return nodes[node_name]
 
+    out = {}
+    async_iterable_cache = {}
+    for e in target_nodes:
+        if e in target_errors:
+            out[e] = _clean_json_via_generator(target_errors[e])
+            continue
+
+        node_result = await visit(e)
+        if isinstance(node_result, collections.abc.AsyncIterable):
+            shared_iterable = async_iterable_cache.get(id(node_result))
+            if shared_iterable is None:
+                shared_iterable = node_result
+                async_iterable_cache[id(node_result)] = shared_iterable
+            out[e] = _clean_json_via_generator(shared_iterable)
+            continue
+
+        out[e] = _clean_json_via_generator(node_result)
+
+
+    return out
+
     # Include execution history in output if operating in development settings
     if learning_observer.settings.RUN_MODE == learning_observer.settings.RUN_MODES.DEV:
         return {e: _clean_json_via_generator(await visit(e)) for e in target_nodes}
-
     # HACK currently `dashboard.py` relies on the provenance to tell users which
     # items need updating, such as John Doe's history essay. This ought to be
     # handled by the communication protocol during execution. Once that occurs,

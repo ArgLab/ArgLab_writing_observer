@@ -73,8 +73,14 @@ def add_routes(app):
             '/webapi/courselist/',
             rosters.courselist_api),
         aiohttp.web.get(
+            '/webapi/course/{course_id}',
+            rosters.course_api),
+        aiohttp.web.get(
             '/webapi/courseroster/{course_id}',
             rosters.courseroster_api),
+        aiohttp.web.get(
+            '/webapi/courseassignments/{course_id}',
+            rosters.courseassignments_api),
     ])
 
     register_auth_webapp_views(app)
@@ -379,7 +385,7 @@ def register_repo_routes(app, repos):
     An example repo is:
 
     {
-        'url': 'https://github.com/ETS-Next-Gen/writing_observer.git',  // URL to the repo; downloaded if not already here
+        'url': 'https://github.com/ArgLab/writing_observer.git',  // URL to the repo; downloaded if not already here
         'prefix': 'modules/writing_observer/writing_observer/static',   // Path in repo to serve static files from
         'module': 'wobserver',                                          // Module name to use in the static path
 
@@ -457,7 +463,7 @@ def register_extra_views(app):
         if 'static_json' in view:
             views.append(aiohttp.web.get(
                 f'/views/{view["module"]}/{view["suburl"]}/',
-                lambda x: aiohttp.web.json_response(view['static_json'])
+                lambda request, data=view['static_json']: aiohttp.web.json_response(data)
             ))
         elif 'method' in view and 'handler' in view:
             views.append(HTTP_METHOD_MAPPING[view['method']](
