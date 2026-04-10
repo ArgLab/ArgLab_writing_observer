@@ -6,15 +6,21 @@ events.
 from __future__ import annotations
 
 import datetime as dt
-import re
-
 
 PASTE_WAIT_MS = 2500
 MENU_FLAG_MS = 1500
 DEDUP_MS = 750
 BIG_PASTE_THRESHOLD = 200
+MAX_RECENT_PASTE_TEXT_CHARS = 500
+MAX_RECURSION_DEPTH = 50
 
-DOC_URL_RE = re.compile(r"^https://docs.google.com/document/d/(?P<DOCID>[^/\s]+)/(?P<ACT>[a-zA-Z]+)")
+
+class Actions:
+    COPY = frozenset({"copy", "clipboard_copy", "gdocs_copy", "menu_copy", "edit_copy"})
+    CUT = frozenset({"cut", "clipboard_cut", "gdocs_cut", "menu_cut", "edit_cut"})
+    PASTE = frozenset({"paste", "clipboard_paste", "gdocs_paste", "insert_from_clipboard"})
+    MENU_PASTE = frozenset({"menu_paste", "edit_paste", "contextmenu_paste"})
+    GDOCS_SAVE = "google_docs_save"
 
 
 def unwrap_event(event):
@@ -23,17 +29,12 @@ def unwrap_event(event):
     return event if isinstance(event, dict) else {}
 
 
-def get_doc_id(event):
-    client = unwrap_event(event)
-    doc_id = client.get("doc_id")
-    if doc_id:
-        return doc_id
-
-    url = client.get("object", {}).get("url")
-    if not url or not DOC_URL_RE.match(url):
-        return None
-
-    return client.get("object", {}).get("id")
+def _get_event_time(event, client):
+    """Resolve the timestamp once per event, with fallback."""
+    server_time = (event.get("server") or {}).get("time")
+    if server_time is not None:
+        return server_time
+    return client.get("timestamp") or (client.get("metadata") or {}).get("ts")
 
 
 def event_action(client):
@@ -61,45 +62,62 @@ def keys_info(client):
     }
 
 
+def _is_key_combo(info, key_char, code_str, key_code_int):
+    return info["event_type"] == "keydown" and info["ctrl_or_meta"] and (
+        info["key"] == key_char or info["code"] == code_str or info["key_code"] == key_code_int
+    )
+
+
 def is_copy(client):
     action = event_action(client)
-    if action in {"copy", "clipboard_copy", "gdocs_copy", "menu_copy", "edit_copy"}:
+    if action in Actions.COPY:
         return True
-    info = keys_info(client)
-    return info["event_type"] == "keydown" and info["ctrl_or_meta"] and (
-        info["key"] == "c" or info["code"] == "KeyC" or info["key_code"] == 67
-    )
+    return _is_key_combo(keys_info(client), "c", "KeyC", 67)
 
 
 def is_cut(client):
     action = event_action(client)
-    if action in {"cut", "clipboard_cut", "gdocs_cut", "menu_cut", "edit_cut"}:
+    if action in Actions.CUT:
         return True
-    info = keys_info(client)
-    return info["event_type"] == "keydown" and info["ctrl_or_meta"] and (
-        info["key"] == "x" or info["code"] == "KeyX" or info["key_code"] == 88
-    )
+    return _is_key_combo(keys_info(client), "x", "KeyX", 88)
 
 
 def is_paste_keyboard(client):
     action = event_action(client)
-    if action in {"paste", "clipboard_paste", "gdocs_paste", "insert_from_clipboard"}:
+    if action in Actions.PASTE:
         return True
-    info = keys_info(client)
-    return info["event_type"] == "keydown" and info["ctrl_or_meta"] and (
-        info["key"] == "v" or info["code"] == "KeyV" or info["key_code"] == 86
-    )
+    return _is_key_combo(keys_info(client), "v", "KeyV", 86)
 
 
 def looks_like_menu_paste(client):
     action = event_action(client)
     if action in {"menu_paste", "edit_paste", "contextmenu_paste"}:
         return True
-    return action == "contextmenu"
+    if action == "contextmenu":
+        return True
+    # Catches both right-click → Paste and Edit menu → Paste
+    if action == "mouseclick":
+        mc = client.get("mouseclick") or {}
+        inner_text = str(mc.get("target.innerText") or "").strip().lower()
+        class_name = str(mc.get("target.className") or "")
+        if inner_text == "paste" and "goog-menuitem-label" in class_name:
+            return True
+    return False
 
 
 def timestamp_ms(event, client=None):
     client = client or unwrap_event(event)
+
+    # Primary source: metadata.iso_ts (present in both formats)
+    meta = client.get("metadata") or {}
+    iso_ts = meta.get("iso_ts") if isinstance(meta, dict) else None
+    if iso_ts:
+        try:
+            return int(
+                dt.datetime.fromisoformat(iso_ts.replace("Z", "+00:00")).timestamp() * 1000
+            )
+        except Exception:
+            pass
     for source in (client, event):
         for key in ("timestamp", "ts", "time", "t"):
             value = source.get(key)
@@ -114,8 +132,8 @@ def timestamp_ms(event, client=None):
     return int(dt.datetime.utcnow().timestamp() * 1000)
 
 
-def collect_inserted_text(command, output):
-    if not isinstance(command, dict):
+def collect_inserted_text(command, output, _depth=0):
+    if not isinstance(command, dict) or _depth > MAX_RECURSION_DEPTH:
         return
 
     if command.get("ty") == "is":
@@ -124,10 +142,10 @@ def collect_inserted_text(command, output):
             output.append(string_value)
 
     if isinstance(command.get("nmc"), dict):
-        collect_inserted_text(command["nmc"], output)
+        collect_inserted_text(command["nmc"], output, _depth + 1)
 
     for child in command.get("mts") or []:
-        collect_inserted_text(child, output)
+        collect_inserted_text(child, output, _depth + 1)
 
 
 def extract_insert_from_gdocs_save(client):
@@ -149,11 +167,17 @@ def paste_length_bin(length):
 
 
 def append_recent(items, entry, limit=10):
-    items = list(items or [])
-    items.append(entry)
-    if len(items) > limit:
-        items = items[-limit:]
-    return items
+    result = list(items or [])
+    result.append(entry)
+    return result[-limit:]
+
+
+def clip_recent_paste_text(text, limit=MAX_RECENT_PASTE_TEXT_CHARS):
+    if text is None:
+        return None, False
+    if len(text) <= limit:
+        return text, False
+    return text[:limit], True
 
 
 def default_paste_state():
@@ -169,6 +193,8 @@ def default_paste_state():
             "medium_21_200": 0,
             "long_201_plus": 0,
         },
+        "last_right_click_ms": 0,
+        "pending_paste_source": None,
         "recent_pastes": [],
         "awaiting_paste_until": 0,
         "maybe_menu_paste_until": 0,
@@ -188,8 +214,18 @@ def default_copy_cut_state():
 
 def update_paste_state(event, state):
     state = dict(default_paste_state() if state is None else state)
-    client = event.get("client", {}) or {}
+    state["length_bins"] = dict(state.get("length_bins", {}))
+    state["recent_pastes"] = [dict(p) for p in state.get("recent_pastes", [])]
+
+    client = unwrap_event(event)
     ts_ms = timestamp_ms(event, client)
+    action = event_action(client)
+
+    if action == "mouseclick": #Fixed
+        mc = client.get("mouseclick") or {}
+        if mc.get("button") == 2:
+            state["last_right_click_ms"] = ts_ms
+            return state  # not a paste itself, just record it
 
     if is_paste_keyboard(client):
         if ts_ms - state.get("last_paste_signal_ms", 0) <= DEDUP_MS:
@@ -198,16 +234,26 @@ def update_paste_state(event, state):
         state["last_paste_signal_ms"] = ts_ms
         state["awaiting_paste_until"] = ts_ms + PASTE_WAIT_MS
         state["recent_pastes"] = append_recent(
-            state.get("recent_pastes"),
-            {"timestamp_ms": ts_ms, "length": None, "source": "keyboard_signal"},
+            state["recent_pastes"],
+            {
+                "timestamp_ms": ts_ms,
+                "length": None,
+                "source": "keyboard",
+                "text": None,
+                "text_truncated": False,
+                "resolved": False,
+            },
         )
         return state
 
-    if looks_like_menu_paste(client):
+    if looks_like_menu_paste(client):                     # FIXED : now detects mouseclick Paste
         state["maybe_menu_paste_until"] = ts_ms + MENU_FLAG_MS
+        # FIX 4: label right-click paste vs. menubar paste
+        is_right_click = (ts_ms - state.get("last_right_click_ms", 0)) < MENU_FLAG_MS
+        state["pending_paste_source"] = "right_click" if is_right_click else "menubar"
         return state
 
-    if event_action(client) != "google_docs_save":
+    if action != Actions.GDOCS_SAVE:
         return False
 
     inserted_text = extract_insert_from_gdocs_save(client)
@@ -238,17 +284,47 @@ def update_paste_state(event, state):
 
     bin_name = paste_length_bin(paste_length)
     if bin_name != "none":
-        state.setdefault("length_bins", {})
         state["length_bins"][bin_name] = state["length_bins"].get(bin_name, 0) + 1
 
-    state["recent_pastes"] = append_recent(
-        state.get("recent_pastes"),
-        {
-            "timestamp_ms": ts_ms,
-            "length": paste_length,
-            "source": "menu_inferred" if counted_from_save else "google_docs_save",
-        },
-    )
+    clipped_text, was_truncated = clip_recent_paste_text(inserted_text)
+
+    # --- Coalesce: find the pending keyboard entry and enrich it ---
+    if not counted_from_save:
+        resolved = False
+        for entry in reversed(state["recent_pastes"]):
+            if not entry.get("resolved") and entry.get("source") == "keyboard":
+                entry["length"] = paste_length
+                entry["text"] = clipped_text
+                entry["text_truncated"] = was_truncated
+                entry["resolved"] = True
+                resolved = True
+                break
+        if not resolved:
+            # Defensive fallback: no pending entry found, append standalone
+            state["recent_pastes"] = append_recent(
+                state["recent_pastes"],
+                {
+                    "timestamp_ms": ts_ms,
+                    "length": paste_length,
+                    "source": "keyboard",
+                    "text": clipped_text,
+                    "text_truncated": was_truncated,
+                    "resolved": True,
+                },
+            )
+    else:
+        state["recent_pastes"] = append_recent(
+            state["recent_pastes"],
+            {
+                "timestamp_ms": ts_ms,
+                "length": paste_length,
+                "source": "menu",
+                "text": clipped_text,
+                "text_truncated": was_truncated,
+                "resolved": True,
+            },
+        )
+
     state["awaiting_paste_until"] = 0
     state["maybe_menu_paste_until"] = 0
     return state
@@ -256,7 +332,9 @@ def update_paste_state(event, state):
 
 def update_copy_cut_state(event, state):
     state = dict(default_copy_cut_state() if state is None else state)
-    client = event.get("client", {}) or {}
+    state["recent_events"] = list(state.get("recent_events", []))
+
+    client = unwrap_event(event)
     ts_ms = timestamp_ms(event, client)
     event_type = None
 
