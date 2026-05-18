@@ -11,8 +11,7 @@ dash
 dash_renderjson
 docopt
 dash-bootstrap-components
-tsvx @ git+https://github.com/pmitros/tsvx.git@09bf7f33107f66413d929075a8b54c36ca581dae#egg=tsvx
-loremipsum @ git+https://github.com/testlabauto/loremipsum.git@b7bd71a6651207ef88993045cd755f20747f2a1e#egg=loremipsum
+tsvx @ https://codeload.github.com/pmitros/tsvx/tar.gz/f883c63892dc383cc15d1d14c05a33d16fb92317
 ipython
 ipykernel
 jsonschema
@@ -37,4 +36,4 @@ svgwrite
 uvloop
 watchdog
 
-gitserve @ git+https://github.com/ETS-Next-Gen/writing_observer.git#subdirectory=gitserve
+gitserve @ git+https://github.com/ArgLab/writing_observer.git#subdirectory=gitserve

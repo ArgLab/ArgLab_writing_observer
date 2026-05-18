@@ -19,6 +19,7 @@ import string
 
 import aiohttp
 import aiohttp.web
+import aiohttp_session
 
 import learning_observer.constants as constants
 import learning_observer.settings as settings
@@ -29,7 +30,11 @@ import learning_observer.runtime
 import learning_observer.util
 
 
-class Endpoint(recordclass.make_dataclass("Endpoint", ["name", "remote_url", "doc", "cleaners", "api_name", "headers"], defaults=["", None, None, None])):
+class Endpoint(recordclass.make_dataclass(
+    "Endpoint",
+    ["name", "remote_url", "doc", "cleaners", "api_name", "headers", "method"],
+    defaults=["", None, None, None, "get"]
+)):
     def arguments(self):
         return extract_parameters_from_format_string(self.remote_url)
 
@@ -59,7 +64,7 @@ def extract_parameters_from_format_string(format_string):
     '''
     Extracts parameters from a format string. E.g.
 
-    >>> ("hello {hi} my {bye}")]
+    >>> extract_parameters_from_format_string("hello {hi} my {bye}")
     ['hi', 'bye']
     '''
     # The parse returns a lot of context, which we discard. In particular, the
@@ -68,7 +73,20 @@ def extract_parameters_from_format_string(format_string):
     return [f[1] for f in string.Formatter().parse(format_string) if f[1] is not None]
 
 
-async def raw_api_ajax(runtime, target_url, key_translator=None, cache=None, cache_key_prefix=None, headers=None, **kwargs):
+async def raw_api_ajax(
+    runtime,
+    target_url,
+    key_translator=None,
+    cache=None,
+    cache_key_prefix=None,
+    headers=None,
+    method='get',
+    json_body=None,
+    data=None,
+    api_name=None,
+    endpoint_name=None,
+    **kwargs
+):
     '''
     Make an AJAX call to an API, managing auth + auth.
 
@@ -83,14 +101,26 @@ async def raw_api_ajax(runtime, target_url, key_translator=None, cache=None, cac
     url = target_url.format(**kwargs)
     user = await learning_observer.auth.get_active_user(request)
 
-    if constants.AUTH_HEADERS not in request or user is None:
+    # Auth headers may live on the request (set during the LTI launch
+    # redirect) OR in the session (persisted for subsequent requests).
+    # We need to check both sources.
+    auth_headers = request.get(constants.AUTH_HEADERS)
+    if auth_headers is None:
+        session = await aiohttp_session.get_session(request)
+        auth_headers = session.get(constants.AUTH_HEADERS)
+        # Populate request so downstream code can find them too
+        if auth_headers is not None:
+            request[constants.AUTH_HEADERS] = auth_headers
+
+    if auth_headers is None or user is None:
         raise aiohttp.web.HTTPUnauthorized(text="Please log in")
 
     if headers is None:
         headers = {}
-    headers.update(request.get(constants.AUTH_HEADERS, {}))
+    headers.update(auth_headers)
 
-    cache_available = cache is not None and cache_key_prefix is not None
+    method = method.lower()
+    cache_available = method == 'get' and cache is not None and cache_key_prefix is not None
 
     if cache_available:
         cache_key = f"{cache_key_prefix}/{learning_observer.auth.encode_id('session', user[constants.USER_ID])}/{learning_observer.util.url_pathname(url)}"
@@ -103,20 +133,66 @@ async def raw_api_ajax(runtime, target_url, key_translator=None, cache=None, cac
                 return response_data
 
     async with aiohttp.ClientSession(loop=request.app.loop) as client:
-        async with client.get(url, headers=headers) as resp:
-            response = await resp.json()
+        request_kwargs = {'headers': headers}
+        if json_body is not None:
+            request_kwargs['json'] = json_body
+        if data is not None:
+            request_kwargs['data'] = data
+
+        async with client.request(method.upper(), url, **request_kwargs) as resp:
+            content_type = resp.headers.get('Content-Type', '')
+
+            # Many LTI-compliant endpoints return vendor-specific JSON media types
+            # (e.g., application/vnd.ims.lti-nrps.v2.membershipcontainer+json).
+            # Treat any content type containing "json" as JSON, but fall back to
+            # text if parsing fails.
+            if 'json' in content_type.lower():
+                try:
+                    response = await resp.json()
+                except Exception:
+                    response = await resp.text()
+            else:
+                response = await resp.text()
             learning_observer.log_event.log_ajax(target_url, response, request)
+            lms_payload = {
+                'event': 'lms_integration',
+                'api_name': api_name,
+                'endpoint': endpoint_name,
+                'method': method.upper(),
+                'url': url,
+                'params': kwargs,
+                'response': response
+            }
+            if json_body is not None:
+                lms_payload['request_json'] = json_body
+            if data is not None:
+                lms_payload['request_data'] = data
+            try:
+                lms_payload[learning_observer.constants.USER] = request[learning_observer.constants.USER]
+            except KeyError:
+                lms_payload[learning_observer.constants.USER] = None
+            learning_observer.log_event.log_lms_integration(lms_payload)
 
             if cache_available:
                 if settings.feature_flag('use_clean_ajax') is not None:
                     await cache.set(cache_key, json.dumps(response, indent=2))
 
-            if key_translator:
+            if key_translator and isinstance(response, (dict, list)):
                 return learning_observer.util.translate_json_keys(response, key_translator)
             return response
 
 
-def raw_access_partial(remote_url, key_translator=None, cache=None, cache_key_prefix=None, name=None, headers=None):
+def raw_access_partial(
+    remote_url,
+    key_translator=None,
+    cache=None,
+    cache_key_prefix=None,
+    name=None,
+    headers=None,
+    method='get',
+    api_name=None,
+    endpoint_name=None
+):
     '''
     This is a helper which allows us to create a function which calls specific
     API endpoints.
@@ -125,13 +201,20 @@ def raw_access_partial(remote_url, key_translator=None, cache=None, cache_key_pr
         '''
         Make an AJAX request to the API
         '''
+        json_body = kwargs.pop('json_body', None)
+        data = kwargs.pop('data', None)
         return await raw_api_ajax(
-            runtime, 
-            remote_url, 
-            key_translator, 
-            cache, 
+            runtime,
+            remote_url,
+            key_translator,
+            cache,
             cache_key_prefix,
             headers,
+            method,
+            json_body=json_body,
+            data=data,
+            api_name=api_name,
+            endpoint_name=endpoint_name,
             **kwargs
         )
 
@@ -177,7 +260,7 @@ def register_endpoints(app, endpoints, api_name, key_translator=None, cache=None
         aiohttp.web.get(f"/{api_name}", api_docs_handler)
     ])
 
-    def make_ajax_raw_handler(remote_url):
+    def make_ajax_raw_handler(remote_url, method):
         '''
         Creates a handler to forward API requests to the client.
         '''
@@ -190,6 +273,8 @@ def register_endpoints(app, endpoints, api_name, key_translator=None, cache=None
                 key_translator,
                 cache,
                 cache_key_prefix,
+                method=method,
+                json_body=await request.json() if method != 'get' else None,
                 **request.match_info
             )
             return aiohttp.web.json_response(response)
@@ -232,12 +317,15 @@ def register_endpoints(app, endpoints, api_name, key_translator=None, cache=None
     for e in endpoints:
         function_name = f"raw_{e.name}"
         raw_function = raw_access_partial(
-            remote_url=e.remote_url, 
+            remote_url=e.remote_url,
             key_translator=key_translator,
             cache=cache,
             cache_key_prefix=cache_key_prefix,
             name=e.name,
-            headers=e.headers
+            headers=e.headers,
+            method=e.method,
+            api_name=api_name,
+            endpoint_name=e.name
         )
         result_functions[function_name] = raw_function
         cleaners = e._cleaners()
@@ -258,10 +346,11 @@ def register_endpoints(app, endpoints, api_name, key_translator=None, cache=None
                 name=cleaners[c]['name']
             )
 
+        route_factory = getattr(aiohttp.web, e.method.lower())
         app.add_routes([
-            aiohttp.web.get(
+            route_factory(
                 e._local_url(),
-                make_ajax_raw_handler(e.remote_url)
+                make_ajax_raw_handler(e.remote_url, e.method)
             )
         ])
 
@@ -271,6 +360,21 @@ def register_endpoints(app, endpoints, api_name, key_translator=None, cache=None
 def make_cleaner_registrar(endpoints):
     '''
     Creates a register_cleaner function specific to a list of endpoints.
+
+    Cleaners are pure post-processing functions that reshape provider JSON
+    responses into Learning Observer's shared integration format. They should:
+
+    * Accept a raw provider payload (already key-translated when a
+      ``key_translator`` is provided to :func:`register_endpoints`).
+    * Return JSON-serializable Python objects (dicts/lists) without
+      aiohttp-specific types so the same function works as both a web handler
+      and an in-process helper.
+    * Normalize identifiers and key casing consistently across providers (for
+      example, Google/Canvas/Schoology rosters all emit ``user_id`` and keep
+      nested ``profile`` structures) and apply deterministic sorting so callers
+      can rely on stable ordering. In practice this means matching each
+      integrator's native payload into the common roster/course list formats
+      documented in the cleaners themselves.
 
     Returns:
         A function that can be used as a decorator to register cleaners.

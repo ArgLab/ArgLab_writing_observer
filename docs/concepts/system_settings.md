@@ -25,6 +25,23 @@ To view all settings and what they do, checkout the [System Settings Reference](
   boundaries, third-party credentials, or feature flags in one place and keep
   those choices under version control.
 
+## Defining which settings files to use
+
+To load alternate or additional PMSS rulesets, start the server with
+`--pmss-rulesets` and pass one or more file paths or a directory.  The startup
+logic expands directories into sorted file lists, then loads each file as a
+`YAMLFileRuleset` when it ends in `.yaml`/`.yml` or a `PMSSFileRuleset` when it
+ends in `.pmss`.  Any other file suffix is skipped with a warning so you can
+keep README files or notes alongside the rulesets without breaking startup.
+
+This argument is intended for normal startup entry points too (for example, a
+`Makefile` target or deployment startup scripts), not just ad-hoc local runs.
+For example:
+
+```bash
+python -m learning_observer.main --pmss-rulesets creds.yaml schools.pmss
+```
+
 ## The role of `creds.yaml`
 
 Most installations load configuration from `creds.yaml`.  When the process
@@ -98,6 +115,31 @@ YAML baseline or an overlay.  Components call
 stack.  That means a request handled for an instructor can pick up
 instructor-specific defaults while a system job, using the same accessor, still
 observes the site-wide configuration.
+
+### What context we pass today
+
+Every call into `pmss_settings` names the setting through the `types` list.  We
+build that list from the canonical namespace of the setting—`['server']` for the
+public port, `['redis_connection']` for Redis, `['modules', module_name]` for
+module flags, and so on.  Because the list mirrors the hierarchy defined in
+`creds.yaml`, we get deterministic lookups even when overlays layer additional
+rules on top.
+
+Selectors (the `attributes` argument) are rarer.  Only features that genuinely
+vary per request provide them today.  For example, roster resolution passes the
+requesting user's email domain and the LTI provider so the `roster_data`
+configuration can pick the correct backend, and the dashboard logging toggle
+adds the user's domain to honour tenant-specific overrides.  Most other settings
+still rely solely on the namespace lookup.
+
+### Where we want to go
+
+We want every lookup that depends on request context to assemble the same
+attribute payload in the same place.  Rather than sprinkling ad-hoc conditionals
+around the codebase, helpers should gather the domain, provider, role, or other
+selectors once and pass them through every relevant PMSS call.  This keeps the
+setting definitions declarative, makes it obvious which selectors operators can
+target in overlays, and avoids drift between different parts of the system.
 
 ## Extending the system settings surface
 

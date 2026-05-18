@@ -41,6 +41,18 @@ runtime.
 | `aio.session_secret` | Secret used to encrypt and sign aiohttp session cookies. Generate a unique value per deployment. | required | [`learning_observer/learning_observer/webapp_helpers.py`](../../learning_observer/learning_observer/webapp_helpers.py) |
 | `aio.session_max_age` | Session lifetime in seconds. | required | [`learning_observer/learning_observer/webapp_helpers.py`](../../learning_observer/learning_observer/webapp_helpers.py) |
 
+### Dashboard Settings (`dashboard_settings` namespace)
+
+| YAML path | Description | Default | Used in |
+| --- | --- | --- | --- |
+| `dashboard_settings.logging_enabled` | Determine if we should log dashboard sessions. | `false` | [`learning_observer/learning_observer/dashboard.py`](../../learning_observer/learning_observer/dashboard.py) |
+
+### LMS Integration (`lms_integration` namespace)
+
+| YAML path | Description | Default | Used in |
+| --- | --- | --- | --- |
+| `lms_integration.logging_enabled` | Determine if we should log lms integration calls. | `false` | [`learning_observer/learning_observer/log_event.py`](../../learning_observer/learning_observer/log_event.py) |
+
 ### Redis connection (`redis_connection` namespace)
 
 | YAML path | Description | Default | Used in |
@@ -124,6 +136,13 @@ runtime.
 | `event_auth.guest` | Enables guest sessions that mint random IDs for browsers without credentials. | disabled | [`learning_observer/learning_observer/auth/events.py`](../../learning_observer/learning_observer/auth/events.py) |
 | `event_auth.hash_identify` | Enables hash-based identity hints (e.g., `/page#user=alice`) for one-off experiments. | disabled | [`learning_observer/learning_observer/auth/events.py`](../../learning_observer/learning_observer/auth/events.py) |
 | `event_auth.testcase_auth` | Allows automated tests to tag events with deterministic user IDs. | disabled | [`learning_observer/learning_observer/auth/events.py`](../../learning_observer/learning_observer/auth/events.py) |
+
+### Incoming events blacklist (`incoming_events` namespace)
+
+| YAML path | Description | Default | Used in |
+| --- | --- | --- | --- |
+| `incoming_events.blacklist_event_action` | Action to take for incoming events (`TRANSMIT`, `MAINTAIN`, or `DROP`) when blacklist rules match. | `TRANSMIT` | [`learning_observer/learning_observer/blacklist.py`](../../learning_observer/learning_observer/blacklist.py) |
+| `incoming_events.blacklist_time_limit` | Time limit to return when `blacklist_event_action` is `MAINTAIN` (`PERMANENT`, `MINUTES`, or `DAYS`). | `MINUTES` | [`learning_observer/learning_observer/blacklist.py`](../../learning_observer/learning_observer/blacklist.py) |
 
 ## Modules
 

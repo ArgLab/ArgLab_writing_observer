@@ -11,8 +11,11 @@ This may be an examplar for building new modules too.
 # files.
 import pmss
 
+import learning_observer.communication_protocol.integration
 import learning_observer.communication_protocol.query as q
+import learning_observer.constants as constants
 import learning_observer.settings
+import learning_observer.rosters
 
 from learning_observer import downloads as d
 
@@ -21,10 +24,21 @@ import writing_observer.writing_analysis
 import writing_observer.languagetool
 import writing_observer.tag_docs
 import writing_observer.document_timestamps
+import writing_observer.copy_paste_utils
 from writing_observer.nlp_indicators import INDICATOR_JSONS
 
 
 NAME = "The Writing Observer"
+
+@learning_observer.communication_protocol.integration.publish_function('writing_observer.roster_with_provenance')
+async def roster_with_provenance(roster, course_id):
+    """Fetch roster entries and add STUDENT provenance for protocol consumers."""
+    for student in roster:
+        if constants.USER_ID not in student:
+            continue
+        student['provenance'] = {'STUDENT': {constants.USER_ID: student[constants.USER_ID]}}
+    return roster
+
 
 # things that process data versus things that interact with the environment
 # side-effects or not
@@ -40,8 +54,10 @@ unwind = q.call('unwind')
 group_docs_by = q.call('writing_observer.group_docs_by')
 
 document_access_ts = q.call('writing_observer.fetch_doc_at_timestamp')
+document_by_title_text = q.call('writing_observer.fetch_doc_by_title_text')
 
 source_selector = q.call('source_selector')
+single_student_from_roster = q.call('writing_observer.single_student_from_roster')
 
 # TODO each of these choices should come from an Enum
 pmss.parser('nlp_source', parent='string', choices=['nlp', 'nlp_sep_proc'], transform=None)
@@ -85,7 +101,8 @@ gpt_bulk_essay = q.call('wo_bulk_essay_analysis.gpt_essay_prompt')
 document_sources = source_selector(
     sources={'timestamp': q.variable('docs_at_ts'),
              'latest': q.variable('doc_ids'),
-             'assignment': q.variable('assignment_docs')
+             'assignment': q.variable('assignment_docs'),
+             'title_text': q.variable('docs_by_title_text')
             },
     source=q.parameter('doc_source', required=False, default='latest')
 )
@@ -93,10 +110,62 @@ document_sources = source_selector(
 EXECUTION_DAG = {
     "execution_dag": {
         "roster": course_roster(runtime=q.parameter("runtime"), course_id=q.parameter("course_id", required=True)),
+        "roster_with_provenance": q.call('writing_observer.roster_with_provenance')(roster=q.variable('roster'), course_id=q.parameter("course_id", required=True)),
+        # all documents for a student
+        'student_with_docs': q.select(
+            q.keys(
+                'writing_observer.document_list',
+                scope_fields={
+                    "student": q.parameter("student_id", required=True)
+                }
+            ),
+            fields={'docs': 'documents'}
+        ),
+        # a single document by explicit doc id
+        'single_student_doc_by_id': q.select(
+            q.keys(
+                'writing_observer.reconstruct',
+                scope_fields={
+                    "student": q.parameter("student_id", required=True),
+                    "doc_id": q.parameter("doc_ids", default=[])
+                }
+            ),
+            fields={'text': 'text'}
+        ),
+        'single_student_profile': single_student_from_roster(
+            roster=q.variable('roster_with_provenance'),
+            student_id=q.parameter('student_id', required=True)
+        ),
+        "docs": q.select(
+            q.keys(
+                'writing_observer.reconstruct',
+                scope_fields={
+                    "student": {"values": q.variable("roster"), "path": "user_id"},
+                    "doc_id": {"values": q.variable("update_docs"), "path": "doc_id"}
+                }
+            ), 
+            fields={'text': 'text'}
+        ),
+        'single_student_docs_by_ids': q.select(
+            q.keys(
+                'writing_observer.reconstruct',
+                scope_fields={
+                    "student": q.parameter("student_id", required=True),
+                    "doc_id": q.parameter("document", default=[])
+                }
+            ),
+            fields={'text': 'text'}
+        ),
+        'single_student_nlp': process_texts(
+            writing_data=q.variable('single_student_docs_by_ids'),
+            options=q.parameter('nlp_options', required=False, default=[])
+        ),
         "doc_ids": q.select(q.keys('writing_observer.last_document', STUDENTS=q.variable("roster"), STUDENTS_path='user_id'), fields={'document_id': 'doc_id'}),
         'update_docs': update_via_google(runtime=q.parameter("runtime"), doc_ids=q.variable('doc_sources')),
-        "docs": q.select(q.keys('writing_observer.reconstruct', STUDENTS=q.variable("roster"), STUDENTS_path='user_id', RESOURCES=q.variable("update_docs"), RESOURCES_path='doc_id'), fields={'text': 'text'}),
+
         "docs_combined": q.join(LEFT=q.variable("docs"), RIGHT=q.variable("roster"), LEFT_ON='provenance.provenance.STUDENT.value.user_id', RIGHT_ON='user_id'),
+        "paste_metrics": q.select(q.keys('writing_observer.lo_paste_reducer', STUDENTS=q.variable("roster"), STUDENTS_path='user_id', RESOURCES=q.variable("doc_sources"), RESOURCES_path='doc_id'), fields={'pastes_with_length': 'pastes_with_length', 'length_bins': 'length_bins', 'total_paste_chars': 'total_paste_chars'}),
+        "copy_cut_metrics": q.select(q.keys('writing_observer.lo_copy_cut_reducer', STUDENTS=q.variable("roster"), STUDENTS_path='user_id', RESOURCES=q.variable("doc_sources"), RESOURCES_path='doc_id'), fields={'copy_count': 'copy_count'}),
         'nlp': process_texts(writing_data=q.variable('docs'), options=q.parameter('nlp_options', required=False, default=[])),
         'nlp_sep_proc': q.select(q.keys('writing_observer.nlp_components', STUDENTS=q.variable('roster'), STUDENTS_path='user_id', RESOURCES=q.variable("doc_ids"), RESOURCES_path='doc_id'), fields='All'),
         'nlp_combined': q.join(LEFT=q.variable(nlp_source), LEFT_ON='provenance.provenance.STUDENT.value.user_id', RIGHT=q.variable('roster'), RIGHT_ON='user_id'),
@@ -143,6 +212,10 @@ EXECUTION_DAG = {
         'timestamped_docs': q.select(q.keys('writing_observer.document_access_timestamps', STUDENTS=q.variable('roster'), STUDENTS_path='user_id'), fields={'timestamps': 'timestamps'}),
         'docs_at_ts': document_access_ts(overall_timestamps=q.variable('timestamped_docs'), kwargs=q.parameter('doc_source_kwargs')),
 
+        # fetch the latest matching document by title text
+        'raw_doc_lists': q.select(q.keys('writing_observer.document_list', STUDENTS=q.variable('roster'), STUDENTS_path='user_id'), fields={'docs': 'docs'}),
+        'docs_by_title_text': document_by_title_text(document_lists=q.variable('raw_doc_lists'), kwargs=q.parameter('doc_source_kwargs')),
+
         # figure out where to source document ids from
         # current options include `ts` for a given timestamp
         # or `latest` for the most recently accessed
@@ -162,9 +235,44 @@ EXECUTION_DAG = {
             "parameters": ["course_id"],
             "output": ""
         },
-        "roster": {
-            "returns": "roster",
+        "paste_metrics": {
+            "returns": "paste_metrics",
             "parameters": ["course_id"],
+            "output": ""
+        },
+        "copy_cut_metrics": {
+            "returns": "copy_cut_metrics",
+            "parameters": ["course_id"],
+            "output": ""
+        },
+        "roster": {
+            "returns": "roster_with_provenance",
+            "parameters": ["course_id"],
+            "output": ""
+        },
+        "student_with_docs": {
+            "returns": "student_with_docs",
+            # "parameters": ["student_id"],
+            "output": ""
+        },
+        "single_student_doc_by_id": {
+            "returns": "single_student_doc_by_id",
+            "parameters": ["student_id", "doc_ids"],
+            "output": ""
+        },
+        "single_student_profile": {
+            "returns": "single_student_profile",
+            "parameters": ["student_id"],
+            "output": ""
+        },
+        "single_student_all_reconstruct": {
+            "returns": "single_student_all_reconstruct",
+            "parameters": ["student_id"],
+            "output": ""
+        },
+        "single_student_docs_with_nlp_annotations": {
+            "returns": "single_student_nlp",
+            "parameters": ["student_id", "document", "nlp_options"],
             "output": ""
         },
         "document_list": {
@@ -261,7 +369,25 @@ REDUCERS = [
     {
         'context': "org.mitros.writing_analytics",
         'scope': writing_observer.writing_analysis.gdoc_scope,
-        'function': writing_observer.writing_analysis.time_on_task,
+        'function': writing_observer.writing_analysis.lo_paste_reducer,
+        'default': writing_observer.copy_paste_utils.default_paste_state()
+    },
+    {
+        'context': "org.mitros.writing_analytics",
+        'scope': writing_observer.writing_analysis.gdoc_scope,
+        'function': writing_observer.writing_analysis.lo_copy_cut_reducer,
+        'default': writing_observer.copy_paste_utils.default_copy_cut_state()
+    },
+    {
+        'context': "org.mitros.writing_analytics",
+        'scope': writing_observer.writing_analysis.gdoc_scope,
+        'function': writing_observer.writing_analysis.gdoc_scope_time_on_task,
+        'default': {'saved_ts': 0}
+    },
+    {
+        'context': "org.mitros.writing_analytics",
+        'scope': writing_observer.writing_analysis.gdoc_tab_scope,
+        'function': writing_observer.writing_analysis.gdoc_tab_scope_time_on_task,
         'default': {'saved_ts': 0}
     },
     {
@@ -285,6 +411,12 @@ REDUCERS = [
         'scope': writing_observer.writing_analysis.student_scope,
         'function': writing_observer.writing_analysis.document_list,
         'default': {'docs': []}
+    },
+    {
+        'context': "org.mitros.writing_analytics",
+        'scope': writing_observer.writing_analysis.gdoc_scope,
+        'function': writing_observer.writing_analysis.tab_list,
+        'default': {'tabs': {}}
     },
     {
         'context': "org.mitros.writing_analytics",
@@ -347,7 +479,7 @@ THIRD_PARTY = {
 STATIC_FILE_GIT_REPOS = {
     'writing_observer': {
         # Where we can grab a copy of the repo, if not already on the system
-        'url': 'https://github.com/ETS-Next-Gen/writing_observer.git',
+        'url': 'https://github.com/ArgLab/writing_observer.git',
         # Where the static files in the repo lie
         'prefix': 'modules/writing_observer/writing_observer/static',
         # Branches we serve. This can either be a whitelist (e.g. which ones

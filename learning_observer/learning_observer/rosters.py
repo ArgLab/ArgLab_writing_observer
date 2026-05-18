@@ -359,7 +359,7 @@ def init():
     # Google, Canvas, and Schoology all use integrations instead of ajax when called
     elif roster_source in ["google_api"]:
         ajax = google_ajax
-    elif roster_source in ["canvas_api", 'schoology_api']:
+    elif roster_source in ["canvas_api", 'schoology']:
         pass
     elif roster_source in ["all"]:
         ajax = all_ajax
@@ -368,7 +368,7 @@ def init():
             "Settings file `roster_data` element should have `source` field\n"
             "set to either:\n"
             "  test        (retrieve from files courses.json and students.json)\n"
-            "  google_api | canvas_api | schoology_api  (retrieve roster data from an api)\n"
+            "  google_api | canvas_api | schoology  (retrieve roster data from an api)\n"
             "  filesystem  (retrieve roster data from file system hierarchy\n"
             "  all  (retrieve roster data as all students)"
         )
@@ -413,7 +413,7 @@ async def run_additional_module_func(request, function_name, kwargs=None):
     if not kwargs:
         kwargs = {}
 
-    user = await auth.get_active_user(request)
+    user = await auth.get_active_user(request) or {}
 
     # Grab roster source based on user
     user_domain = learning_observer.util.get_domain_from_email(user.get('email'))
@@ -449,13 +449,25 @@ async def run_additional_module_func(request, function_name, kwargs=None):
         if inspect.isawaitable(result):
             result = await result
         return result
-    debug_log(f'No result from `{roster_source}.{function_name}`')
+    debug_log(f'No result returned from `{roster_source}.{function_name}`\nkwargs:{kwargs}')
     return None
 
 
 async def courselist(request):
     '''
     List all of the courses a teacher manages: Helper
+
+    Returns a list of course dictionaries. Each course has the following structure:
+
+        {
+            'id': str,                  # Unique course identifier
+            'name': str,                # Course name/label
+            'description_heading': str, # Course description
+        }
+
+    Note: Different integrations (Google Classroom, Canvas, Schoology, etc.)
+    may return data in different formats. Each integration should register
+    cleaners to transform their data into this expected format.
     '''
     course_list = await run_additional_module_func(request, 'courses')
     if course_list is not None:
@@ -463,6 +475,7 @@ async def courselist(request):
     # TODO if course_list is falsey, the following code may fail if there if ajax is not defined.
 
     # Legacy code
+    debug_log('Falling back to ajax call for course list retrieval.')
     course_list = await ajax(
         request,
         url=COURSE_URL,
@@ -502,7 +515,26 @@ async def memoize_courseroster_runtime(runtime, course_id):
 
 async def courseroster(request, course_id):
     '''
-    List all of the students in a course: Helper
+    List all of the students in a course.
+
+    Returns a list of user dictionaries. Each user has the following structure:
+
+        {
+            'profile': {
+                'name': {
+                    'given_name': str,    # User's first name
+                    'family_name': str,   # User's last name
+                    'full_name': str      # User's full name
+                },
+                'email_address': str,     # User's email address
+                'photo_url': str          # URL to user's profile photo (optional)
+            },
+            constants.USER_ID: str        # Unique user identifier (local to our system)
+        }
+
+    Note: Different integrations (Google Classroom, Canvas, Schoology, etc.)
+    may return data in different formats. Each integration should register
+    cleaners to transform their data into this expected format.
     '''
     roster = await run_additional_module_func(request, 'roster', kwargs={'courseId': course_id})
     if roster is not None:
@@ -510,6 +542,7 @@ async def courseroster(request, course_id):
 
     if not ajax:
         return []
+    debug_log(f'Falling back to ajax roster call for course: `{course_id}`.')
     roster = await ajax(
         request,
         url=ROSTER_URL,
@@ -521,11 +554,42 @@ async def courseroster(request, course_id):
     return roster
 
 
+async def courseassignments(request, course_id):
+    '''Fetch all the assignments for a given course
+    '''
+    assignments = await run_additional_module_func(request, 'assignments', kwargs={'courseId': course_id})
+    if assignments is not None:
+        return assignments
+    return []
+
+
+async def courseassignment_assigned_docs(request, course_id, assignment_id):
+    '''
+    Fetch all assigned docs for a given assignment
+    '''
+    assigned_docs = await run_additional_module_func(request, 'assigned_docs', kwargs={'courseId': course_id, 'courseWorkId': assignment_id})
+    if assigned_docs is not None:
+        return assigned_docs
+    return []
+
+
 async def courselist_api(request):
     '''
     List all of the courses a teacher manages: Handler
     '''
     return aiohttp.web.json_response(await courselist(request))
+
+
+async def course_api(request):
+    '''
+    Fetch course information
+    '''
+    course_id = request.match_info['course_id']
+    courses = await courselist(request)
+    for course in courses:
+        if course['id'] == course_id:
+            return aiohttp.web.json_response(course)
+    return aiohttp.web.json_response({})
 
 
 async def courseroster_api(request):
@@ -534,3 +598,11 @@ async def courseroster_api(request):
     '''
     course_id = int(request.match_info['course_id'])
     return aiohttp.web.json_response(await courseroster(request, course_id))
+
+
+async def courseassignments_api(request):
+    '''
+    List all of the assignments in a course: Handler
+    '''
+    course_id = request.match_info['course_id']
+    return aiohttp.web.json_response(await courseassignments(request, course_id))
