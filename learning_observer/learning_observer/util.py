@@ -146,7 +146,7 @@ def get_nested_dict_value(d, key_str=None, default=MissingType.Missing):
         key_str = ''
     keys = key_str.split('.')
     for key in keys:
-        if d is not None and key in d:
+        if isinstance(d, dict) and key in d:
             d = d[key]
         elif key == '':
             d = d
@@ -302,6 +302,8 @@ async def async_generator_to_list(gen):
 def get_domain_from_email(email):
     '''Helper function to extract the domain from an email address
     '''
+    if email is None:
+        return None
     if '@' in email:
         return email.split('@')[1]
     return None

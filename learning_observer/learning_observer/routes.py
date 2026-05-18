@@ -73,8 +73,14 @@ def add_routes(app):
             '/webapi/courselist/',
             rosters.courselist_api),
         aiohttp.web.get(
+            '/webapi/course/{course_id}',
+            rosters.course_api),
+        aiohttp.web.get(
             '/webapi/courseroster/{course_id}',
             rosters.courseroster_api),
+        aiohttp.web.get(
+            '/webapi/courseassignments/{course_id}',
+            rosters.courseassignments_api),
     ])
 
     register_auth_webapp_views(app)
@@ -379,7 +385,7 @@ def register_repo_routes(app, repos):
     An example repo is:
 
     {
-        'url': 'https://github.com/ETS-Next-Gen/writing_observer.git',  // URL to the repo; downloaded if not already here
+        'url': 'https://github.com/ArgLab/writing_observer.git',  // URL to the repo; downloaded if not already here
         'prefix': 'modules/writing_observer/writing_observer/static',   // Path in repo to serve static files from
         'module': 'wobserver',                                          // Module name to use in the static path
 
@@ -457,7 +463,7 @@ def register_extra_views(app):
         if 'static_json' in view:
             views.append(aiohttp.web.get(
                 f'/views/{view["module"]}/{view["suburl"]}/',
-                lambda x: aiohttp.web.json_response(view['static_json'])
+                lambda request, data=view['static_json']: aiohttp.web.json_response(data)
             ))
         elif 'method' in view and 'handler' in view:
             views.append(HTTP_METHOD_MAPPING[view['method']](
@@ -474,8 +480,22 @@ def create_nextjs_handler(path):
         sub_url = request.match_info.get('tail')
         if sub_url is None:
             return aiohttp.web.FileResponse(os.path.join(path, 'index.html'))
-        # TODO will this handle multi-layered sub-urls? /foo/bar
-        return aiohttp.web.FileResponse(os.path.join(path, f'{sub_url}.html'))
+        # Normalize the subpath and ensure it stays in the exported Next.js folder.
+        # This allows exported assets like `runtime-config.js` to be served directly.
+        relative_path = sub_url.lstrip('/')
+        file_path = os.path.normpath(os.path.join(path, relative_path))
+        if os.path.commonpath([os.path.abspath(file_path), os.path.abspath(path)]) != os.path.abspath(path):
+            raise aiohttp.web.HTTPNotFound()
+
+        if os.path.isfile(file_path):
+            return aiohttp.web.FileResponse(file_path)
+
+        # Handle extension-less routes exported as html files.
+        html_path = os.path.normpath(os.path.join(path, f'{relative_path}.html'))
+        if os.path.commonpath([os.path.abspath(html_path), os.path.abspath(path)]) != os.path.abspath(path):
+            raise aiohttp.web.HTTPNotFound()
+
+        return aiohttp.web.FileResponse(html_path)
     return _nextjs_handler
 
 
@@ -494,6 +514,11 @@ def register_nextjs_routes(app):
         # The tail path handles suburls
         tail_path = page_path + '{tail:.*}'
         app.router.add_get(tail_path, create_nextjs_handler(full_path))
+
+        # Some exported apps resolve local assets under an `/_next<page_path>` prefix.
+        # Mirror those requests back to the same exported directory.
+        next_prefixed_tail_path = f'/_next{page_path}' + '{tail:.*}'
+        app.router.add_get(next_prefixed_tail_path, create_nextjs_handler(full_path))
 
 
 def register_wsgi_routes(app):
