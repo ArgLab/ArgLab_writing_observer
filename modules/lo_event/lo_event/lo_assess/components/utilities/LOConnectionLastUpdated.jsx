@@ -63,7 +63,7 @@ export const LOConnectionLastUpdated = ({ message, connectionStatus, showText=fa
     <div title={titles[connectionStatus]}>
       <i className={icons[connectionStatus]} />
       {showText ? <span className='mx-1'>{titles[connectionStatus]}</span> : ''}
-      <span className='ms-1'>{lastUpdatedMessage}</span>
+      <span className='ml-1'>{lastUpdatedMessage}</span>
     </div>
   );
 };

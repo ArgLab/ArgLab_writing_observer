@@ -121,6 +121,58 @@ EXECUTION_DAG = {
             ),
             fields={'docs': 'documents'}
         ),
+        # Single student activities including documents, copies and pastes
+        'single_student_all_activity': q.join(
+            LEFT=q.variable('single_student_paste'),
+            RIGHT=q.join(
+                LEFT=q.variable('single_student_copy_cut'),
+                RIGHT=q.variable('single_student_time_on_task'),
+                LEFT_ON='provenance',
+                RIGHT_ON='provenance'
+            ),
+            LEFT_ON='provenance',
+            RIGHT_ON='provenance'
+        ),
+        # Single student paste stats — one entry per doc
+        'single_student_paste': q.select(
+            q.keys(
+                'writing_observer.lo_paste_reducer',
+                scope_fields={
+                    "student": q.parameter("student_id", required=True),
+                    "doc_id":  q.parameter("doc_ids", default=[])
+                }
+            ),
+            fields={
+                'pastes_with_length': 'pastes_with_length',
+                'length_bins':        'length_bins',
+                'total_paste_chars':  'total_paste_chars'
+            }
+        ),
+        # Single student copy/cut stats — one entry per doc
+        'single_student_copy_cut': q.select(
+            q.keys(
+                'writing_observer.lo_copy_cut_reducer',
+                scope_fields={
+                    "student": q.parameter("student_id", required=True),
+                    "doc_id":  q.parameter("doc_ids", default=[])
+                }
+            ),
+            fields={'copy_count': 'copy_count'}
+        ),
+        # Single student time on task — one entry per doc
+        'single_student_time_on_task': q.select(
+            q.keys(
+                'writing_observer.time_on_task',
+                scope_fields={
+                    "student": q.parameter("student_id", required=True),
+                    "doc_id":  q.parameter("doc_ids", default=[])
+                }
+            ),
+            fields={
+                'saved_ts':           'last_ts',
+                'total_time_on_task': 'time_on_task'
+            }
+        ),
         # a single document by explicit doc id
         'single_student_doc_by_id': q.select(
             q.keys(
@@ -233,6 +285,26 @@ EXECUTION_DAG = {
         "docs_with_roster": {
             "returns": "docs_combined",
             "parameters": ["course_id"],
+            "output": ""
+        },
+        "single_student_all_activity": {
+            "returns": "single_student_all_activity",
+            "parameters": ["student_id", "doc_ids"],
+            "output": ""
+        },
+        "single_student_paste": {
+            "returns": "single_student_paste",
+            "parameters": ["student_id", "doc_ids"],
+            "output": ""
+        },
+        "single_student_copy_cut": {
+            "returns": "single_student_copy_cut",
+            "parameters": ["student_id", "doc_ids"],
+            "output": ""
+        },
+        "single_student_time_on_task": {
+            "returns": "single_student_time_on_task",
+            "parameters": ["student_id", "doc_ids"],
             "output": ""
         },
         "paste_metrics": {
