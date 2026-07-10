@@ -40,6 +40,11 @@ from learning_observer.log_event import debug_log
 AUTH_METHODS = {}
 
 
+class TestRequest:
+    """Simple request stub for doctests."""
+    pass
+
+
 def register_event_auth(name):
     '''
     Decorator to register a method to authenticate events
@@ -135,7 +140,9 @@ async def guest_auth(request, event, source):
     We assign a cookie on first visit, but we have no guarantee
     the browser will keep cookies around.
 
-    >>> a = asyncio.run(guest_auth(TestRequest(), [], {}, 'org.mitros.test'))
+    >>> from unittest.mock import AsyncMock, patch
+    >>> with patch('aiohttp_session.get_session', new=AsyncMock(return_value={})):
+    ...     a = asyncio.run(guest_auth(TestRequest(), {}, 'org.mitros.test'))
     >>> a['user_id'] = len(a['user_id'])  # Different user_id each time, and we want doctest to match exact string.
     >>> a
     {'sec': 'none', 'user_id': 32, 'providence': 'guest'}
@@ -163,12 +170,16 @@ async def local_storage_auth(request, event, source):
     unauthenticated (if we don't), or allow for both, with a tag for
     guest versus non-guest accounts.
 
+    >>> from unittest.mock import patch
     >>> auth_event = {'event': 'local_storage', 'user_tag': 'bob'}
-    >>> a = asyncio.run(local_storage_auth(TestRequest(), [], auth_event, 'org.mitros.test'))
+    >>> with patch('learning_observer.auth.events.token_authorize_user', return_value='authenticated'):
+    ...     a = asyncio.run(local_storage_auth(TestRequest(), auth_event, 'org.mitros.test'))
     >>> a
     {'sec': 'authenticated', 'user_id': 'ls-bob', 'providence': 'ls'}
     >>> auth_event['user_tag'] = 'jim'
-    >>> a = asyncio.run(local_storage_auth(TestRequest(), [auth_event], {}, 'org.mitros.test'))
+    >>> with patch('learning_observer.auth.events.token_authorize_user', return_value='unauthenticated'):
+    ...     a = asyncio.run(local_storage_auth(TestRequest(), auth_event, 'org.mitros.test'))
+
     >>> a
     {'sec': 'unauthenticated', 'user_id': 'ls-jim', 'providence': 'ls'}
     '''
@@ -217,6 +228,30 @@ async def chromebook_auth(request, event, source):
         constants.USER_ID: gc_uid,
         'safe_user_id': gc_uid,
         'providence': 'gcu'  # Google Chrome, unauthenticated
+    }
+
+
+@register_event_auth('lti_session')
+async def lti_session_auth(request, event, source):
+    """Authenticate websocket events using the existing LTI session.
+
+    When a dashboard is launched through LTI, the launch flow stores the
+    verified user information (including the subject identifier and course
+    context) in the aiohttp session via :func:`update_session_user_info`. If a
+    websocket request reuses that session, we can surface the same metadata for
+    incoming events so reducers can attribute them correctly.
+    """
+
+    session = await aiohttp_session.get_session(request)
+    user = session.get(constants.USER)
+    if not user:
+        return False
+
+    return {
+        'sec': 'authenticated',
+        constants.USER_ID: user[constants.USER_ID],
+        'providence': 'lti',
+        'lti_context': user.get('lti_context')
     }
 
 
@@ -319,9 +354,6 @@ def check_event_auth_config():
 if __name__ == "__main__":
     import doctest
     print("Running tests")
-
-    class TestRequest:
-        pass
 
     session = {}
 
